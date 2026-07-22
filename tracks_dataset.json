@@ -1,0 +1,49 @@
+{
+  "tracks": [
+    {
+      "id": "ai_fundamentals",
+      "name": "AI Fundamentals",
+      "required_level": "Beginner",
+      "hours_per_week": 8,
+      "budget": "Low",
+      "goal": "AI",
+      "description": "Introduces core AI concepts, basic Python for AI, and simple machine learning ideas. Suitable for students starting from zero with an interest in AI."
+    },
+    {
+      "id": "data_analysis",
+      "name": "Data Analysis",
+      "required_level": "Beginner",
+      "hours_per_week": 6,
+      "budget": "Low",
+      "goal": "Data",
+      "description": "Focuses on data cleaning, visualization, and basic statistics using tools like Excel, SQL, and Python (pandas). Ideal for students interested in working with data but not ready for heavy math."
+    },
+    {
+      "id": "full_stack_web",
+      "name": "Full Stack Web",
+      "required_level": "Intermediate",
+      "hours_per_week": 10,
+      "budget": "Medium",
+      "goal": "Web",
+      "description": "Covers front-end and back-end web development, including HTML/CSS/JS, a backend framework, and databases. Requires some prior programming experience."
+    },
+    {
+      "id": "flutter",
+      "name": "Flutter",
+      "required_level": "Beginner",
+      "hours_per_week": 8,
+      "budget": "Medium",
+      "goal": "Mobile",
+      "description": "Teaches mobile app development using Flutter and Dart, from UI basics to publishing a simple app. Suitable for beginners interested in mobile development."
+    },
+    {
+      "id": "machine_learning",
+      "name": "Machine Learning",
+      "required_level": "Advanced",
+      "hours_per_week": 12,
+      "budget": "High",
+      "goal": "AI",
+      "description": "In-depth track covering machine learning algorithms, model training, and evaluation. Requires strong Python and math (linear algebra, statistics) background and significant weekly time commitment."
+    }
+  ]
+}
