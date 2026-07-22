@@ -95,9 +95,9 @@ To evaluate the four architectures, we tested them all with the same intentional
 
 | Member  | Responsibility                                              |
 | ------- | ------------------------------------------------------------ |
-| Ahmed   | Reactive + contribution to README and comparison table       |
+| Ahmed   | Routing  + contribution to README and comparison table       |
 | Omar    | Unconstrained ReAct                                          |
-| Fareeda | Routing                                                      |
+| Fareeda | Reactive                                                     |
 | All     | Constrained ReAct (most complex) + final presentation        |
 
 No team member owns more than two components, and no one is responsible for the presentation only — every member contributed code.
