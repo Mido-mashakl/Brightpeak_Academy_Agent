@@ -1,0 +1,11 @@
+{
+  "total_cases": 11,
+  "evaluated": 8,
+  "passed": 8,
+  "failed": 0,
+  "average_steps": 4.09,
+  "average_latency": 3.23,
+  "average_tools": 2.45,
+  "average_model_calls": 4.09,
+  "total_model_calls": 45
+}

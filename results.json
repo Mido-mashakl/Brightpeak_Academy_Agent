@@ -1,0 +1,123 @@
+[
+  {
+    "id": "tc_01_easy_match",
+    "type": "easy",
+    "steps": 3,
+    "model_calls": 3,
+    "tool_calls": 2,
+    "latency_sec": 2.37,
+    "expected_track": "AI Fundamentals",
+    "recommended_track": "Based on your background as a complete beginner with a limited budget and 8 hours available per week, I recommend the \"AI Fundamentals\" track. It covers core AI concepts and basic Python for AI while ",
+    "status": "PASS"
+  },
+  {
+    "id": "tc_02_easy_match",
+    "type": "easy",
+    "steps": 3,
+    "model_calls": 3,
+    "tool_calls": 2,
+    "latency_sec": 2.16,
+    "expected_track": "Full Stack Web",
+    "recommended_track": "Based on your intermediate coding experience, 10 available hours per week, and medium budget, I recommend the **Full Stack Web** track. This program perfectly matches your goals by covering both front",
+    "status": "PASS"
+  },
+  {
+    "id": "tc_03_conflicting_constraints",
+    "type": "tricky",
+    "steps": 5,
+    "model_calls": 5,
+    "tool_calls": 4,
+    "latency_sec": 3.77,
+    "expected_track": "AI Fundamentals",
+    "recommended_track": "Based on your request, I recommend the **AI Fundamentals** track. It builds directly on your existing Python knowledge, avoids heavy math requirements by focusing on core concepts and simple ideas, an",
+    "status": "PASS"
+  },
+  {
+    "id": "tc_04_missing_information",
+    "type": "tricky",
+    "steps": 2,
+    "model_calls": 2,
+    "tool_calls": 1,
+    "latency_sec": 3.61,
+    "expected_track": null,
+    "recommended_track": "Based on your interest in exploring tech, I recommend three great beginner-friendly tracks to start with:\n1. **AI Fundamentals** (8 hours/week): Perfect if you are curious about artificial intelligenc",
+    "status": "N/A"
+  },
+  {
+    "id": "tc_05_budget_level_mismatch",
+    "type": "tricky",
+    "steps": 7,
+    "model_calls": 7,
+    "tool_calls": 4,
+    "latency_sec": 5.56,
+    "expected_track": "Machine Learning",
+    "recommended_track": "Based on your advanced background and interest in Machine Learning, the best option available at Brightpeak Academy is the \"Machine Learning\" track. Please note that this track requires 12 hours a wee",
+    "status": "PASS"
+  },
+  {
+    "id": "tc_06_multiple_valid_goals",
+    "type": "tricky",
+    "steps": 5,
+    "model_calls": 5,
+    "tool_calls": 4,
+    "latency_sec": 3.5,
+    "expected_track": "Flutter",
+    "recommended_track": "Based on your interests in both mobile apps and AI as a beginner with 8 hours available per week and a medium budget, I recommend two tracks: the **Flutter** track for mobile app development and the *",
+    "status": "PASS"
+  },
+  {
+    "id": "tc_07_out_of_scope",
+    "type": "tricky",
+    "steps": 1,
+    "model_calls": 1,
+    "tool_calls": 0,
+    "latency_sec": 0.94,
+    "expected_track": null,
+    "recommended_track": "I am an academic advisor specifically for Brightpeak Academy's learning tracks, so I cannot help you choose a traditional university major. However, if you are interested in exploring our professional",
+    "status": "N/A"
+  },
+  {
+    "id": "tc_08_adversarial_input",
+    "type": "tricky",
+    "steps": 6,
+    "model_calls": 6,
+    "tool_calls": 2,
+    "latency_sec": 4.2,
+    "expected_track": null,
+    "recommended_track": "Based on your interest in artificial intelligence and machine learning, I recommend the \"AI Fundamentals\" track. It is a beginner-friendly, low-budget program that requires about 8 hours per week to i",
+    "status": "N/A"
+  },
+  {
+    "id": "tc_09_borderline_fit",
+    "type": "tricky",
+    "steps": 5,
+    "model_calls": 5,
+    "tool_calls": 4,
+    "latency_sec": 3.58,
+    "expected_track": "AI Fundamentals",
+    "recommended_track": "I recommend the \"AI Fundamentals\" track. It matches your beginner level and low budget, requiring 8 hours a week, which is very close to your availability of 7 hours per week.",
+    "status": "PASS"
+  },
+  {
+    "id": "tc_10_data_track_match",
+    "type": "tricky",
+    "steps": 3,
+    "model_calls": 3,
+    "tool_calls": 2,
+    "latency_sec": 2.15,
+    "expected_track": "Data Analysis",
+    "recommended_track": "I recommend the \"Data Analysis\" track, as it is designed for beginners on a low budget, requires only 6 hours per week, avoids heavy math, and focuses on practical tools like Excel, SQL, and Python.",
+    "status": "PASS"
+  },
+  {
+    "id": "tc_11_two_profiles_one_message",
+    "type": "tricky",
+    "steps": 5,
+    "model_calls": 5,
+    "tool_calls": 2,
+    "latency_sec": 3.69,
+    "expected_track": "Full Stack Web + Data Analysis",
+    "recommended_track": "For your friend, I recommend the \"Full Stack Web\" track, which matches their intermediate level, 10 hours per week availability, and medium budget. For you, I recommend the \"Data Analysis\" track, perf",
+    "status": "PASS"
+  }
+]
