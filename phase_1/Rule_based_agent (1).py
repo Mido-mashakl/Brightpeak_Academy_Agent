@@ -13,8 +13,8 @@ that checks all four conditions before recommending it.
 It still has real limits (this is a rule-based agent, not a smart
 one): it can't handle two goals or two different students mentioned in
 the same message, and it can't explain *why* something is a partial
-match -- if a track's conditions aren't all met, it returns
-"No suitable track found based on the provided information."  Those limits are exactly what the other
+match -- if a track's conditions aren't all met, it just says
+"No matching track found." Those limits are exactly what the other
 three architectures in the project are meant to improve on.
 """
 
@@ -88,13 +88,6 @@ def recommend_track(student_input: str) -> str:
     hours = get_hours(student_input)
     budget = get_budget(student_input)
     goals = get_goal(student_input)
-
-
-    if not goals:
-        return "No learning goal was identified in the student's message."
-
-    if level is None or hours is None or budget is None:
-        return "Insufficient information to recommend a track."
 
     for goal in goals:
 
