@@ -1,0 +1,3 @@
+def authorize():
+
+    return True
