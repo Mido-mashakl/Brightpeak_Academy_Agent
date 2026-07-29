@@ -39,8 +39,6 @@ from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP
 
-import database as db
-import roles
 from auth import authenticate_staff_impl
 from prompts import register_prompts
 from resources import register_resources

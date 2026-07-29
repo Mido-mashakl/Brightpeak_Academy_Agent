@@ -1,4 +1,5 @@
 """
+auth.py
 =======
 === CONCERN: Capability negotiation ===
 Two lightweight helpers that inspect the MCP client's declared

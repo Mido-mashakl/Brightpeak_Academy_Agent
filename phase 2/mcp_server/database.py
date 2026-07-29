@@ -64,7 +64,7 @@ def _init_db() -> None:
 
 
 # -----------------------------------------------------------------------
-# READ — Students
+# READ — Students & Instructors
 # -----------------------------------------------------------------------
 
 def get_student(student_id: int) -> dict[str, Any] | None:
@@ -72,6 +72,18 @@ def get_student(student_id: int) -> dict[str, Any] | None:
         row = con.execute(
             "SELECT student_id, name, email, level FROM Students WHERE student_id = ?",
             (student_id,),
+        ).fetchone()
+    return _row(row)
+
+def get_instructor(instructor_id: int):
+    with _conn() as con:
+        row = con.execute(
+            """
+            SELECT instructor_id, name, email
+            FROM Instructors
+            WHERE instructor_id = ?
+            """,
+            (instructor_id,),
         ).fetchone()
     return _row(row)
 

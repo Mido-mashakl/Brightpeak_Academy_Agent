@@ -31,7 +31,7 @@ def register_resources(mcp) -> None:
     def all_policies() -> str:
         """All Brightpeak Academy policies (attendance, scholarship,
         academic integrity, late submission, course withdrawal)."""
-        policies = db.list_policies()
+        policies = db.get_all_policies()
         return "\n\n".join(
             f"# {p['title']} ({p['category']})\n{p['content']}"
             for p in policies

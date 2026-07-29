@@ -1,4 +1,5 @@
 """
+validation.py
 =============
 === CONCERN: Defensive tool design ===
 Server-side validation helpers that run independently of whatever the
@@ -67,7 +68,7 @@ def scholarship_would_change(student_id: int, assignment_id: int, new_score: flo
 
 def is_large_override(student_id: int, assignment_id: int, new_score: float, threshold: float = 15.0) -> bool:
     """Return True if this overwrites an existing grade by more than `threshold` points."""
-    existing = db.get_existing_grade(student_id, assignment_id)
+    existing = db.get_grade_for_assignment(student_id, assignment_id)
     if existing is None:
         return False
     return abs(existing["score"] - new_score) > threshold
