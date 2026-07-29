@@ -11,10 +11,7 @@ happens) rather than here, because it's tightly coupled to the
 authentication flow rather than to progress reporting.
 """
 
-from __future__ import annotations
-
 from mcp.server.fastmcp import Context
-
 
 async def report_progress(
     ctx: Context,

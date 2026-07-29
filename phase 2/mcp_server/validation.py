@@ -1,5 +1,4 @@
 """
-validation.py
 =============
 === CONCERN: Defensive tool design ===
 Server-side validation helpers that run independently of whatever the
@@ -9,10 +8,7 @@ trust a caller-supplied value when the DB holds the ground truth.
 All helpers return (is_valid: bool, error_message: str | None).
 """
 
-from __future__ import annotations
-
 import database as db
-
 
 def validate_score(score: float, assignment_id: int) -> tuple[bool, str | None]:
     """Confirm `score` is in [0, assignment.max_score].

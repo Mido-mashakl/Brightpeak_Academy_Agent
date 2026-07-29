@@ -1,5 +1,4 @@
 """
-auth.py
 =======
 === CONCERN: Capability negotiation ===
 Two lightweight helpers that inspect the MCP client's declared
@@ -13,8 +12,6 @@ it registers the write-tool implementations with the FastMCP instance
 passed in and fires tools/list_changed so the client doesn't have to
 poll.
 """
-
-from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 

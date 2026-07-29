@@ -34,8 +34,6 @@ registered below.  The pieces this server cares about explicitly:
 Both guards live in auth.py.
 """
 
-from __future__ import annotations
-
 import sys
 from typing import Any
 
@@ -51,8 +49,6 @@ from tools import get_write_tools, register_readonly_tools
 # ------------------------------------------------------------------
 # Bootstrap
 # ------------------------------------------------------------------
-
-db.init_db_if_needed()
 
 mcp = FastMCP("brightpeak-academy")
 

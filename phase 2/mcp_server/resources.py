@@ -11,8 +11,6 @@ Import this module in server.py BEFORE calling mcp.run() so the
 decorators fire and FastMCP registers these endpoints.
 """
 
-from __future__ import annotations
-
 import database as db
 
 # `mcp` is imported from server.py to avoid a circular dependency.

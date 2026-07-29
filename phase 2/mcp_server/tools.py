@@ -14,8 +14,6 @@ Concerns addressed here:
   - Progress tracking       (generate_course_report via notifications.py)
 """
 
-from __future__ import annotations
-
 import asyncio
 from typing import Any
 

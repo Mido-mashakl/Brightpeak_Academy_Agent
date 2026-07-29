@@ -13,9 +13,6 @@ Usage in server.py:
     register_prompts(mcp)
 """
 
-from __future__ import annotations
-
-
 def register_prompts(mcp) -> None:
     """Attach all prompt endpoints to `mcp`.
 
