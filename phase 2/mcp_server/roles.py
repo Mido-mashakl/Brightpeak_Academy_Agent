@@ -30,10 +30,10 @@ import bcrypt
 # ------------------------------------------------------------------
 # Registrar passcode (hashed)
 # ------------------------------------------------------------------
-# Default is the bcrypt hash of "brightpeak2024" — change before prod.
+# Default is the bcrypt hash of "brightpeak2026" — change before prod.
 # Override by setting the REGISTRAR_PASSCODE_HASH environment variable.
 
-_DEFAULT_HASH = b"$2b$12$eImiTXuWVxfM37uY4JANjOe5XpSvDuFiWJ.sBDi9DV5ByEsYdvlrS"
+_DEFAULT_HASH = b"$2b$12$JQRb8ndLSPj2gRFx2iZm3O/05FbWfTudfylrXZOh1Rq6QVHjFrk9e"
 
 REGISTRAR_PASSCODE_HASH: bytes = (
     os.environ.get("REGISTRAR_PASSCODE_HASH", "").encode()
