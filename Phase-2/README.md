@@ -30,6 +30,35 @@ Database
 - Protecting the database
 
 ---
+### Example Request Flow
+ 
+A quick walkthrough of what happens when a user asks *"Show me student #1's profile"*:
+ 
+```
+User: "Show me student #1's profile"
+        │
+        ▼
+Gemini Client
+        │
+        ▼
+Gemini decides: "I need student data" → picks a tool
+        │
+        ▼
+MCP Agent → call_tool("get_student_profile", {student_id: 1})
+        │
+        ▼
+MCP Server → validates + authorizes the call
+        │
+        ▼
+SQLite → returns the student's data
+        │
+        ▼
+Gemini formats the final, natural-language answer
+```
+ 
+Gemini never queries SQLite directly — it only ever decides *which tool to call*; the MCP Server is the one actually touching the database.
+
+---
 
 ## 🗄️ Database
 
