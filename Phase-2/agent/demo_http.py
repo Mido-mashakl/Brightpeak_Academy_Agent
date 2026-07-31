@@ -42,7 +42,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from mcp import ClientSession
-from mcp.client.streamable_http import streamablehttp_client
+from mcp.client.streamable_http import streamable_http_client
 from mcp.types import (
     CreateMessageResult,
     ElicitResult,
@@ -174,7 +174,7 @@ async def main() -> None:
     # spawns and pipes to a local subprocess; streamablehttp_client()
     # instead opens an HTTP(S) connection to a server that is already
     # running independently and could be serving other clients too.
-    async with streamablehttp_client(SERVER_URL) as (read, write, get_session_id):
+    async with streamable_http_client(SERVER_URL) as (read, write, get_session_id):
         async with ClientSession(
             read,
             write,
