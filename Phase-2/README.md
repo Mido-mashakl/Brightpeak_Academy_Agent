@@ -58,23 +58,34 @@ Gemini never queries SQLite directly — it only ever decides which tool to call
 
 ---
 
-## 🗄️ Database
-
-The project uses SQLite, with the following tables:
-
-- Students
-- Courses
-- Instructors
-- Enrollments
-- Assignments
-- Grades
-- Attendance
-- Policies
-
-Along with:
-- `ERD.png` — entity relationship diagram
-- `schema.sql` — table definitions
-- `seed.sql` — sample/test data
+## 3. Entity-Relationship Diagram
+ 
+See [`db/ERD.png`](db/ERD.png). Summary:
+ 
+```
+Instructors (1) ──< (N) Courses (1) ──< (N) Assignments (1) ──< (N) Grades >── (N) Students
+                          │                                                        │
+                          └──< (N) Enrollments >────────────────────────────────────┘
+                          └──< (N) Attendance  >────────────────────────────────────┘
+ 
+Policies (standalone reference table — exposed as MCP Resources, not joined to anything)
+```
+ 
+- `Students` — id, name, email, level (Beginner/Intermediate/Advanced)
+- `Instructors` — id, name, email
+- `Courses` — id, title, category, duration, `instructor_id` (FK → Instructors)
+- `Enrollments` — student ↔ course, `status` (active/completed/dropped), `progress`,
+  `enrollment_date`
+- `Assignments` — belongs to a course, `max_score`, `deadline`
+- `Grades` — student × assignment, `score`, `graded_by` (FK → Instructors)
+- `Attendance` — student × course, `percentage`
+- `Policies` — standalone reference documents (attendance, scholarship, academic
+  integrity, late submission, course withdrawal)
+Engine: **SQLite** (`db/brightpeak.db`), built from `db/schema.sql` and seeded from
+`db/seed.sql` automatically on first run (see `mcp_server/database.py`). Seed data
+covers normal cases (active enrollments, graded assignments) and edge cases (a student
+already `dropped`, attendance below the 75% floor, a student already above the 90%
+scholarship threshold).
 
 ---
 
