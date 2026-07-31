@@ -115,7 +115,8 @@ Brightpeak-MCP/
 ├── agent/
 │   ├── client.py
 │   ├── agent.py
-│   └── demo.py  ← full walkthrough of all 8 protocol concerns
+│   ├── demo.py  ← full walkthrough of all 8 protocol concerns
+|   └── demo_http.py 
 │
 └── requirements.txt
 ```
