@@ -24,6 +24,7 @@ import roles
 from auth import client_supports_elicitation, client_supports_sampling
 from notifications import report_progress
 from schemas import GradeOverrideConfirmation, WithdrawalConfirmation
+from memory import recall_notes, remember_note
 from validation import (
     is_large_override,
     scholarship_would_change,
@@ -125,6 +126,17 @@ def register_readonly_tools(mcp) -> None:
             "overall_average": db.get_overall_average(student_id),
         }
 
+        # === CONCERN (Add-On Lab): Agent Memory ===
+        # Auto-recall any advisor notes left for this student in a past
+        # session -- no explicit search call needed from the client.
+        past_notes = recall_notes(
+            student_id,
+            query="attendance grade circumstances accommodation deadline",
+            top_k=3,
+        )
+        if past_notes:
+            facts["advisor_notes"] = past_notes
+
         if not client_supports_sampling(ctx):
             # Graceful degradation: return raw facts instead of failing.
             return {
@@ -220,6 +232,40 @@ def register_readonly_tools(mcp) -> None:
 # successful role escalation.
 # =======================================================================
 
+# -------------------------------------------------------------------
+# === CONCERN (Add-On Lab): Agent Memory -- write path ===
+# -------------------------------------------------------------------
+
+async def _add_advisor_note_impl(
+    student_id: int,
+    note_text: str,
+    ctx: Context,
+) -> dict[str, Any]:
+    """Record a short note about a student for future advising sessions
+    (e.g. a documented accommodation, an extenuating circumstance, a
+    follow-up reminder). Resurfaces automatically the next time anyone
+    generates an academic advisory for this student -- including in a
+    different session.
+
+    Requires an authenticated instructor or registrar.
+
+    Args:
+        student_id: the student's numeric ID.
+        note_text: the note itself, in the advisor's own words.
+    """
+    if roles.SESSION.role not in ("instructor", "registrar"):
+        return {"error": "Not authorized. Authenticate as instructor or registrar first."}
+
+    student = db.get_student(student_id)
+    if student is None:
+        return {"error": f"No student with id {student_id}"}
+
+    if not note_text or not note_text.strip():
+        return {"error": "note_text cannot be empty."}
+
+    record = remember_note(student_id, note_text.strip(), roles.SESSION.role)
+    return {"success": True, "stored_note": record}
+
 def get_write_tools() -> list:
     """Return the write-tool callables so server.py can register them
     after authentication without importing private names directly."""
@@ -227,6 +273,7 @@ def get_write_tools() -> list:
         _record_grade_impl,
         _update_attendance_impl,
         _change_enrollment_status_impl,
+        _add_advisor_note_impl,
     ]
 
 
