@@ -1,0 +1,48 @@
+======================================================================
+EVIDENCE — test_router.py (standalone, no episodic store)
+Generated: 2026-08-05T23:39:34.588446+00:00
+Result: PASSED
+======================================================================
+
+======================================================================
+TEST 1 — routine message is routed to 'forget' with reasoning
+======================================================================
+destination: forget
+reasoning:   No event-signal keywords found; message reads as routine conversational filler or a tool acknowledgement with no standalone value once the active task finishes.
+PASS
+
+======================================================================
+TEST 2 — a consequential event is routed to 'episodic' with context
+======================================================================
+destination:   episodic
+reasoning:     Message contains signal keyword 'below', indicating a specific, consequential event (not routine chatter) worth recording with its context for future advisory sessions.
+event_summary: Student 14 attendance is below the 75% threshold for course 3.
+context:       role=tool, msg_type=text
+PASS
+
+======================================================================
+TEST 3 — router structurally cannot produce a 'semantic' destination
+======================================================================
+Correctly rejected: PromoteOrDropRouter only supports 'forget' or 'episodic', got 'semantic'. Semantic memory is only ever written by the consolidation layer.
+PASS
+
+======================================================================
+TEST 4 — process_overflow() wraps ShortTermMemory eviction directly
+======================================================================
+  evicted: 'Scholarship eligibility: student is now below the 75% attendance threshold.' -> episodic
+  evicted: 'How is my son doing this semester?' -> forget
+PASS — process_overflow() correctly consumes ShortTermMemory's eviction output.
+
+======================================================================
+Full router decision log (visible reasoning, as required by the lab):
+======================================================================
+[1] 2026-08-05T23:39:34.587612+00:00 -> EPISODIC
+    message: 'Scholarship eligibility: student is now below the 75% attendance threshold.'
+    reasoning: Message contains signal keyword 'eligibility', indicating a specific, consequential event (not routine chatter) worth recording with its context for future advisory sessions.
+[2] 2026-08-05T23:39:34.587620+00:00 -> FORGET
+    message: 'How is my son doing this semester?'
+    reasoning: No event-signal keywords found; message reads as routine conversational filler or a tool acknowledgement with no standalone value once the active task finishes.
+
+======================================================================
+ALL TESTS PASSED
+======================================================================
