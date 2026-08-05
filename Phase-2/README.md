@@ -92,15 +92,25 @@ scholarship threshold).
 ## 📂 Project Structure
 
 ```
-Brightpeak-MCP/
+Brightpeak_Academy_Agent/
 │
 ├── README.md
+├── requirements.txt
+├── .env.example
+├── .gitignore
 │
 ├── db/
 │   ├── schema.sql
 │   ├── seed.sql
 │   ├── brightpeak.db
 │   └── ERD.png
+│
+├── documents/
+│   ├── academic_rules.pdf
+│   ├── attendance_policy.pdf
+│   ├── scholarship_policy.pdf
+│   ├── exam_policy.pdf
+│   └── ...
 │
 ├── mcp_server/
 │   ├── server.py
@@ -115,9 +125,8 @@ Brightpeak-MCP/
 ├── agent/
 │   ├── client.py
 │   ├── agent.py
-│   ├── demo.py
-│   ├── demo_http.py
-│   └── memory_rag_agent.py
+│   ├── memory_rag_agent.py
+│   └── demo.py
 │
 ├── memory/
 │   ├── short_term.py
@@ -125,15 +134,9 @@ Brightpeak-MCP/
 │   ├── router.py
 │   ├── episodic.py
 │   ├── semantic.py
-│   └── consolidation.py
-│
-├── context_eval/
-│   ├── sliding_window.py
-│   ├── observation_masking.py
-│   ├── recursive_summary.py
-│   ├── zone_pruning.py
-│   ├── test_cases.json
-│   └── evaluate.py
+│   ├── consolidation.py
+│   ├── recall.py
+│   └── verification.py
 │
 ├── rag/
 │   ├── chunker.py
@@ -145,18 +148,24 @@ Brightpeak-MCP/
 │   ├── self_rag.py
 │   └── ingestion.py
 │
+├── context_eval/
+│   ├── sliding_window.py
+│   ├── observation_masking.py
+│   ├── recursive_summary.py
+│   ├── zone_pruning.py
+│   ├── test_cases.json
+│   └── evaluate.py
+│
 ├── retrieval_eval/
 │   ├── questions.json
 │   ├── evaluate.py
-│   └── comparison_table.md
+│   ├── comparison_table.md
+│   └── results.json
 │
-├── documents/
-│   ├── academic_policies.pdf
-│   ├── scholarship_policy.pdf
-│   ├── attendance_policy.pdf
-│   └── exam_regulations.pdf
-│
-└── requirements.txt
+└── tests/
+    ├── memory_tests.py
+    ├── rag_tests.py
+    └── integration_tests.py
 ```
 
 ---
@@ -259,10 +268,10 @@ Campus C client ──┘
 
 | Member     | Responsibilities                                                                                                                                                                                                                                                                         |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Ahmed**  | **Memory System Extension** — Short-Term Memory, Scratchpad, Promote-or-Drop Router, Episodic Memory, Semantic Memory, Consolidation Layer, Memory Integration with the Agent  + Database — ERD design, schema.sql, seed.sql, SQLite setup, test data                                                                                                      |
+| **Ahmed**  |   **Memory & Retrieval Evaluation** — Context Window Management (Sliding Window, Observation Masking, Recursive Summarization, Zone-Based Pruning) + Database — ERD design, schema.sql, seed.sql, SQLite setup, test data                                                                                                    |
 | **Omar**   | **MCP Server** — MCP Server, Tools, Notifications, Resources, Prompts, Authorization, Validation, Progress Tracking, Sampling                                                                                                                                                  |
 | **Farida** | **Agent** — Gemini Client, Handshake, Tool Discovery, Tool Calls, Demo, README  + Responsible for designing and implementing Retrieval-Augmented Generation (RAG) pipeline-->  Document Collection & Preparation, Chunking, Embedding ,Vector Database, Naive RAG, Hybrid Search, Agentic RAG, Self-RAG Verification                                                                                                                                                                                            |
-| **Fatma**  | **Memory & Retrieval Evaluation** — Context Window Management (Sliding Window, Observation Masking, Recursive Summarization, Zone-Based Pruning), Vector Database Setup, Naive RAG, Hybrid Search, Agentic RAG, Self-RAG Verification, Retrieval Evaluation, Comparison Tables |
+| **Fatma**  | **Memory System Extension** — Short-Term Memory, Scratchpad, Promote-or-Drop Router, Episodic Memory, Semantic Memory, Consolidation Layer, Memory Integration with the Agent   |
 
 
 ---
