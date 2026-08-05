@@ -115,8 +115,46 @@ Brightpeak-MCP/
 ├── agent/
 │   ├── client.py
 │   ├── agent.py
-│   ├── demo.py  ← full walkthrough of all 8 protocol concerns
-|   └── demo_http.py 
+│   ├── demo.py
+│   ├── demo_http.py
+│   └── memory_rag_agent.py
+│
+├── memory/
+│   ├── short_term.py
+│   ├── scratchpad.py
+│   ├── router.py
+│   ├── episodic.py
+│   ├── semantic.py
+│   └── consolidation.py
+│
+├── context_eval/
+│   ├── sliding_window.py
+│   ├── observation_masking.py
+│   ├── recursive_summary.py
+│   ├── zone_pruning.py
+│   ├── test_cases.json
+│   └── evaluate.py
+│
+├── rag/
+│   ├── chunker.py
+│   ├── embedder.py
+│   ├── vector_db.py
+│   ├── naive_rag.py
+│   ├── hybrid_rag.py
+│   ├── agentic_rag.py
+│   ├── self_rag.py
+│   └── ingestion.py
+│
+├── retrieval_eval/
+│   ├── questions.json
+│   ├── evaluate.py
+│   └── comparison_table.md
+│
+├── documents/
+│   ├── academic_policies.pdf
+│   ├── scholarship_policy.pdf
+│   ├── attendance_policy.pdf
+│   └── exam_regulations.pdf
 │
 └── requirements.txt
 ```
@@ -219,11 +257,13 @@ Campus C client ──┘
 
 ## 👥 Team Split
 
-| Member | Responsibility |
-|---|---|
-| **Ahmed** | Database — ERD design, `schema.sql`, `seed.sql`, SQLite setup, test data |
-| **Omar** | MCP Server — tools, notifications, resources, prompts, authorization, validation, progress tracking, sampling |
-| **Farida** | Agent — Gemini client, handshake, tool discovery, tool calls, demo, README |
+| Member     | Responsibilities                                                                                                                                                                                                                                                                         |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ahmed**  | **Memory System Extension** — Short-Term Memory, Scratchpad, Promote-or-Drop Router, Episodic Memory, Semantic Memory, Consolidation Layer, Memory Integration with the Agent  + Database — ERD design, schema.sql, seed.sql, SQLite setup, test data                                                                                                      |
+| **Omar**   | **MCP Server** — MCP Server, Tools, Notifications, Resources, Prompts, Authorization, Validation, Progress Tracking, Sampling                                                                                                                                                  |
+| **Farida** | **Agent** — Gemini Client, Handshake, Tool Discovery, Tool Calls, Demo, README  + Responsible for designing and implementing Retrieval-Augmented Generation (RAG) pipeline-->  Document Collection & Preparation, Chunking, Embedding ,Vector Database, Naive RAG, Hybrid Search, Agentic RAG, Self-RAG Verification                                                                                                                                                                                            |
+| **Fatma**  | **Memory & Retrieval Evaluation** — Context Window Management (Sliding Window, Observation Masking, Recursive Summarization, Zone-Based Pruning), Vector Database Setup, Naive RAG, Hybrid Search, Agentic RAG, Self-RAG Verification, Retrieval Evaluation, Comparison Tables |
+
 
 ---
 
@@ -238,6 +278,30 @@ Campus C client ──┘
 - [ ] Build Agent
 - [ ] Demo
 - [ ] README
+---------------------------------
+**Phase 2**
+ Implement Short-Term Memory
+ Implement Scratchpad
+ Implement Promote-or-Drop Router
+ Build Episodic Memory
+ Build Semantic Memory
+ Implement Consolidation Layer
+ Implement Sliding Window
+ Implement Observation Masking
+ Implement Recursive Summarization
+ Implement Zone-Based Pruning
+ Build Vector Database
+ Implement Chunking Pipeline
+ Generate Embeddings
+ Implement Naive RAG
+ Implement Hybrid Search
+ Implement Agentic RAG
+ Implement Self-RAG Verification
+ Retrieval Evaluation
+ Context Evaluation
+ Integrate Memory & RAG with MCP Agent
+ Update README
+ Final Demo
 
 ---
 
