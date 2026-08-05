@@ -1,0 +1,24 @@
+======================================================================
+EVIDENCE — test_short_term.py (standalone, no other memory component)
+Generated: 2026-08-05T23:12:22.509041+00:00
+Result: PASSED
+======================================================================
+
+======================================================================
+TEST 1 — ShortTermMemory evicts the oldest message on overflow
+======================================================================
+Buffer size after 7 adds (max_turns=5): 5
+Evicted count: 2
+First evicted message role/content: user / 'Check scholarship eligibility for course 3 roster.'
+PASS — oldest message evicted in correct FIFO order, not silently dropped.
+
+======================================================================
+TEST 2 — Scratchpad survives short-term memory overflow untouched
+======================================================================
+Scratchpad BEFORE overflow: plan='scholarship eligibility sweep for course 3', subgoal='checking student 14 of 4', working_state={'roster_total': 4, 'students_checked': [14]}
+Scratchpad AFTER 20 more evictions: plan='scholarship eligibility sweep for course 3', subgoal='checking student 14 of 4', working_state={'roster_total': 4, 'students_checked': [14]}
+PASS — scratchpad fields identical before/after; short-term eviction never touched it.
+
+======================================================================
+ALL TESTS PASSED
+======================================================================
