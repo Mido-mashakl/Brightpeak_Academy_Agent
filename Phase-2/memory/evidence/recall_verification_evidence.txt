@@ -1,0 +1,98 @@
+======================================================================
+EVIDENCE — test_recall_verification.py
+(recall.py + verification.py + REAL EpisodicStore + REAL SemanticStore)
+Generated: 2026-08-06T18:57:10.038777+00:00
+Result: PASSED
+======================================================================
+
+======================================================================
+SETUP — build a real, mixed history for two students
+======================================================================
+Episodes: flutter=1 ai=2 scholarship=3 smalltalk=4 attendance(student20)=5
+Consolidation ran: 5 decisions
+  episode=4 -> skipped_no_fact   fact_key=None
+  episode=1 -> conflict_resolved fact_key=preferred_track:student_14
+  episode=2 -> created           fact_key=preferred_track:student_14
+  episode=3 -> created           fact_key=scholarship_status:student_14
+  episode=5 -> created           fact_key=attendance_flag:student_20
+
+Current preferred_track:student_14 = 'Ai' (v1)
+Manually expired scholarship_status:student_14 (expires_at=2026-08-06T18:57:10.021512+00:00)
+
+======================================================================
+TEST 1 — RECALL: query about track surfaces both track episodes + the fact
+======================================================================
+Query: 'what track did the student pick'
+  [episodic] ref_id=2 score=0.50 text='Student confirmed interest in the AI track instead'
+  [episodic] ref_id=1 score=0.50 text='Student confirmed interest in the Flutter track'
+  [semantic] ref_id=1 score=0.33 text='preferred_track:student_14=Ai'
+  [episodic] ref_id=4 score=0.33 text='Weather is nice today, student said thanks and logged off'
+  [episodic] ref_id=3 score=0.33 text='Student is eligible for the merit scholarship'
+PASS — recall found the relevant episodes and fact across both stores.
+
+======================================================================
+TEST 2 — VERIFICATION catches the STALE episode (Flutter, superseded by AI)
+======================================================================
+  [episodic] ref_id=2 -> SUPPORTED
+      reasoning: Episode 2 implies preferred_track:student_14='Ai', which matches the current semantic fact (v1) exactly -- corroborated, not just uncontradicted.
+  [episodic] ref_id=1 -> UNSUPPORTED
+      reasoning: Episode 1 implies preferred_track:student_14='Flutter', but the CURRENT semantic fact for that key is now 'Ai' (v1) -- this episode has been superseded by newer, contradicting knowledge and must not be presented as still true.
+  [semantic] ref_id=1 -> SUPPORTED
+      reasoning: Fact 'preferred_track:student_14' (v1) is relevant and is the current, non-expired value in semantic memory -- safe to present to the agent as ground truth.
+  [episodic] ref_id=4 -> SUPPORTED
+      reasoning: Episode 4 implies no generalizable, checkable claim (e.g. it's a raw logged event, not a standing status) -- nothing in semantic memory could contradict it, so it stands on its own as a historical record.
+  [episodic] ref_id=3 -> UNSUPPORTED
+      reasoning: Episode 3 implies scholarship_status:student_14='eligible', but the CURRENT semantic fact for that key is now 'eligible' (v1, expired) -- this episode has been superseded by newer, contradicting knowledge and must not be presented as still true.
+PASS — stale episode rejected, corroborated episode and current fact both kept.
+
+======================================================================
+TEST 3 — supported_only() hands the agent a clean list (no stale memory leaks through)
+======================================================================
+supported_only() -> {('episodic', 4), ('semantic', 1), ('episodic', 2)}
+PASS — agent-facing result set is clean.
+
+======================================================================
+TEST 4 — VERIFICATION catches the EXPIRED fact, and the episode it agrees with too
+======================================================================
+  [episodic] ref_id=3 score=1.00 text='Student is eligible for the merit scholarship'
+  [episodic] ref_id=4 score=0.43 text='Weather is nice today, student said thanks and logged off'
+  [episodic] ref_id=2 score=0.29 text='Student confirmed interest in the AI track instead'
+  [episodic] ref_id=1 score=0.29 text='Student confirmed interest in the Flutter track'
+  [semantic] ref_id=1 score=0.14 text='preferred_track:student_14=Ai'
+  [episodic] ref_id=3 -> UNSUPPORTED
+      reasoning: Episode 3 implies scholarship_status:student_14='eligible', but the CURRENT semantic fact for that key is now 'eligible' (v1, expired) -- this episode has been superseded by newer, contradicting knowledge and must not be presented as still true.
+  [episodic] ref_id=4 -> SUPPORTED
+      reasoning: Episode 4 implies no generalizable, checkable claim (e.g. it's a raw logged event, not a standing status) -- nothing in semantic memory could contradict it, so it stands on its own as a historical record.
+  [episodic] ref_id=2 -> IRRELEVANT
+      reasoning: Relevance score 0.29 is below the 0.30 floor -- too little genuine word overlap with the query to treat as on-topic, regardless of whether the underlying memory is itself trustworthy.
+  [episodic] ref_id=1 -> IRRELEVANT
+      reasoning: Relevance score 0.29 is below the 0.30 floor -- too little genuine word overlap with the query to treat as on-topic, regardless of whether the underlying memory is itself trustworthy.
+  [semantic] ref_id=1 -> IRRELEVANT
+      reasoning: Relevance score 0.14 is below the 0.30 floor -- too little genuine word overlap with the query to treat as on-topic, regardless of whether the underlying memory is itself trustworthy.
+PASS — expiration correctly propagates to the episode it agrees with: not presented as current.
+
+======================================================================
+TEST 5 — VERIFICATION grades weak coincidental overlap as IRRELEVANT, not supported
+======================================================================
+Small-talk episode recalled with score=0.25 (below relevance floor)
+  -> IRRELEVANT: Relevance score 0.25 is below the 0.30 floor -- too little genuine word overlap with the query to treat as on-topic, regardless of whether the underlying memory is itself trustworthy.
+PASS — coincidental overlap correctly rejected as irrelevant, not treated as support.
+
+======================================================================
+TEST 6 — student scoping: student 14's query never surfaces student 20's memory, and vice versa
+======================================================================
+Query 'attendance flagged review' for student 14 -> [('episodic', 3)]
+Query 'attendance flagged review' for student 20 -> [('episodic', 5), ('semantic', 3)]
+PASS — recall is correctly isolated per student.
+
+======================================================================
+TEST 7 — to_context_string() produces a clean, agent-ready block from a clean result set
+======================================================================
+- [EPISODE] Student confirmed interest in the AI track instead (relevance=0.50)
+- [FACT] preferred_track:student_14=Ai (relevance=0.33)
+- [EPISODE] Weather is nice today, student said thanks and logged off (relevance=0.33)
+PASS — formatted context block is ready to hand to the agent, stale info excluded.
+
+======================================================================
+ALL TESTS PASSED
+======================================================================
