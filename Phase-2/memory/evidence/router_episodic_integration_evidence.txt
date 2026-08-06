@@ -1,0 +1,46 @@
+======================================================================
+EVIDENCE — test_router_episodic_integration.py
+(router.py + episodic.py wired together on a real overflow scenario)
+Generated: 2026-08-05T23:53:38.959940+00:00
+Result: PASSED
+======================================================================
+
+======================================================================
+SCENARIO — scholarship eligibility sweep for course 3 roster
+======================================================================
+Transcript length: 15 turns, max_turns=4
+Total eviction/routing decisions made: 11
+  -> episodic  | 'Run scholarship eligibility sweep for course 3.'
+  -> forget    | 'Starting sweep. Checking student 14 first.'
+  -> forget    | 'get_student_attendance(14) -> 92%'
+  -> episodic  | 'get_student_grades(14) -> avg 88, below scholarship threshold'
+  -> episodic  | 'Student 14: not eligible, average below threshold.'
+  -> forget    | 'Checking student 15 next.'
+  -> forget    | 'get_student_attendance(15) -> 60%'
+  -> episodic  | 'Student 15 attendance is below the 75% threshold, flagged for review.'
+  -> forget    | 'Noted. Checking student 16 next.'
+  -> forget    | 'get_student_attendance(16) -> 95%'
+  -> episodic  | 'get_student_grades(16) -> avg 93, scholarship eligible confirmed.'
+
+Decisions routed to episodic: 5
+
+======================================================================
+WRITING episodic decisions into EpisodicStore
+======================================================================
+  Inserted episode id=1: 'Run scholarship eligibility sweep for course 3.'
+  Inserted episode id=2: 'get_student_grades(14) -> avg 88, below scholarship threshold'
+  Inserted episode id=3: 'Student 14: not eligible, average below threshold.'
+  Inserted episode id=4: 'Student 15 attendance is below the 75% threshold, flagged for review.'
+  Inserted episode id=5: 'get_student_grades(16) -> avg 93, scholarship eligible confirmed.'
+
+======================================================================
+READING episodic store back (as a future recall.py component would)
+======================================================================
+list_by_metadata({'course_id': 3}) -> 5 episode(s)
+PASS — every episodic decision the router made is present in the store, exactly as decided, queryable independently.
+
+PASS — no 'forget' decisions leaked into episodic memory.
+
+======================================================================
+ALL INTEGRATION TESTS PASSED — router.py and episodic.py work correctly together
+======================================================================
