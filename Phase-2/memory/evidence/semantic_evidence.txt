@@ -1,0 +1,42 @@
+======================================================================
+EVIDENCE — test_semantic.py (standalone, temp SQLite file)
+Generated: 2026-08-06T00:13:27.329993+00:00
+Result: PASSED
+======================================================================
+
+======================================================================
+TEST 1 — first upsert creates version 1, is 'current'
+======================================================================
+v1: id=1, version=1, value='Flutter', superseded_by=None
+PASS
+
+======================================================================
+TEST 2 — a fact CHANGE creates version 2; version 1 is superseded, not deleted
+======================================================================
+v2: id=2, version=2, value='AI'
+v1 re-read: superseded_by=2, still in DB with value='Flutter'
+Full history (2 versions): [(1, 'Flutter'), (2, 'AI')]
+PASS — old value preserved, new value is current, nothing silently lost.
+
+======================================================================
+TEST 3 — expiration: a fact with a past expires_at is not returned as current
+======================================================================
+get_current() for an already-expired fact: None
+With include_expired=True, still readable: 'Summer 2025 internship'
+PASS — expired fact hidden by default, still recoverable, not deleted.
+
+======================================================================
+TEST 4 — explicit expire_now() on a fact that had no prior expiry
+======================================================================
+expires_at set to: 2026-08-06T00:13:27.317357+00:00
+PASS
+
+======================================================================
+TEST 5 — list_all_current() excludes superseded and expired facts
+======================================================================
+Current facts: ['preferred_track:student_14']
+PASS
+
+======================================================================
+ALL TESTS PASSED
+======================================================================
