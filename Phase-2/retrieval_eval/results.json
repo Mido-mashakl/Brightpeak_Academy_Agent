@@ -1,0 +1,418 @@
+[
+  {
+    "architecture": "naive_rag",
+    "accuracy": 0.861,
+    "avg_tokens": 469,
+    "avg_latency_s": 0.001,
+    "per_question": [
+      {
+        "id": "q1",
+        "accuracy": 1.0,
+        "tokens": 445,
+        "latency_s": 0.0011,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q2",
+        "accuracy": 1.0,
+        "tokens": 470,
+        "latency_s": 0.0006,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q3",
+        "accuracy": 1.0,
+        "tokens": 466,
+        "latency_s": 0.001,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q4",
+        "accuracy": 1.0,
+        "tokens": 294,
+        "latency_s": 0.0006,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q5",
+        "accuracy": 0.667,
+        "tokens": 530,
+        "latency_s": 0.0005,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q6",
+        "accuracy": 1.0,
+        "tokens": 554,
+        "latency_s": 0.0005,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q7",
+        "accuracy": 1.0,
+        "tokens": 522,
+        "latency_s": 0.0004,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q8",
+        "accuracy": 0.75,
+        "tokens": 526,
+        "latency_s": 0.0005,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q9",
+        "accuracy": 1.0,
+        "tokens": 461,
+        "latency_s": 0.0006,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q10",
+        "accuracy": 1.0,
+        "tokens": 413,
+        "latency_s": 0.0005,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q11",
+        "accuracy": 0.25,
+        "tokens": 449,
+        "latency_s": 0.0005,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q12",
+        "accuracy": 0.667,
+        "tokens": 497,
+        "latency_s": 0.0005,
+        "self_rag_pass": true,
+        "n_hits": 4
+      }
+    ]
+  },
+  {
+    "architecture": "hybrid_rag",
+    "accuracy": 0.889,
+    "avg_tokens": 492,
+    "avg_latency_s": 0.001,
+    "per_question": [
+      {
+        "id": "q1",
+        "accuracy": 1.0,
+        "tokens": 465,
+        "latency_s": 0.001,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q2",
+        "accuracy": 1.0,
+        "tokens": 437,
+        "latency_s": 0.0011,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q3",
+        "accuracy": 1.0,
+        "tokens": 486,
+        "latency_s": 0.0009,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q4",
+        "accuracy": 1.0,
+        "tokens": 331,
+        "latency_s": 0.0008,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q5",
+        "accuracy": 1.0,
+        "tokens": 537,
+        "latency_s": 0.0009,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q6",
+        "accuracy": 1.0,
+        "tokens": 603,
+        "latency_s": 0.0012,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q7",
+        "accuracy": 1.0,
+        "tokens": 508,
+        "latency_s": 0.0011,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q8",
+        "accuracy": 0.75,
+        "tokens": 546,
+        "latency_s": 0.0009,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q9",
+        "accuracy": 1.0,
+        "tokens": 481,
+        "latency_s": 0.0038,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q10",
+        "accuracy": 1.0,
+        "tokens": 491,
+        "latency_s": 0.0038,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q11",
+        "accuracy": 0.25,
+        "tokens": 469,
+        "latency_s": 0.001,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q12",
+        "accuracy": 0.667,
+        "tokens": 555,
+        "latency_s": 0.0011,
+        "self_rag_pass": true,
+        "n_hits": 4
+      }
+    ]
+  },
+  {
+    "architecture": "agentic_rag",
+    "accuracy": 0.889,
+    "avg_tokens": 404,
+    "avg_latency_s": 0.001,
+    "per_question": [
+      {
+        "id": "q1",
+        "accuracy": 1.0,
+        "tokens": 336,
+        "latency_s": 0.0013,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q2",
+        "accuracy": 1.0,
+        "tokens": 361,
+        "latency_s": 0.0013,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q3",
+        "accuracy": 1.0,
+        "tokens": 395,
+        "latency_s": 0.0009,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q4",
+        "accuracy": 1.0,
+        "tokens": 367,
+        "latency_s": 0.0038,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q5",
+        "accuracy": 1.0,
+        "tokens": 441,
+        "latency_s": 0.0009,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q6",
+        "accuracy": 1.0,
+        "tokens": 475,
+        "latency_s": 0.001,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q7",
+        "accuracy": 1.0,
+        "tokens": 372,
+        "latency_s": 0.0011,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q8",
+        "accuracy": 0.75,
+        "tokens": 446,
+        "latency_s": 0.0009,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q9",
+        "accuracy": 1.0,
+        "tokens": 413,
+        "latency_s": 0.0009,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q10",
+        "accuracy": 1.0,
+        "tokens": 421,
+        "latency_s": 0.0009,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q11",
+        "accuracy": 0.25,
+        "tokens": 347,
+        "latency_s": 0.0037,
+        "self_rag_pass": true,
+        "n_hits": 3
+      },
+      {
+        "id": "q12",
+        "accuracy": 0.667,
+        "tokens": 472,
+        "latency_s": 0.0011,
+        "self_rag_pass": true,
+        "n_hits": 3
+      }
+    ]
+  },
+  {
+    "architecture": "graph_rag",
+    "accuracy": 0.486,
+    "avg_tokens": 475,
+    "avg_latency_s": 0.025,
+    "per_question": [
+      {
+        "id": "q1",
+        "accuracy": 0.333,
+        "tokens": 515,
+        "latency_s": 0.0237,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q2",
+        "accuracy": 0.0,
+        "tokens": 438,
+        "latency_s": 0.0247,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q3",
+        "accuracy": 0.5,
+        "tokens": 485,
+        "latency_s": 0.0231,
+        "self_rag_pass": false,
+        "n_hits": 4
+      },
+      {
+        "id": "q4",
+        "accuracy": 0.667,
+        "tokens": 586,
+        "latency_s": 0.0241,
+        "self_rag_pass": false,
+        "n_hits": 4
+      },
+      {
+        "id": "q5",
+        "accuracy": 0.0,
+        "tokens": 567,
+        "latency_s": 0.0229,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q6",
+        "accuracy": 0.667,
+        "tokens": 552,
+        "latency_s": 0.0279,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q7",
+        "accuracy": 0.25,
+        "tokens": 451,
+        "latency_s": 0.0317,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q8",
+        "accuracy": 0.75,
+        "tokens": 487,
+        "latency_s": 0.0252,
+        "self_rag_pass": false,
+        "n_hits": 4
+      },
+      {
+        "id": "q9",
+        "accuracy": 1.0,
+        "tokens": 237,
+        "latency_s": 0.0307,
+        "self_rag_pass": true,
+        "n_hits": 1
+      },
+      {
+        "id": "q10",
+        "accuracy": 0.333,
+        "tokens": 451,
+        "latency_s": 0.024,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q11",
+        "accuracy": 1.0,
+        "tokens": 468,
+        "latency_s": 0.0226,
+        "self_rag_pass": true,
+        "n_hits": 4
+      },
+      {
+        "id": "q12",
+        "accuracy": 0.333,
+        "tokens": 467,
+        "latency_s": 0.0229,
+        "self_rag_pass": true,
+        "n_hits": 4
+      }
+    ]
+  }
+]
