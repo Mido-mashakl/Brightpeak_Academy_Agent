@@ -1,0 +1,92 @@
+======================================================================
+EVIDENCE — test_persistence_session_1.py + test_persistence_session_2.py
+(two SEPARATE OS processes, real SQLite file on disk, no shared memory)
+Generated: 2026-08-06T18:40:45.381698+00:00
+Result: PASSED
+======================================================================
+
+----- SESSION 1 LOG -----
+======================================================================
+SESSION 1 — writes real data, then this OS process exits completely
+======================================================================
+PID of this process: 30372
+Opened real SQLite file on disk: D:\session3_agents\Brightpeak_Academy_Agent\Phase-2\memory\evidence\_persistence_cross_session.db
+
+----------------------------------------------------------------------
+Writing two episodes for student 7 (advisor session, week 1)
+----------------------------------------------------------------------
+episode 1: 'Student is eligible for the merit scholarship'
+episode 2: 'Student confirmed interest in the Data Science track'
+
+----------------------------------------------------------------------
+Running consolidation so semantic memory has real, versioned facts too
+----------------------------------------------------------------------
+  episode=1 -> created   fact_key=scholarship_status:student_7
+  episode=2 -> created   fact_key=preferred_track:student_7
+scholarship_status:student_7 -> 'eligible' (version 1)
+preferred_track:student_7    -> 'Data Science' (version 1)
+
+Wrote expectation snapshot for session 2 to compare against: D:\session3_agents\Brightpeak_Academy_Agent\Phase-2\memory\evidence\_persistence_snapshot.json
+
+----------------------------------------------------------------------
+Closing both store connections explicitly
+----------------------------------------------------------------------
+Connections closed. Nothing about this data lives in RAM anymore --
+only what is on disk at D:\session3_agents\Brightpeak_Academy_Agent\Phase-2\memory\evidence\_persistence_cross_session.db is real from here on.
+
+----- SESSION 2 LOG -----
+======================================================================
+SESSION 2 — a brand-new OS process, opened separately from session 1
+======================================================================
+PID of this process: 14688
+Loaded session 1's expectation snapshot (written by PID 30372).
+Confirmed: this process's PID differs from session 1's -- genuinely separate process.
+
+Opened NEW, independent connections to the SAME file: D:\session3_agents\Brightpeak_Academy_Agent\Phase-2\memory\evidence\_persistence_cross_session.db
+
+======================================================================
+TEST 1 — episodes written in session 1 are readable, byte-for-byte, in session 2
+======================================================================
+episode 1: expected='Student is eligible for the merit scholarship'
+episode 1: actual  ='Student is eligible for the merit scholarship'
+episode 2: expected='Student confirmed interest in the Data Science track'
+episode 2: actual  ='Student confirmed interest in the Data Science track'
+PASS — every episode survived the process restart unchanged.
+
+======================================================================
+TEST 2 — semantic facts written in session 1 are readable in session 2
+======================================================================
+scholarship_status:student_7: expected value='eligible' version=1
+scholarship_status:student_7: actual   value='eligible' version=1
+preferred_track:student_7: expected value='Data Science' version=1
+preferred_track:student_7: actual   value='Data Science' version=1
+PASS — every fact and its version number survived the process restart.
+
+======================================================================
+TEST 3 — AUTOINCREMENT continues from where session 1 left off
+======================================================================
+Last episode id from session 1: 2. New episode id in session 2: 3
+PASS — SQLite's own id sequence persisted; it did not reset with the process.
+
+======================================================================
+TEST 4 — a FRESH ConsolidationLayer (read-position reset to 0) re-sweeps old + 
+new episodes together, and still stays correct via SemanticStore's own diffing
+======================================================================
+  episode=1 -> unchanged         fact_key=scholarship_status:student_7
+  episode=2 -> conflict_resolved fact_key=preferred_track:student_7
+  episode=3 -> versioned         fact_key=preferred_track:student_7
+scholarship_status:student_7 -> 'unchanged' as expected: re-sweeping an old, already-consolidated episode after a restart must NOT create a duplicate fact version.
+old episode 2 (Data Science) -> conflict_resolved
+new episode 3 (AI, session 2) -> versioned
+PASS — even with zero in-memory tracking carried over, on-disk versioning kept every outcome exactly correct.
+
+======================================================================
+TEST 5 — final fact history reflects the true order of events across both sessions
+======================================================================
+preferred_track:student_7 full history: ['Data Science', 'Ai']
+PASS — full, correct history spans both processes as if it had been one continuous run.
+
+
+======================================================================
+ALL TESTS PASSED — persistence across independent OS processes confirmed
+======================================================================
