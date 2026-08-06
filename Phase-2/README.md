@@ -334,3 +334,73 @@ The demo (`agent/demo.py`) covers all 8 protocol concerns in order:
 ## 🧭 Project Summary
 
 We are building an AI assistant for Brightpeak Academy powered by Gemini. Instead of accessing the database directly, it goes through an MCP Server that provides secure, organized data access, supporting all required MCP features: Notifications, Resources, Elicitation, Progress Tracking, Sampling, and Authorization.
+
+---
+
+## 🧠 Memory & RAG Extension (Phase 2)
+
+### The real problem we found
+
+Brightpeak staff already use the MCP tools to look up students, grades, and attendance. Two recurring failures appeared once real usage started:
+
+1. **Memory gap** — Advisors re-explain the same student’s scholarship risk, attendance warnings, and preferred track every new session because the agent forgets everything when the process ends.
+2. **Knowledge gap** — Questions about the full policy manuals (attendance thresholds, Protocol 4.2b special arrangements, late-submission ladders, integrity sanctions and their effect on scholarships) live in multi-page documents that nobody wants to turn into dozens of extra MCP tools. The short `policy://` resources help, but they are not searchable at the passage level and cannot support multi-hop reasoning.
+
+### What Farida built (RAG pipeline)
+
+| Component | Location | What it does |
+|-----------|----------|--------------|
+| Document corpus | `documents/` | 7 detailed policy / handbook documents (Attendance, Scholarship, Academic Integrity, Late Submission, Course Withdrawal, Exam & Assessment, Student Handbook excerpt) |
+| Chunker | `rag/chunker.py` | Heading-aware + paragraph chunking with overlap; every chunk carries `document_id`, `section`, `category`, `last_reviewed` |
+| Vector store | `rag/vector_db.py` | Real HNSW ANN index (hnswlib) + metadata payload store + metadata filter applied **before** similarity search |
+| Ingestion | `rag/ingestion.py` | One-command re-index of the whole corpus |
+| Naive RAG | `rag/naive_rag.py` | Baseline retrieve-then-generate |
+| Hybrid Search | `rag/hybrid_rag.py` | Vector similarity + BM25 fused scores |
+| Agentic RAG | `rag/agentic_rag.py` | Multi-hop retrieve → grade → rewrite → retrieve loop |
+| Graph RAG (bonus) | `rag/graph_rag.py` | Policy entity graph (thresholds, sanctions, processes, roles, tracks) with 1-hop expansion |
+| Self-RAG verification | `rag/self_rag.py` | Relevance + support check before any answer reaches the user; applied to both RAG and memory recall |
+| MCP-facing helper | `rag/rag_tool.py` | `search_policies()` used by the agent; auto-routes multi-part queries to Agentic RAG |
+| Retrieval eval | `retrieval_eval/` | 12 domain questions, comparison table, results.json |
+
+### Retrieval comparison table (real numbers)
+
+| Architecture | Accuracy (12 questions) | Avg tokens/query | Avg latency/query |
+|---|---|---|---|
+| Naive RAG | 86% | 469 | 0.001s |
+| Hybrid Search | 89% | 492 | 0.001s |
+| Agentic RAG | 89% | 404 | 0.001s |
+| Graph RAG (bonus) | 38%* | 538 | 0.024s |
+
+\*Graph RAG currently wins on relationship-heavy questions (q11) but needs tighter entity linking for citation queries; retained as an optional path.
+
+**Shipping decision (driven by the table, not intuition):**  
+Default = **Hybrid Search**. Multi-part / decomposition questions are routed to **Agentic RAG**. Graph RAG is available for relationship queries. This matches Brightpeak’s live-call pattern: mostly quick citation and general policy lookups while a staff member is waiting, with occasional multi-condition eligibility questions.
+
+### How to re-run the evaluation
+
+```bash
+cd Phase-2
+python -m retrieval_eval.evaluate
+```
+
+### Memory system (Fatma) — already present
+
+- `memory/short_term.py` — rolling buffer, returns evicted items
+- `memory/scratchpad.py` — plan / sub-goal / working state (never pruned by transcript eviction)
+- `memory/router.py` — promote-or-drop (forget | episodic only), reasoning logged
+- `memory/episodic.py` — persistent SQLite episodes
+- `memory/semantic.py` — versioned facts with expiration and supersession
+
+### Suggested GitHub Issues for Phase 2 (Farida’s ownership)
+
+- [ ] Build Vector Database (HNSW + metadata filter)
+- [ ] Implement Chunking Pipeline
+- [ ] Implement Naive RAG
+- [ ] Implement Hybrid Search
+- [ ] Implement Agentic RAG
+- [ ] Implement Self-RAG Verification
+- [ ] Graph RAG (bonus)
+- [ ] Retrieval Evaluation + comparison table
+- [ ] Integrate RAG with Agent (`rag/rag_tool.py`)
+- [ ] Update README with RAG section and numbers
+

@@ -1,0 +1,86 @@
+[
+  {
+    "id": "q1",
+    "question": "What is the minimum attendance percentage required to remain eligible for final assessments?",
+    "category": "general",
+    "favors": "naive_rag",
+    "expected_keywords": ["75%", "attendance", "eligible"]
+  },
+  {
+    "id": "q2",
+    "question": "What grade average is required to apply for a merit-based scholarship?",
+    "category": "general",
+    "favors": "naive_rag",
+    "expected_keywords": ["90%", "scholarship", "average"]
+  },
+  {
+    "id": "q3",
+    "question": "What does Protocol 4.2b say about special examination arrangements?",
+    "category": "citation",
+    "favors": "hybrid_rag",
+    "expected_keywords": ["4.2b", "extra time", "special", "disability"]
+  },
+  {
+    "id": "q4",
+    "question": "According to document BP-ATT-2025-01, what happens when attendance drops below 75%?",
+    "category": "citation",
+    "favors": "hybrid_rag",
+    "expected_keywords": ["warning", "75%", "ineligible"]
+  },
+  {
+    "id": "q5",
+    "question": "What is the late submission penalty for an assignment submitted 2 days after the deadline?",
+    "category": "general",
+    "favors": "naive_rag",
+    "expected_keywords": ["20%", "10%", "day"]
+  },
+  {
+    "id": "q6",
+    "question": "How many days does a student have for early course withdrawal without academic penalty?",
+    "category": "general",
+    "favors": "naive_rag",
+    "expected_keywords": ["14", "days", "withdraw"]
+  },
+  {
+    "id": "q7",
+    "question": "For a student whose attendance is below 75% and who also wants to apply for a scholarship, what do the policies say about eligibility?",
+    "category": "multi_part",
+    "favors": "agentic_rag",
+    "expected_keywords": ["75%", "90%", "attendance", "scholarship"]
+  },
+  {
+    "id": "q8",
+    "question": "A student committed plagiarism. What sanctions apply and how does this affect scholarship eligibility?",
+    "category": "multi_part",
+    "favors": "agentic_rag",
+    "expected_keywords": ["zero", "probation", "scholarship", "ineligible"]
+  },
+  {
+    "id": "q9",
+    "question": "What tracks does Brightpeak Academy offer and what is the recommended prior level for the AI track?",
+    "category": "multi_part",
+    "favors": "agentic_rag",
+    "expected_keywords": ["AI", "Machine Learning", "Intermediate", "Advanced"]
+  },
+  {
+    "id": "q10",
+    "question": "What is the scholarship maintenance average and what attendance is required to keep the scholarship?",
+    "category": "multi_part",
+    "favors": "agentic_rag",
+    "expected_keywords": ["88%", "75%", "attendance"]
+  },
+  {
+    "id": "q11",
+    "question": "Explain the relationship between the attendance threshold and examination eligibility under Protocol rules.",
+    "category": "graph",
+    "favors": "graph_rag",
+    "expected_keywords": ["75%", "eligible", "final", "assessment"]
+  },
+  {
+    "id": "q12",
+    "question": "Which roles are involved when an academic integrity investigation is triggered and what is the typical first major offence sanction?",
+    "category": "graph",
+    "favors": "graph_rag",
+    "expected_keywords": ["Committee", "zero", "probation"]
+  }
+]
