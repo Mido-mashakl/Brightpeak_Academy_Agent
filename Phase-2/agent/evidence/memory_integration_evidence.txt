@@ -1,0 +1,83 @@
+======================================================================
+EVIDENCE — test_memory_integration.py
+(memory_integration.py — all 8 memory modules wired into the agent)
+Generated: 2026-08-06T20:20:14.951313+00:00
+Result: PASSED
+======================================================================
+
+======================================================================
+SETUP — scratchpad plan, exactly the scratchpad.py docstring scenario
+======================================================================
+plan='scholarship eligibility sweep for course 3' subgoal='checking student 14 of 22'
+
+======================================================================
+TEST 1 — WRITE PATH: short_term overflow -> router -> episodic
+======================================================================
+Messages added: 15, max_turns=4 -> eviction/routing decisions: 11
+  -> episodic  | 'Run scholarship eligibility sweep for course 3.' (metadata={})
+  -> forget    | 'Starting sweep. Checking student 14 first.' (metadata={})
+  -> forget    | 'get_student_attendance(14) -> 92%' (metadata={'student_id': 14})
+  -> episodic  | 'get_student_grades(14) -> avg 88, ineligible for scholarship, below threshold' (metadata={'student_id': 14})
+  -> episodic  | 'Student 14: ineligible, average below scholarship threshold.' (metadata={'student_id': 14})
+  -> forget    | 'Checking student 15 next.' (metadata={})
+  -> forget    | 'get_student_attendance(15) -> 60%' (metadata={'student_id': 15})
+  -> episodic  | 'Student 15 attendance is below the 75% threshold, flagged for review.' (metadata={'student_id': 15})
+  -> forget    | 'Noted. Checking student 16 next.' (metadata={})
+  -> forget    | 'get_student_attendance(16) -> 95%' (metadata={'student_id': 16})
+  -> episodic  | 'get_student_grades(16) -> avg 93, scholarship eligible confirmed' (metadata={'student_id': 16})
+PASS — episodic store has exactly 5 row(s), matching router's decisions.
+
+Checking per-student metadata scoping on the episode(s) actually written...
+  student_id=14 -> ['Student 14: ineligible, average below scholarship threshold.', 'get_student_grades(14) -> avg 88, ineligible for scholarship, below threshold']
+  student_id=15 -> ['Student 15 attendance is below the 75% threshold, flagged for review.']
+PASS — episodes are scoped to the correct student, taken from the EVICTED message's own metadata.
+
+Scratchpad survived the eviction storm untouched (see scratchpad.py's own docstring guarantee):
+  plan='scholarship eligibility sweep for course 3' subgoal='checking student 14 of 22'
+PASS — scratchpad is untouched by short-term buffer pruning.
+
+======================================================================
+TEST 2 — CONSOLIDATION: episodic events become versioned semantic facts
+======================================================================
+  episode=1 -> skipped_no_fact   fact_key=None
+  episode=2 -> conflict_resolved fact_key=scholarship_status:student_14
+  episode=3 -> created           fact_key=scholarship_status:student_14
+  episode=4 -> created           fact_key=attendance_flag:student_15
+  episode=5 -> created           fact_key=scholarship_status:student_16
+scholarship_status:student_14 = 'ineligible'
+attendance_flag:student_15    = 'flagged'
+scholarship_status:student_16 = 'eligible'
+PASS — consolidation correctly turned all three episodes into distinct, correctly-scoped current semantic facts.
+
+Re-running consolidate() must be a no-op (idempotent, per consolidation.py's guarantee):
+  second pass actions: set()
+PASS — consolidation is idempotent when called again through the agent.
+
+======================================================================
+TEST 3 — READ PATH: chat() recalls + verifies memory, builds the prompt, then replies
+======================================================================
+Reply: 'STUB_REPLY: acknowledged.'
+Recalled: [('semantic', 1, 0.75), ('episodic', 3, 0.5), ('episodic', 2, 0.5)]
+Verified: [('semantic', 1), ('episodic', 3), ('episodic', 2)]
+PASS — recalled + verified memory AND scratchpad state both reached the prompt actually sent to the model.
+
+Student scoping on the read path: student 15's query must never surface student 14's memory.
+PASS — read path is correctly isolated per student.
+
+======================================================================
+TEST 4 — VERIFICATION filters a now-stale episode out of the agent's prompt
+======================================================================
+Verified after re-evaluation: [('semantic', 4, 'scholarship_status:student_14=eligible')]
+PASS — the superseded episode was correctly excluded; only the current fact reached the prompt.
+
+======================================================================
+TEST 5 — PERSISTENCE: a fresh MemoryIntegratedAgent sees prior episodes/facts
+======================================================================
+Fresh agent instance recalled: [('semantic', 4, 'scholarship_status:student_14=eligible')]
+PASS — memory written by one agent instance is visible to a brand-new instance via the same db file.
+
+======================================================================
+ALL INTEGRATION TESTS PASSED — memory_integration.py correctly wires
+short_term, scratchpad, router, episodic, semantic, consolidation,
+recall, and verification into a single working agent.
+======================================================================
