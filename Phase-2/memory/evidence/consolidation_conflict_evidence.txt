@@ -1,0 +1,69 @@
+======================================================================
+EVIDENCE — test_consolidation.py
+(consolidation.py + REAL EpisodicStore + REAL SemanticStore, temp files)
+Generated: 2026-08-06T17:52:46.435440+00:00
+Result: PASSED
+======================================================================
+
+======================================================================
+SCENARIO — Ahmed (student 14) changes his mind on track, mid-sweep
+======================================================================
+Inserted episodes into REAL episodic store: 1, 2, 3, 4
+
+======================================================================
+TEST 1 — run() processes all 4 pending episodes
+======================================================================
+Decisions this pass: 4
+  episode=4 -> skipped_no_fact   fact_key=None
+  episode=1 -> conflict_resolved fact_key=preferred_track:student_14
+  episode=2 -> created           fact_key=preferred_track:student_14
+  episode=3 -> created           fact_key=attendance_flag:student_20
+PASS
+
+======================================================================
+TEST 2 — CONFLICT RESOLUTION: episode 1 (Flutter) loses to episode 2 (AI)
+======================================================================
+episode 1 (Flutter, earlier) -> action=conflict_resolved
+    reasoning: Episode 1 also implied preferred_track:student_14='Flutter', but episode 2 is more recent and supersedes it within this batch. Only the more recent episode's value is written to semantic memory.
+episode 2 (AI, later)       -> action=created
+    reasoning: Episode 2 states a track preference (Ai) -- generalizable beyond this single conversation.
+semantic.get_current('preferred_track:student_14') -> 'Ai'
+Full fact history: [(1, 'Ai')]
+PASS — more recent episode won, older conflicting episode logged but never written to semantic memory, exactly one fact version exists.
+
+======================================================================
+TEST 3 — unrelated fact (attendance flag, student 20) created independently
+======================================================================
+episode 3 -> action=created, fact_key=attendance_flag:student_20
+PASS — unrelated students' facts never interfere with each other.
+
+======================================================================
+TEST 4 — small talk (episode 4) has no extractable fact, skipped honestly
+======================================================================
+episode 4 -> action=skipped_no_fact
+PASS
+
+======================================================================
+TEST 5 — VERSIONING TRIGGER: re-running run() with no new episodes is a no-op
+======================================================================
+Decisions on an empty pass (nothing new pending): 0
+PASS — no new episodes, no new decisions, no new fact versions.
+
+======================================================================
+TEST 6 — VERSIONING TRIGGER: a NEW episode with the SAME value must not create a spurious version (idempotent under repeated confirmation)
+======================================================================
+Decisions after inserting a re-confirming episode 5: 1
+  episode=5 -> unchanged         fact_key=preferred_track:student_14
+Fact history after re-confirmation: [(1, 'Ai')]
+PASS — versioning only triggers on an actual change, confirmed idempotent.
+
+======================================================================
+TEST 7 — a genuine LATER change still versions correctly (not stuck forever)
+======================================================================
+episode 6 -> action=versioned
+Final fact history: [(1, 'Ai'), (2, 'Cybersecurity')]
+PASS — real changes still create a new version; old value preserved in history.
+
+======================================================================
+ALL TESTS PASSED
+======================================================================
