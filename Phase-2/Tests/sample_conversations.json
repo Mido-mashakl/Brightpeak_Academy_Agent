@@ -1,0 +1,162 @@
+{
+  "conversations": [
+    {
+      "id": "conv_001",
+      "student_id": 1,
+      "description": "Student profile retrieval",
+      "turns": [
+        {
+          "user": "Show me my student profile.",
+          "tool": "get_student_profile",
+          "args": {
+            "student_id": 1
+          },
+          "expected_facts": [
+            "profile"
+          ]
+        },
+        {
+          "user": "What are my grades?",
+          "tool": "get_student_grades",
+          "args": {
+            "student_id": 1
+          },
+          "expected_facts": [
+            "grades"
+          ]
+        },
+        {
+          "user": "Show my attendance.",
+          "tool": "get_student_attendance",
+          "args": {
+            "student_id": 1
+          },
+          "expected_facts": [
+            "attendance"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "conv_002",
+      "student_id": 2,
+      "description": "Enrollment and advisory",
+      "turns": [
+        {
+          "user": "Show my enrolled courses.",
+          "tool": "get_student_enrollments",
+          "args": {
+            "student_id": 2
+          },
+          "expected_facts": [
+            "course"
+          ]
+        },
+        {
+          "user": "Generate academic advisory.",
+          "tool": "generate_academic_advisory",
+          "args": {
+            "student_id": 2
+          },
+          "expected_facts": [
+            "advisory"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "conv_003",
+      "student_id": 3,
+      "description": "Policy search using RAG",
+      "turns": [
+        {
+          "user": "Search attendance policy.",
+          "tool": "search_policies",
+          "args": {
+            "query": "attendance"
+          },
+          "expected_facts": [
+            "attendance"
+          ]
+        },
+        {
+          "user": "Search scholarship policy.",
+          "tool": "search_policies",
+          "args": {
+            "query": "scholarship"
+          },
+          "expected_facts": [
+            "scholarship"
+          ]
+        },
+        {
+          "user": "Search late submission policy.",
+          "tool": "search_policies",
+          "args": {
+            "query": "late submission"
+          },
+          "expected_facts": [
+            "late"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "conv_004",
+      "student_id": 1,
+      "description": "Memory recall",
+      "turns": [
+        {
+          "user": "Remember that I prefer morning classes.",
+          "expected_facts": [
+            "morning classes"
+          ]
+        },
+        {
+          "user": "What class schedule do I prefer?",
+          "expected_facts": [
+            "morning classes"
+          ],
+          "recall_only": true
+        }
+      ]
+    },
+    {
+      "id": "conv_005",
+      "student_id": 4,
+      "description": "Mixed pipeline",
+      "turns": [
+        {
+          "user": "Show my profile.",
+          "tool": "get_student_profile",
+          "args": {
+            "student_id": 4
+          },
+          "expected_facts": [
+            "profile"
+          ]
+        },
+        {
+          "user": "Search scholarship policy.",
+          "tool": "search_policies",
+          "args": {
+            "query": "scholarship"
+          },
+          "expected_facts": [
+            "scholarship"
+          ]
+        },
+        {
+          "user": "Generate academic advisory.",
+          "tool": "generate_academic_advisory",
+          "args": {
+            "student_id": 4
+          },
+          "expected_facts": [
+            "advisory"
+          ]
+        }
+      ]
+    }
+  ]
+}
