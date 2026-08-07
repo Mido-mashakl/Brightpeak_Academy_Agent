@@ -17,6 +17,16 @@ Concerns addressed here:
 import asyncio
 from typing import Any
 
+import sys
+from pathlib import Path
+
+# Make the sibling `rag/` package importable from mcp_server/
+RAG_DIR = Path(__file__).resolve().parent.parent / "rag"
+if str(RAG_DIR) not in sys.path:
+    sys.path.insert(0, str(RAG_DIR))
+
+from rag_tool import search_policies as rag_search_policies  # noqa: E402
+
 from mcp.server.fastmcp import Context
 
 import database as db
@@ -93,6 +103,23 @@ def register_readonly_tools(mcp) -> None:
         grades = db.get_grades(student_id, course_id)
         avg = db.get_overall_average(student_id)
         return {"grades": grades, "overall_average": avg}
+
+    @mcp.tool()
+    def search_policies(
+        query: str,
+        architecture: str = "auto",
+        category: str | None = None,
+    ) -> dict[str, Any]:
+        """Search Brightpeak policy documents (attendance, scholarship,
+        academic integrity, late submission, withdrawal, exams) using RAG
+        retrieval with Self-RAG verification before returning an answer.
+
+        Args:
+            query: the policy question to answer.
+            architecture: "auto" | "naive" | "hybrid" | "agentic" | "graph".
+            category: optional category filter, e.g. "Attendance".
+        """
+        return rag_search_policies(query, architecture=architecture, category=category)
 
     # -------------------------------------------------------------------
     # === CONCERN: Sampling ===

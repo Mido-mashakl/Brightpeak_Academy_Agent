@@ -38,9 +38,17 @@ class VerificationResult:
         }
 
 
-def _tokenize(text: str) -> set[str]:
-    return set(re.findall(r"[a-z0-9]+", text.lower()))
+_STOPWORDS = {
+    "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
+    "what", "which", "who", "whom", "this", "that", "these", "those",
+    "in", "on", "at", "to", "for", "of", "with", "by", "from", "as",
+    "and", "or", "but", "if", "do", "does", "did", "it", "its",
+}
 
+
+def _tokenize(text: str) -> set[str]:
+    words = re.findall(r"[a-z0-9]+", text.lower())
+    return {w for w in words if w not in _STOPWORDS}
 
 def _overlap_ratio(a: str, b: str) -> float:
     ta, tb = _tokenize(a), _tokenize(b)
