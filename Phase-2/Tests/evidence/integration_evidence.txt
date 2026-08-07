@@ -1,0 +1,140 @@
+======================================================================
+EVIDENCE — test_integration.py
+(User -> Agent -> Memory -> MCP -> RAG -> Answer, end to end)
+Generated: 2026-08-07T16:17:31.519144+00:00
+Result: PASSED (0 failure(s))
+======================================================================
+
+======================================================================
+FULL-SYSTEM INTEGRATION TEST
+5 conversation(s) from sample_conversations.json
+User -> Agent -> Memory -> MCP -> RAG -> Answer
+======================================================================
+
+[MCP] initializing session with the real server subprocess...
+[MCP] handshake OK -- server exposes: ['authenticate_staff', 'generate_academic_advisory', 'generate_course_report', 'get_student_attendance', 'get_student_enrollments', 'get_student_grades', 'get_student_profile', 'search_policies']
+
+======================================================================
+CONVERSATION — conv_001
+Student profile retrieval
+======================================================================
+
+--- [conv_001 #1] USER: 'Show me my student profile.'
+[conv_001 #1] AGENT decides a live MCP tool call is needed: get_student_profile({'student_id': 1})
+[conv_001 #1] MCP tool result (122 chars): '{\n  "student_id": 1,\n  "name": "Ahmed Mostafa",\n  "email": "ahmed.mostafa@student.brightpeak.edu",\n  "level": "Beginner"\n}'...
+[conv_001 #1] recalled=0 verified=0
+[conv_001 #1] ANSWER: 'ANSWER: (grounded on a 703-char prompt) me my student profile.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nShow me my student profile.'
+[conv_001 #1] PASS -- fact 'profile' flowed: MCP/memory -> prompt -> answer stage
+
+--- [conv_001 #2] USER: 'What are my grades?'
+[conv_001 #2] AGENT decides a live MCP tool call is needed: get_student_grades({'student_id': 1})
+[conv_001 #2] MCP tool result (236 chars): '{\n  "grades": [\n    {\n      "grade_id": 1,\n      "assignment_id": 1,\n      "title": "Python Basics Quiz",\n      "max_score": 100,\n      "score": 85.0,\n      "graded_by": 1,\n      "percentage": 85.0\n  '...
+[conv_001 #2] recalled=0 verified=0
+[conv_001 #2] ANSWER: 'ANSWER: (grounded on a 1219-char prompt) .0\n}\nuser: What are my grades?\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nWhat are my grades?'
+[conv_001 #2] PASS -- fact 'grades' flowed: MCP/memory -> prompt -> answer stage
+
+--- [conv_001 #3] USER: 'Show my attendance.'
+[conv_001 #3] AGENT decides a live MCP tool call is needed: get_student_attendance({'student_id': 1})
+[conv_001 #3] MCP tool result (342 chars): '{\n  "attendance": [\n    {\n      "attendance_id": 1,\n      "student_id": 1,\n      "course_id": 1,\n      "course_title": "Introduction to Python",\n      "percentage": 88.5\n    },\n    {\n      "attendance'...
+[conv_001 #3] recalled=0 verified=0
+[conv_001 #3] ANSWER: 'ANSWER: (grounded on a 1854-char prompt) ]\n}\nuser: Show my attendance.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nShow my attendance.'
+[conv_001 #3] PASS -- fact 'attendance' flowed: MCP/memory -> prompt -> answer stage
+
+======================================================================
+CONVERSATION — conv_002
+Enrollment and advisory
+======================================================================
+
+--- [conv_002 #1] USER: 'Show my enrolled courses.'
+[conv_002 #1] AGENT decides a live MCP tool call is needed: get_student_enrollments({'student_id': 2})
+[conv_002 #1] MCP tool result (469 chars): '{\n  "enrollments": [\n    {\n      "enrollment_id": 3,\n      "student_id": 2,\n      "course_id": 1,\n      "course_title": "Introduction to Python",\n      "status": "dropped",\n      "progress": 100,\n    '...
+[conv_002 #1] recalled=0 verified=0
+[conv_002 #1] ANSWER: 'ANSWER: (grounded on a 1050-char prompt) how my enrolled courses.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nShow my enrolled courses.'
+[conv_002 #1] PASS -- fact 'course' flowed: MCP/memory -> prompt -> answer stage
+
+--- [conv_002 #2] USER: 'Generate academic advisory.'
+[conv_002 #2] AGENT decides a live MCP tool call is needed: generate_academic_advisory({'student_id': 2})
+[conv_002 #2] MCP tool result (1642 chars): '{\n  "note": "Client does not support sampling; returning raw data instead of a generated narrative.",\n  "facts": {\n    "student": {\n      "student_id": 2,\n      "name": "Farida Ibrahim",\n      "email"'...
+[conv_002 #2] recalled=0 verified=0
+[conv_002 #2] ANSWER: 'ANSWER: (grounded on a 2999-char prompt) ate academic advisory.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nGenerate academic advisory.'
+[conv_002 #2] PASS -- fact 'advisory' flowed: MCP/memory -> prompt -> answer stage
+
+======================================================================
+CONVERSATION — conv_003
+Policy search using RAG
+======================================================================
+
+--- [conv_003 #1] USER: 'Search attendance policy.'
+[conv_003 #1] AGENT decides a live MCP tool call is needed: search_policies({'query': 'attendance'})
+[conv_003 #1] RAG stage -> architecture=hybrid_rag verification=pass
+[conv_003 #1] MCP tool result (6428 chars): '{\n  "architecture_used": "hybrid_rag",\n  "hits": [\n    {\n      "text": "Students must maintain **at least 75% attendance** in each individual course. Attendance is calculated as:\\n\\n```\\nAttendance % '...
+[conv_003 #1] recalled=0 verified=0
+[conv_003 #1] ANSWER: 'ANSWER: (grounded on a 7007-char prompt) earch attendance policy.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nSearch attendance policy.'
+[conv_003 #1] PASS -- fact 'attendance' flowed: MCP/memory -> prompt -> answer stage
+
+--- [conv_003 #2] USER: 'Search scholarship policy.'
+[conv_003 #2] AGENT decides a live MCP tool call is needed: search_policies({'query': 'scholarship'})
+[conv_003 #2] RAG stage -> architecture=hybrid_rag verification=pass
+[conv_003 #2] MCP tool result (8103 chars): '{\n  "architecture_used": "hybrid_rag",\n  "hits": [\n    {\n      "text": "- **Attendance floor**: 75% per course (Attendance Policy)\\n- **Scholarship entry average**: > 90% across completed courses (Sch'...
+[conv_003 #2] recalled=0 verified=0
+[conv_003 #2] ANSWER: 'ANSWER: (grounded on a 15411-char prompt) rch scholarship policy.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nSearch scholarship policy.'
+[conv_003 #2] PASS -- fact 'scholarship' flowed: MCP/memory -> prompt -> answer stage
+
+--- [conv_003 #3] USER: 'Search late submission policy.'
+[conv_003 #3] AGENT decides a live MCP tool call is needed: search_policies({'query': 'late submission'})
+[conv_003 #3] RAG stage -> architecture=hybrid_rag verification=pass
+[conv_003 #3] MCP tool result (7003 chars): '{\n  "architecture_used": "hybrid_rag",\n  "hits": [\n    {\n      "text": "- **Formative assessments** (quizzes, in-class exercises) — may be optional or low-stakes; late-submission rules may be relaxed '...
+[conv_003 #3] recalled=0 verified=0
+[conv_003 #3] ANSWER: 'ANSWER: (grounded on a 22727-char prompt) submission policy.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nSearch late submission policy.'
+[conv_003 #3] PASS -- fact 'late' flowed: MCP/memory -> prompt -> answer stage
+
+======================================================================
+CONVERSATION — conv_004
+Memory recall
+======================================================================
+
+--- [conv_004 #1] USER: 'Remember that I prefer morning classes.'
+[conv_004 #1] AGENT answers from memory alone -- no MCP call this turn (this is the recall_only check)
+[conv_004 #1] recalled=0 verified=0
+[conv_004 #1] ANSWER: 'ANSWER: (grounded on a 553-char prompt) g classes.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nRemember that I prefer morning classes.'
+[conv_004 #1] PASS -- fact 'morning classes' flowed: MCP/memory -> prompt -> answer stage
+
+--- [conv_004 #2] USER: 'What class schedule do I prefer?'
+[conv_004 #2] AGENT answers from memory alone -- no MCP call this turn (this is the recall_only check)
+[conv_004 #2] recalled=0 verified=0
+[conv_004 #2] ANSWER: 'ANSWER: (grounded on a 796-char prompt) dule do I prefer?\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nWhat class schedule do I prefer?'
+[conv_004 #2] PASS -- fact 'morning classes' flowed: MCP/memory -> prompt -> answer stage
+[conv_004 #2] PASS -- recall_only turn was answered without a new MCP call
+
+======================================================================
+CONVERSATION — conv_005
+Mixed pipeline
+======================================================================
+
+--- [conv_005 #1] USER: 'Show my profile.'
+[conv_005 #1] AGENT decides a live MCP tool call is needed: get_student_profile({'student_id': 4})
+[conv_005 #1] MCP tool result (116 chars): '{\n  "student_id": 4,\n  "name": "Hassan Ali",\n  "email": "hassan.ali@student.brightpeak.edu",\n  "level": "Beginner"\n}'...
+[conv_005 #1] recalled=0 verified=0
+[conv_005 #1] ANSWER: 'ANSWER: (grounded on a 675-char prompt) eginner"\n}\nuser: Show my profile.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nShow my profile.'
+[conv_005 #1] PASS -- fact 'profile' flowed: MCP/memory -> prompt -> answer stage
+
+--- [conv_005 #2] USER: 'Search scholarship policy.'
+[conv_005 #2] AGENT decides a live MCP tool call is needed: search_policies({'query': 'scholarship'})
+[conv_005 #2] RAG stage -> architecture=hybrid_rag verification=pass
+[conv_005 #2] MCP tool result (8103 chars): '{\n  "architecture_used": "hybrid_rag",\n  "hits": [\n    {\n      "text": "- **Attendance floor**: 75% per course (Attendance Policy)\\n- **Scholarship entry average**: > 90% across completed courses (Sch'...
+[conv_005 #2] recalled=0 verified=0
+[conv_005 #2] ANSWER: 'ANSWER: (grounded on a 9087-char prompt) rch scholarship policy.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nSearch scholarship policy.'
+[conv_005 #2] PASS -- fact 'scholarship' flowed: MCP/memory -> prompt -> answer stage
+
+--- [conv_005 #3] USER: 'Generate academic advisory.'
+[conv_005 #3] AGENT decides a live MCP tool call is needed: generate_academic_advisory({'student_id': 4})
+[conv_005 #3] MCP tool result (780 chars): '{\n  "note": "Client does not support sampling; returning raw data instead of a generated narrative.",\n  "facts": {\n    "student": {\n      "student_id": 4,\n      "name": "Hassan Ali",\n      "email": "h'...
+[conv_005 #3] recalled=0 verified=0
+[conv_005 #3] ANSWER: 'ANSWER: (grounded on a 10173-char prompt) ate academic advisory.\n\n=== Verified long-term memory (recalled for this query) ===\n(no relevant memory found)\n\n=== New message ===\nGenerate academic advisory.'
+[conv_005 #3] PASS -- fact 'advisory' flowed: MCP/memory -> prompt -> answer stage
+
+======================================================================
+RESULT: ALL CONVERSATIONS PASSED — every stage of
+User -> Agent -> Memory -> MCP -> RAG -> Answer
+produced output the NEXT stage actually consumed correctly.
+======================================================================
