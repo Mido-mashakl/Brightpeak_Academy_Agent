@@ -1,0 +1,368 @@
+{
+  "per_test_case_results": [
+    {
+      "test_case_id": "case1_recency_loss",
+      "strategy": "sliding_window",
+      "passed": false,
+      "missing_expected": [
+        "92%"
+      ],
+      "leaked_unexpected": [],
+      "tokens_before": 222,
+      "tokens_after": 139,
+      "token_reduction_pct": 37.4,
+      "latency_ms": 0.0139,
+      "messages_before": 13,
+      "messages_after": 8
+    },
+    {
+      "test_case_id": "case1_recency_loss",
+      "strategy": "observation_masking",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 222,
+      "tokens_after": 228,
+      "token_reduction_pct": -2.7,
+      "latency_ms": 0.0221,
+      "messages_before": 13,
+      "messages_after": 13
+    },
+    {
+      "test_case_id": "case1_recency_loss",
+      "strategy": "recursive_summary",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 222,
+      "tokens_after": 224,
+      "token_reduction_pct": -0.9,
+      "latency_ms": 0.044,
+      "messages_before": 13,
+      "messages_after": 10
+    },
+    {
+      "test_case_id": "case1_recency_loss",
+      "strategy": "zone_pruning",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 222,
+      "tokens_after": 80,
+      "token_reduction_pct": 64.0,
+      "latency_ms": 0.1717,
+      "messages_before": 13,
+      "messages_after": 5
+    },
+    {
+      "test_case_id": "case2_stale_supersession",
+      "strategy": "sliding_window",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 186,
+      "tokens_after": 113,
+      "token_reduction_pct": 39.2,
+      "latency_ms": 0.0076,
+      "messages_before": 14,
+      "messages_after": 8
+    },
+    {
+      "test_case_id": "case2_stale_supersession",
+      "strategy": "observation_masking",
+      "passed": false,
+      "missing_expected": [],
+      "leaked_unexpected": [
+        "web development"
+      ],
+      "tokens_before": 186,
+      "tokens_after": 202,
+      "token_reduction_pct": -8.6,
+      "latency_ms": 0.0206,
+      "messages_before": 14,
+      "messages_after": 14
+    },
+    {
+      "test_case_id": "case2_stale_supersession",
+      "strategy": "recursive_summary",
+      "passed": false,
+      "missing_expected": [],
+      "leaked_unexpected": [
+        "web development"
+      ],
+      "tokens_before": 186,
+      "tokens_after": 200,
+      "token_reduction_pct": -7.5,
+      "latency_ms": 0.0214,
+      "messages_before": 14,
+      "messages_after": 11
+    },
+    {
+      "test_case_id": "case2_stale_supersession",
+      "strategy": "zone_pruning",
+      "passed": false,
+      "missing_expected": [],
+      "leaked_unexpected": [
+        "web development"
+      ],
+      "tokens_before": 186,
+      "tokens_after": 150,
+      "token_reduction_pct": 19.4,
+      "latency_ms": 0.0989,
+      "messages_before": 14,
+      "messages_after": 9
+    },
+    {
+      "test_case_id": "case3_masking_loss",
+      "strategy": "sliding_window",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 177,
+      "tokens_after": 139,
+      "token_reduction_pct": 21.5,
+      "latency_ms": 0.0045,
+      "messages_before": 12,
+      "messages_after": 8
+    },
+    {
+      "test_case_id": "case3_masking_loss",
+      "strategy": "observation_masking",
+      "passed": false,
+      "missing_expected": [
+        "97%"
+      ],
+      "leaked_unexpected": [],
+      "tokens_before": 177,
+      "tokens_after": 184,
+      "token_reduction_pct": -4.0,
+      "latency_ms": 0.021,
+      "messages_before": 12,
+      "messages_after": 12
+    },
+    {
+      "test_case_id": "case3_masking_loss",
+      "strategy": "recursive_summary",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 177,
+      "tokens_after": 191,
+      "token_reduction_pct": -7.9,
+      "latency_ms": 0.0157,
+      "messages_before": 12,
+      "messages_after": 9
+    },
+    {
+      "test_case_id": "case3_masking_loss",
+      "strategy": "zone_pruning",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 177,
+      "tokens_after": 184,
+      "token_reduction_pct": -4.0,
+      "latency_ms": 0.0727,
+      "messages_before": 12,
+      "messages_after": 12
+    },
+    {
+      "test_case_id": "case4_zone_relevance",
+      "strategy": "sliding_window",
+      "passed": false,
+      "missing_expected": [
+        "88%"
+      ],
+      "leaked_unexpected": [],
+      "tokens_before": 155,
+      "tokens_after": 111,
+      "token_reduction_pct": 28.4,
+      "latency_ms": 0.0039,
+      "messages_before": 11,
+      "messages_after": 8
+    },
+    {
+      "test_case_id": "case4_zone_relevance",
+      "strategy": "observation_masking",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 155,
+      "tokens_after": 161,
+      "token_reduction_pct": -3.9,
+      "latency_ms": 0.0079,
+      "messages_before": 11,
+      "messages_after": 11
+    },
+    {
+      "test_case_id": "case4_zone_relevance",
+      "strategy": "recursive_summary",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 155,
+      "tokens_after": 164,
+      "token_reduction_pct": -5.8,
+      "latency_ms": 0.0162,
+      "messages_before": 11,
+      "messages_after": 8
+    },
+    {
+      "test_case_id": "case4_zone_relevance",
+      "strategy": "zone_pruning",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 155,
+      "tokens_after": 161,
+      "token_reduction_pct": -3.9,
+      "latency_ms": 0.0752,
+      "messages_before": 11,
+      "messages_after": 11
+    },
+    {
+      "test_case_id": "case5_summary_truncation",
+      "strategy": "sliding_window",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 149,
+      "tokens_after": 126,
+      "token_reduction_pct": 15.4,
+      "latency_ms": 0.0034,
+      "messages_before": 11,
+      "messages_after": 8
+    },
+    {
+      "test_case_id": "case5_summary_truncation",
+      "strategy": "observation_masking",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 149,
+      "tokens_after": 155,
+      "token_reduction_pct": -4.0,
+      "latency_ms": 0.0075,
+      "messages_before": 11,
+      "messages_after": 11
+    },
+    {
+      "test_case_id": "case5_summary_truncation",
+      "strategy": "recursive_summary",
+      "passed": false,
+      "missing_expected": [
+        "scheduling conflict"
+      ],
+      "leaked_unexpected": [],
+      "tokens_before": 149,
+      "tokens_after": 137,
+      "token_reduction_pct": 8.1,
+      "latency_ms": 0.0151,
+      "messages_before": 11,
+      "messages_after": 8
+    },
+    {
+      "test_case_id": "case5_summary_truncation",
+      "strategy": "zone_pruning",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 149,
+      "tokens_after": 155,
+      "token_reduction_pct": -4.0,
+      "latency_ms": 0.0586,
+      "messages_before": 11,
+      "messages_after": 11
+    },
+    {
+      "test_case_id": "case6_baseline_sanity",
+      "strategy": "sliding_window",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 65,
+      "tokens_after": 68,
+      "token_reduction_pct": -4.6,
+      "latency_ms": 0.0037,
+      "messages_before": 5,
+      "messages_after": 5
+    },
+    {
+      "test_case_id": "case6_baseline_sanity",
+      "strategy": "observation_masking",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 65,
+      "tokens_after": 68,
+      "token_reduction_pct": -4.6,
+      "latency_ms": 0.0066,
+      "messages_before": 5,
+      "messages_after": 5
+    },
+    {
+      "test_case_id": "case6_baseline_sanity",
+      "strategy": "recursive_summary",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 65,
+      "tokens_after": 68,
+      "token_reduction_pct": -4.6,
+      "latency_ms": 0.0048,
+      "messages_before": 5,
+      "messages_after": 5
+    },
+    {
+      "test_case_id": "case6_baseline_sanity",
+      "strategy": "zone_pruning",
+      "passed": true,
+      "missing_expected": [],
+      "leaked_unexpected": [],
+      "tokens_before": 65,
+      "tokens_after": 68,
+      "token_reduction_pct": -4.6,
+      "latency_ms": 0.0348,
+      "messages_before": 5,
+      "messages_after": 5
+    }
+  ],
+  "strategy_summaries": [
+    {
+      "strategy": "sliding_window",
+      "accuracy": 0.667,
+      "avg_token_reduction_pct": 22.9,
+      "avg_tokens_after": 116,
+      "avg_latency_ms": 0.0062,
+      "passed_count": 4,
+      "total_count": 6
+    },
+    {
+      "strategy": "observation_masking",
+      "accuracy": 0.667,
+      "avg_token_reduction_pct": -4.6,
+      "avg_tokens_after": 166.3,
+      "avg_latency_ms": 0.0143,
+      "passed_count": 4,
+      "total_count": 6
+    },
+    {
+      "strategy": "recursive_summary",
+      "accuracy": 0.667,
+      "avg_token_reduction_pct": -3.1,
+      "avg_tokens_after": 164,
+      "avg_latency_ms": 0.0195,
+      "passed_count": 4,
+      "total_count": 6
+    },
+    {
+      "strategy": "zone_pruning",
+      "accuracy": 0.833,
+      "avg_token_reduction_pct": 11.2,
+      "avg_tokens_after": 133,
+      "avg_latency_ms": 0.0853,
+      "passed_count": 5,
+      "total_count": 6
+    }
+  ]
+}

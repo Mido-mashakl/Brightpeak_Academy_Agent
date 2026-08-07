@@ -146,6 +146,8 @@ Brightpeak_Academy_Agent/
 │   ├── hybrid_rag.py
 │   ├── agentic_rag.py
 │   ├── self_rag.py
+|   ├── graph_rag.py
+|   ├── rag_tool.py
 │   └── ingestion.py
 │
 ├── context_eval/
@@ -268,9 +270,9 @@ Campus C client ──┘
 
 | Member     | Responsibilities                                                                                                                                                                                                                                                                         |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Ahmed**  |   **Memory & Retrieval Evaluation** — Context Window Management (Sliding Window, Observation Masking, Recursive Summarization, Zone-Based Pruning) + Database — ERD design, schema.sql, seed.sql, SQLite setup, test data                                                                                                    |
+| **Ahmed**  |   **Memory & Tests** — Context Window Management (Sliding Window, Observation Masking, Recursive Summarization, Zone-Based Pruning), mamory and rag test and Integration + Database — ERD design, schema.sql, seed.sql, SQLite setup, test data                                                                                                    |
 | **Omar**   | **MCP Server** — MCP Server, Tools, Notifications, Resources, Prompts, Authorization, Validation, Progress Tracking, Sampling                                                                                                                                                  |
-| **Farida** | **Agent** — Gemini Client, Handshake, Tool Discovery, Tool Calls, Demo, README  + Responsible for designing and implementing Retrieval-Augmented Generation (RAG) pipeline-->  Document Collection & Preparation, Chunking, Embedding ,Vector Database, Naive RAG, Hybrid Search, Agentic RAG, Self-RAG Verification                                                                                                                                                                                            |
+| **Farida** | **Agent** — Gemini Client, Handshake, Tool Discovery, Tool Calls, Demo, README  + **Retrieval-Augmented Generation (RAG)** pipeline-->  Document Collection & Preparation, Chunking, Embedding ,Vector Database, Naive RAG, Hybrid Search, Agentic RAG, Self-RAG Verification and Retrieval Evaluation                                                                                                                                                                                       |
 | **Fatma**  | **Memory System Extension** — Short-Term Memory, Scratchpad, Promote-or-Drop Router, Episodic Memory, Semantic Memory, Consolidation Layer, Memory Integration with the Agent   |
 
 
@@ -361,6 +363,20 @@ Brightpeak staff already use the MCP tools to look up students, grades, and atte
 | Self-RAG verification | `rag/self_rag.py` | Relevance + support check before any answer reaches the user; applied to both RAG and memory recall |
 | MCP-facing helper | `rag/rag_tool.py` | `search_policies()` used by the agent; auto-routes multi-part queries to Agentic RAG |
 | Retrieval eval | `retrieval_eval/` | 12 domain questions, comparison table, results.json |
+
+---
+
+# Context Management Strategy Comparison
+Generated from `test_cases.json` (6 test cases x 4 strategies).
+
+| Strategy | Accuracy | Passed | Avg Token Reduction | Avg Tokens After | Avg Latency (ms) |
+|---|---|---|---|---|---|
+| sliding_window | 66.7% | 4/6 | 22.9% | 116.0 | 0.0062 |
+| observation_masking | 66.7% | 4/6 | -4.6% | 166.3 | 0.0143 |
+| recursive_summary | 66.7% | 4/6 | -3.1% | 164.0 | 0.0195 |
+| zone_pruning | 83.3% | 5/6 | 11.2% | 133.0 | 0.0853 |
+
+--- 
 
 ### Retrieval comparison table (real numbers)
 

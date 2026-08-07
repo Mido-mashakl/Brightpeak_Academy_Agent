@@ -8,5 +8,6 @@ mcp_server/__pycache__/schemas.cpython-310.pyc
 mcp_server/__pycache__/roles.cpython-310.pyc
 mcp_server/__pycache__/tools.cpython-310.pyc
 mcp_server/__pycache__/validation.cpython-310.pyc
+# Python cache
 __pycache__/
 *.py[cod]
