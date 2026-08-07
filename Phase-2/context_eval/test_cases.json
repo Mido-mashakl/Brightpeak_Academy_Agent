@@ -1,0 +1,124 @@
+{
+  "test_cases": [
+    {
+      "id": "case1_recency_loss",
+      "description": "A fact stated early in the conversation is asked about again after several unrelated turns. Recency-only pruning (sliding_window) drops it, while the other three strategies retain it through different mechanisms (full retention, folding into the summary, or lexical relevance).",
+      "messages": [
+        {"role": "user", "content": "Give me Ahmed Mostafa's attendance summary for this term."},
+        {"role": "assistant", "content": "Ahmed Mostafa's attendance is 92% this term with zero absences recorded."},
+        {"role": "user", "content": "Thanks. Now switch topics -- can you tell me about the Flutter track curriculum?"},
+        {"role": "assistant", "content": "The Flutter track covers Dart basics, widgets, state management, and a capstone app over 8 weeks."},
+        {"role": "user", "content": "What prerequisites does the Flutter track have?"},
+        {"role": "assistant", "content": "Students need to have completed Intro to Programming with a grade of at least 70."},
+        {"role": "user", "content": "How many students are currently enrolled in the Flutter track?"},
+        {"role": "assistant", "content": "There are 24 students currently enrolled in the Flutter track this term."},
+        {"role": "user", "content": "Is there a waitlist for the Flutter track?"},
+        {"role": "assistant", "content": "Yes, there are 5 students on the waitlist for the Flutter track."},
+        {"role": "user", "content": "What about the Web Development track, how many weeks is it?"},
+        {"role": "assistant", "content": "The Web Development track runs for 10 weeks and covers HTML, CSS, JavaScript, and React."},
+        {"role": "user", "content": "Great, one more thing -- remind me, what was Ahmed's attendance percentage again?"}
+      ],
+      "query": "what was ahmed's attendance percentage again?",
+      "expected_facts": ["92%"],
+      "unexpected_facts": []
+    },
+    {
+      "id": "case2_stale_supersession",
+      "description": "A student's track registration changes mid-conversation (Web Development -> Flutter). Tests whether a strategy resurfaces the superseded track as if it were still current. Only sliding_window naturally drops the stale mention through recency; the other three -- which preserve or lexically re-surface older content -- leak it.",
+      "messages": [
+        {"role": "user", "content": "Register Sara Naguib for the Web Development track please.", "msg_type": "text", "metadata": {"zone": "sara_track"}},
+        {"role": "tool", "content": "Sara Naguib enrolled in Web Development track, cohort spring-2026.", "msg_type": "tool_result", "metadata": {"zone": "sara_track"}},
+        {"role": "assistant", "content": "Done -- Sara is registered in the Web Development track, spring-2026 cohort.", "msg_type": "text", "metadata": {"zone": "sara_track"}},
+        {"role": "user", "content": "What is Ahmed Mostafa's current GPA?", "msg_type": "text", "metadata": {"zone": "ahmed_grades"}},
+        {"role": "tool", "content": "Ahmed Mostafa: Math 88, Science 92, Arabic 79, English 85. GPA 3.6.", "msg_type": "tool_result", "metadata": {"zone": "ahmed_grades"}},
+        {"role": "assistant", "content": "Ahmed's GPA is 3.6.", "msg_type": "text", "metadata": {"zone": "ahmed_grades"}},
+        {"role": "user", "content": "And his attendance percentage?", "msg_type": "text", "metadata": {"zone": "ahmed_grades"}},
+        {"role": "assistant", "content": "His attendance is 88%.", "msg_type": "text", "metadata": {"zone": "ahmed_grades"}},
+        {"role": "user", "content": "Actually, Sara wants to switch her track registration -- please move her to the Flutter track instead.", "msg_type": "text", "metadata": {"zone": "sara_track"}},
+        {"role": "tool", "content": "Sara Naguib's enrollment updated: now in Flutter track, cohort spring-2026.", "msg_type": "tool_result", "metadata": {"zone": "sara_track"}},
+        {"role": "assistant", "content": "Done -- Sara is now registered in the Flutter track, spring-2026 cohort.", "msg_type": "text", "metadata": {"zone": "sara_track"}},
+        {"role": "user", "content": "Thanks. One more question about the academy calendar.", "msg_type": "text", "metadata": {"zone": "calendar"}},
+        {"role": "assistant", "content": "Sure, the next holiday break starts in three weeks.", "msg_type": "text", "metadata": {"zone": "calendar"}},
+        {"role": "user", "content": "Which track is Sara currently enrolled in?", "msg_type": "text", "metadata": {"zone": "calendar"}}
+      ],
+      "query": "which track is sara currently enrolled in?",
+      "expected_facts": ["flutter"],
+      "unexpected_facts": ["web development"]
+    },
+    {
+      "id": "case3_masking_loss",
+      "description": "A critical figure (attendance 97%) sits past the 80-character masking summary_chars cutoff, inside a tool observation that is old enough to be masked (not one of the last 2 tool calls) but still recent enough to survive sliding_window's window and stay in the same relevant zone. Only observation_masking loses it -- its own placeholder truncation is the failure mode being tested.",
+      "messages": [
+        {"role": "user", "content": "Check Mariam Nabil's scholarship eligibility.", "msg_type": "text", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "tool", "content": "Mariam Nabil grades: Math 95, Science 91, Arabic 89, English 93. GPA 3.9.", "msg_type": "tool_result", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "assistant", "content": "Her GPA is 3.9.", "msg_type": "text", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "user", "content": "What about her attendance record this term?", "msg_type": "text", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "tool", "content": "Mariam Nabil attendance record for spring term: 20 out of 20 sessions attended, no absences, no late arrivals, currently at 97% attendance.", "msg_type": "tool_result", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "assistant", "content": "Her attendance record looks strong and meets the renewal requirement.", "msg_type": "text", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "user", "content": "Also confirm the scholarship policy threshold for renewal.", "msg_type": "text", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "tool", "content": "Scholarship policy: minimum GPA 3.5 and minimum attendance 90% required for renewal.", "msg_type": "tool_result", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "user", "content": "Now run the final eligibility check.", "msg_type": "text", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "tool", "content": "Mariam Nabil scholarship check: GPA 3.9 meets the 3.5 minimum requirement.", "msg_type": "tool_result", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "assistant", "content": "She meets the GPA requirement for renewal.", "msg_type": "text", "metadata": {"zone": "mariam_scholarship"}},
+        {"role": "user", "content": "What was Mariam's attendance percentage exactly?", "msg_type": "text", "metadata": {"zone": "mariam_scholarship"}}
+      ],
+      "query": "what was mariam's attendance percentage exactly?",
+      "expected_facts": ["97%"],
+      "unexpected_facts": []
+    },
+    {
+      "id": "case4_zone_relevance",
+      "description": "An attendance fact is stated early, followed by a long run of turns about a completely unrelated topic (campus facilities), then a follow-up question about the original fact. sliding_window's pure recency cutoff drops the relevant early zone in favor of the irrelevant recent one; the other three strategies retain it.",
+      "messages": [
+        {"role": "user", "content": "What is Youssef Adel's attendance percentage this term?", "msg_type": "text", "metadata": {"zone": "youssef_attendance"}},
+        {"role": "assistant", "content": "Youssef Adel attendance is 88% this term, all sessions accounted for.", "msg_type": "text", "metadata": {"zone": "youssef_attendance"}},
+        {"role": "user", "content": "Switching gears -- what's the wifi password for the main campus building?", "msg_type": "text", "metadata": {"zone": "facilities_faq"}},
+        {"role": "assistant", "content": "The campus wifi network is BrightpeakGuest, no password required for guests.", "msg_type": "text", "metadata": {"zone": "facilities_faq"}},
+        {"role": "user", "content": "Where can students print assignments on campus?", "msg_type": "text", "metadata": {"zone": "facilities_faq"}},
+        {"role": "assistant", "content": "There are printing stations in the library and the student lounge.", "msg_type": "text", "metadata": {"zone": "facilities_faq"}},
+        {"role": "user", "content": "What time does the cafeteria open?", "msg_type": "text", "metadata": {"zone": "facilities_faq"}},
+        {"role": "assistant", "content": "The cafeteria opens at 7:30 AM on weekdays.", "msg_type": "text", "metadata": {"zone": "facilities_faq"}},
+        {"role": "user", "content": "Is there a shuttle bus between campus buildings?", "msg_type": "text", "metadata": {"zone": "facilities_faq"}},
+        {"role": "assistant", "content": "Yes, the shuttle runs every 15 minutes between 8 AM and 6 PM.", "msg_type": "text", "metadata": {"zone": "facilities_faq"}},
+        {"role": "user", "content": "Remind me, what was the attendance percentage for youssef again?", "msg_type": "text", "metadata": {"zone": "closing"}}
+      ],
+      "query": "remind me, what was the attendance percentage for youssef again?",
+      "expected_facts": ["88%"],
+      "unexpected_facts": []
+    },
+    {
+      "id": "case5_summary_truncation",
+      "description": "A detail (the reason for a track transfer) sits past the 60-character extractive-summary cutoff inside a message that ends up folded by recursive_summary once the conversation passes trigger_at, while still falling inside sliding_window's window and staying in a relevant zone. Only recursive_summary's extractive truncation loses it.",
+      "messages": [
+        {"role": "user", "content": "Give me a full profile check for Youssef Adel.", "msg_type": "text", "metadata": {"zone": "youssef_profile"}},
+        {"role": "assistant", "content": "Sure, pulling his records now.", "msg_type": "text", "metadata": {"zone": "youssef_profile"}},
+        {"role": "user", "content": "Include grades and enrollment status.", "msg_type": "text", "metadata": {"zone": "youssef_profile"}},
+        {"role": "assistant", "content": "Youssef Adel is enrolled in the Flutter track, GPA 3.4, and his enrollment status shows he transferred from the Web Development track last semester due to a scheduling conflict.", "msg_type": "text", "metadata": {"zone": "youssef_profile"}},
+        {"role": "user", "content": "Also check his current attendance while you're at it.", "msg_type": "text", "metadata": {"zone": "youssef_profile"}},
+        {"role": "assistant", "content": "His attendance is 91% this term.", "msg_type": "text", "metadata": {"zone": "youssef_profile"}},
+        {"role": "user", "content": "Great. Any pending assignments due this week?", "msg_type": "text", "metadata": {"zone": "youssef_profile"}},
+        {"role": "assistant", "content": "He has one assignment due Friday for the Flutter capstone.", "msg_type": "text", "metadata": {"zone": "youssef_profile"}},
+        {"role": "user", "content": "Perfect. Any disciplinary notes on file?", "msg_type": "text", "metadata": {"zone": "youssef_profile"}},
+        {"role": "assistant", "content": "No disciplinary notes on file for Youssef.", "msg_type": "text", "metadata": {"zone": "youssef_profile"}},
+        {"role": "user", "content": "Why did Youssef transfer out of his previous track?", "msg_type": "text", "metadata": {"zone": "youssef_profile"}}
+      ],
+      "query": "why did youssef transfer out of his previous track?",
+      "expected_facts": ["scheduling conflict"],
+      "unexpected_facts": []
+    },
+    {
+      "id": "case6_baseline_sanity",
+      "description": "A short, single-topic conversation well within every strategy's limits (few messages, one tool call, one zone, no stale facts). Every strategy should pass -- this is the control case confirming none of the four strategies loses information when there is no pressure to compress.",
+      "messages": [
+        {"role": "user", "content": "What is Nour Hassan's current GPA?", "msg_type": "text", "metadata": {"zone": "nour_scholarship"}},
+        {"role": "tool", "content": "Nour Hassan: Math 90, Science 87, Arabic 94, English 88. GPA 3.72.", "msg_type": "tool_result", "metadata": {"zone": "nour_scholarship"}},
+        {"role": "assistant", "content": "Nour Hassan's GPA is 3.72.", "msg_type": "text", "metadata": {"zone": "nour_scholarship"}},
+        {"role": "user", "content": "Is she eligible for the merit scholarship?", "msg_type": "text", "metadata": {"zone": "nour_scholarship"}},
+        {"role": "assistant", "content": "Yes, with a GPA of 3.72 she is eligible for the merit scholarship, meeting the minimum 3.5 requirement.", "msg_type": "text", "metadata": {"zone": "nour_scholarship"}}
+      ],
+      "query": "what is nour's gpa and is she scholarship eligible?",
+      "expected_facts": ["3.72", "eligible"],
+      "unexpected_facts": []
+    }
+  ]
+}
