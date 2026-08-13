@@ -420,3 +420,247 @@ python -m retrieval_eval.evaluate
 - [ ] Integrate RAG with Agent (`rag/rag_tool.py`)
 - [ ] Update README with RAG section and numbers
 
+# Brightpeak Planning Agent — Task Decomposition & Planning
+
+An extension **inside `Phase-2/`** that gives a **new, separate agent** the ability to break a hard, multi-step,
+ambiguous request into a DAG of sub-tasks, plan the pieces that need real reasoning, and check its own output
+before it ships — built on top of the same `mcp_server/`, `db/`, and reference toolkit
+([`task_decomposition_and_planning`](https://github.com/AmrSheta22/task_decomposition_and_planning)) already used
+by the Memory & RAG agent in this repo.
+
+> This is **not a new project/phase folder** — the lab is explicit that we are extending the same shared repo, the
+> same database, and the same MCP server, not starting fresh. The new Planning Agent sits next to the Memory & RAG
+> agent inside `Phase-2/`, reusing `mcp_server/` and `db/` as-is.
+
+> **Status:** 🚧 This README is a working skeleton. Sections marked `> TODO` need the real problem statement,
+> real numbers, and real test-suite results filled in once the team locks the request type and finishes wiring the
+> agent — no fabricated numbers belong here (see the lab's own guardrail on this).
+
+---
+
+## 🎯 Project Idea
+
+Brightpeak's MCP tools are intentionally narrow — one lookup, one write, one clean call in, one clean result out.
+But not every real request from staff or students fits that shape. Some requests are multi-step, ambiguous, or
+contradictory, and require **deciding what to do** before there's anything to retrieve or call. That's a planning
+problem, not a memory problem and not a retrieval problem — which is why it needs its own agent, separate from the
+Memory & RAG agent already built earlier in `Phase-2/`.
+
+> **The real request we're solving:**
+> TODO — name the actual recurring request a real Brightpeak user sends today that no single tool call or single
+> LLM turn can safely resolve (e.g. something with genuine branching, a real cost to a wrong plan, and a real
+> difference between committing to one plan vs. adjusting as new information comes in). Must be a *different*
+> agent/problem than the Memory & RAG agent.
+
+```
+User request
+      │
+      ▼
+Planning Agent (new — added to Phase-2)
+      │
+      ▼
+DAG (Decomposition) ──► Planning (PS / ToT / LATS) ──► Reflection (Self-Refine / Reflexion) ──► Revise ──► Output
+      │
+      ▼
+Same mcp_server/ + db/ already in Phase-2 (reused, not duplicated)
+```
+
+The Planning Agent sits **next to** the Memory & RAG agent — it does not touch that code path, and it does not
+duplicate `mcp_server/` or `db/`; it reuses both.
+
+---
+
+## 📂 Project Structure
+
+`planning/` and `planning_eval/` are added **inside the existing `Phase-2/` folder**, alongside `mcp_server/`,
+`db/`, `agent/`, `memory/`, and `rag/` — not as a separate phase:
+
+```
+Brightpeak_Academy_Agent/
+│
+├── Phase-1/                         ← Agent architecture comparison
+│
+└── Phase-2/                         ← MCP Server + Memory & RAG agent + (new) Planning Agent
+    ├── README.md
+    ├── db/                          ← existing, reused as-is
+    ├── mcp_server/                  ← existing, reused as-is
+    ├── memory/                      ← existing Memory & RAG agent (untouched)
+    ├── rag/                         ← existing Memory & RAG agent (untouched)
+    ├── agent/
+    │   ├── client.py                ← existing
+    │   ├── agent.py                 ← existing
+    │   ├── memory_rag_agent.py      ← existing, untouched
+    │   ├── planning_agent.py        ← NEW — the planning agent, wired into the same MCP server + DB
+    │   └── demo.py
+    │
+    ├── planning/                    ← NEW — forked & adapted from AmrSheta22/task_decomposition_and_planning
+    │   ├── algorithms/
+    │   │   ├── decomposition.py         ← decomposition-first (plan-once, topological execution)
+    │   │   ├── dynamic_decomposition.py ← plan–act–observe–replan
+    │   │   ├── plan_and_solve.py        ← single-pass, no branching
+    │   │   ├── tree_of_thoughts.py      ← generate → evaluate → search (BFS/DFS)
+    │   │   ├── lats.py                  ← MCTS + real environment feedback
+    │   │   ├── self_refine.py           ← one draft, one rubric critique, one revision
+    │   │   ├── reflexion.py             ← multi-trial, capped episodic verbal-reflection buffer
+    │   │   └── environment.py           ← replaced: real EnvironmentFeedback, not the toolkit's random default
+    │   ├── dag.py                       ← DAG construction + cycle check
+    │   ├── router.py                    ← routes each sub-task to PS / ToT / LATS
+    │   └── critics.py                   ← grounded vs. ungrounded critique, self vs. independent critic
+    │
+    └── planning_eval/                ← NEW
+        ├── test_suite.json          ← fixed real-request test cases (frozen once evaluation starts)
+        ├── evaluate.py
+        ├── comparison_table.md
+        └── artifacts/               ← per-run JSON traces (plans, node outputs, critic feedback,
+                                         episodic memories, MCTS visits, branch reflections)
+```
+
+---
+
+## ✅ Required Concerns
+
+| # | Concern | Owner | Description |
+|---|---|---|---|
+| 1 | **Task Decomposition (both methods)** | Ahmed | Decomposition-first (whole plan generated up front, executed in topological order) **and** dynamic/interleaved decomposition (next sub-task generated after observing the last result). Acyclicity enforced at construction time. |
+| 2 | **Planning Algorithms (all three)** | Farida | Plan-and-Solve (single pass, no branching), Tree of Thoughts (generate/evaluate/search with BFS or DFS), LATS (MCTS-guided search scored by real external feedback, with verbal reflection on failed branches). Each DAG sub-task is routed to whichever fits its shape. |
+| 3 | **Self-Correction (both scopes)** | Fatma | Self-Refine (one draft → rubric critique → one revision) for cheap-to-redo sub-task outputs, and Reflexion (retry the full task across trials, carrying a capped episodic buffer of verbal reflections) for the sub-task/request type where one retry isn't enough. |
+| 4 | **Grounded vs. Ungrounded Critique** | Fatma | Every critique step (Self-Refine, Reflexion's evaluate, LATS's external feedback) states its real source of truth — a test run, an MCP call, a DB check — instead of asking the same model to judge itself. At least one sub-task shows a failure the grounded version catches that an ungrounded self-critique misses. |
+| 5 | **Cost & Quality Comparison** | All | Every method run against every applicable case from a fixed real-request test suite: decomposition-first vs. dynamic, PS vs. ToT vs. LATS, Self-Refine vs. Reflexion. One table scoring accuracy/task success, total LLM calls, total tokens, and latency. |
+
+---
+
+## 🔧 How Sub-Tasks Are Routed
+
+| Sub-task shape | Method | Why |
+|---|---|---|
+| Logical / deterministic (program synthesis, generate & execute code or formulas) | **Plan-and-Solve** | One plan, single pass — no need to pay for branching on a mechanical step. |
+| Complex reasoning / search where several orderings matter before committing | **Tree of Thoughts** | Lookahead beats a single committed plan when self-evaluation is enough to judge candidates. |
+| Knowledge/tool-use steps where a wrong answer is expensive and a real check exists | **LATS** | Environment feedback (grounded) replaces the model's own opinion of itself; worth the extra cost specifically where being wrong is costly. |
+
+> TODO — replace the generic row descriptions above with the actual sub-tasks in this project's DAG once the real
+> request type is chosen, and justify each routing choice against the comparison table, not against which method
+> sounds most sophisticated.
+
+---
+
+## 🌱 Grounding — What "real" Means Here
+
+The toolkit's `algorithms/environment.py` ships with a randomized evaluator that has no connection to reality. It has
+been replaced with a real `EnvironmentFeedback` source:
+
+> TODO — describe the actual check: an executed test, a real call against the MCP server, a real check against
+> `db/brightpeak.db`, or whatever "did this sub-task actually succeed" means for the chosen request.
+
+An ungrounded LATS or Reflexion pointed at the toolkit's randomized default earns no credit for grounding — this
+project's `environment.py` is wired to a real source before submission, not after.
+
+**Grounded vs. ungrounded — the failure case:**
+
+> TODO — show the specific sub-task and the specific failure the grounded check caught that the ungrounded
+> self-critique missed (this is the evidence the rubric asks for, not a description).
+
+---
+
+## 📊 Comparison Table
+
+> TODO — fill in once `planning_eval/evaluate.py` has run against the fixed test suite. Table must cover every
+> required method — a table missing Plan-and-Solve, dynamic decomposition, or the ungrounded-vs-grounded LATS
+> contrast doesn't satisfy the concern even if what's there looks thorough.
+
+### Top-level decomposition: `<request type>` (`<N>` real cases)
+
+| Method | Task success | Avg. LLM calls | Avg. tokens | Avg. latency | Est. cost/run |
+|---|---|---|---|---|---|
+| Decomposition-first | | | | | |
+| Dynamic decomposition | | | | | |
+
+### Planning sub-tasks (`<N>` cases each)
+
+| Method | Sub-task success | Avg. LLM calls | Avg. tokens | Avg. latency | Est. cost/run |
+|---|---|---|---|---|---|
+| Plan-and-Solve | | | | | |
+| Tree of Thoughts | | | | | |
+| LATS, ungrounded env. (toolkit default) | | | | | |
+| LATS, grounded env. (real check) | | | | | |
+
+### Self-correction
+
+| Method | Task success | Avg. LLM calls | Avg. tokens | Avg. latency | Est. cost/run |
+|---|---|---|---|---|---|
+| Self-Refine | | | | | |
+| Reflexion | | | | | |
+
+**Shipping decision (driven by the table, not intuition):**
+> TODO — one paragraph, same pattern as the Phase-2 RAG section: state the default per sub-task type and justify
+> it against the numbers above.
+
+### How to re-run the evaluation
+
+```bash
+cd Phase-2
+python -m planning_eval.evaluate
+```
+
+---
+
+## 🎥 Demo Requirements
+
+The demo covers, in order:
+
+| Step | Concern | Shown by |
+|---|---|---|
+| 1 | Decomposition divergence | Same real request run through decomposition-first and dynamic decomposition, divergence point visible |
+| 2 | Plan-and-Solve | A sub-task solved via PS |
+| 3 | Tree of Thoughts | A sub-task solved via ToT, branches shown |
+| 4 | LATS | A sub-task solved via LATS, MCTS visits + grounded score shown |
+| 5 | Self-Refine | One draft → critique → revision |
+| 6 | Reflexion | A run that fails, reflects, and carries the reflection into the next trial |
+| 7 | Grounded environment | The real check catching a failure the ungrounded toolkit default would have missed |
+
+> TODO — link the recording/transcript once it exists.
+
+---
+
+## 👥 Team Split
+
+| Member | Responsibility |
+|---|---|
+| **Ahmed** | Task Decomposition — `decomposition.py` + `dynamic_decomposition.py`, DAG construction, acyclicity check, integration into `agent/` and `mcp_server/` |
+| **Farida** | Planning Algorithms — `plan_and_solve.py`, `tree_of_thoughts.py`, `lats.py`, routing logic |
+| **Fatma** | Self-Correction & Grounding — `self_refine.py`, `reflexion.py`, real `EnvironmentFeedback`, grounded vs. ungrounded critique comparison, README |
+| **All** | Cost & quality comparison table, evaluation harness, demo |
+
+No team member owns more than the concerns above, and everyone contributes to the shared evaluation deliverable.
+
+---
+
+## 📝 Suggested GitHub Issues
+
+- [ ] Pick and document the real planning problem (different agent/request than Memory & RAG)
+- [ ] Fork the reference toolkit into the team org
+- [ ] Build DAG construction + cycle check (`decomposition.py`)
+- [ ] Implement dynamic decomposition (`dynamic_decomposition.py`)
+- [ ] Wire decomposition against real MCP tools + DB (not toolkit demo prompts)
+- [ ] Implement Plan-and-Solve routing
+- [ ] Implement Tree of Thoughts routing
+- [ ] Implement LATS routing
+- [ ] Swap toolkit's default model provider for the repo's existing provider
+- [ ] Implement Self-Refine with an explicit rubric
+- [ ] Implement Reflexion with capped episodic buffer
+- [ ] Replace `environment.py`'s randomized default with a real, grounded `EnvironmentFeedback`
+- [ ] Document a failure case the grounded check catches that the ungrounded one misses
+- [ ] Build the fixed real-request test suite (`planning_eval/test_suite.json`)
+- [ ] Run every method against every applicable case, produce the comparison table
+- [ ] Justify final per-sub-task method choices against the table
+- [ ] Record demo covering all required concerns
+- [ ] Update this README with final numbers and links
+
+---
+
+## 🧭 Project Summary
+
+This adds a Planning Agent inside `Phase-2/`, separate from the existing Memory & RAG agent, that decomposes a
+genuinely multi-step, ambiguous request into a DAG, routes each sub-task to whichever planning algorithm actually
+fits its shape (Plan-and-Solve, Tree of Thoughts, or LATS), and checks its own output with a grounded critique
+(Self-Refine or Reflexion) before shipping — built as a genuine extension of the existing `mcp_server/`, `db/`, and
+the reference decomposition-and-planning toolkit, not a rebuild of either, and not a new project.
