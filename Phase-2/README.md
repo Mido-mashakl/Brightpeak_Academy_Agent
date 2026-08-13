@@ -522,9 +522,9 @@ Brightpeak_Academy_Agent/
 | # | Concern | Owner | Description |
 |---|---|---|---|
 | 1 | **Task Decomposition (both methods)** | Ahmed | Decomposition-first (whole plan generated up front, executed in topological order) **and** dynamic/interleaved decomposition (next sub-task generated after observing the last result). Acyclicity enforced at construction time. |
-| 2 | **Planning Algorithms (all three)** | Farida | Plan-and-Solve (single pass, no branching), Tree of Thoughts (generate/evaluate/search with BFS or DFS), LATS (MCTS-guided search scored by real external feedback, with verbal reflection on failed branches). Each DAG sub-task is routed to whichever fits its shape. |
-| 3 | **Self-Correction (both scopes)** | Fatma | Self-Refine (one draft → rubric critique → one revision) for cheap-to-redo sub-task outputs, and Reflexion (retry the full task across trials, carrying a capped episodic buffer of verbal reflections) for the sub-task/request type where one retry isn't enough. |
-| 4 | **Grounded vs. Ungrounded Critique** | Fatma | Every critique step (Self-Refine, Reflexion's evaluate, LATS's external feedback) states its real source of truth — a test run, an MCP call, a DB check — instead of asking the same model to judge itself. At least one sub-task shows a failure the grounded version catches that an ungrounded self-critique misses. |
+| 2 | **Planning Algorithms (all three)** | Fatma | Plan-and-Solve (single pass, no branching), Tree of Thoughts (generate/evaluate/search with BFS or DFS), LATS (MCTS-guided search scored by real external feedback, with verbal reflection on failed branches). Each DAG sub-task is routed to whichever fits its shape. |
+| 3 | **Self-Correction (both scopes)** | Farida | Self-Refine (one draft → rubric critique → one revision) for cheap-to-redo sub-task outputs, and Reflexion (retry the full task across trials, carrying a capped episodic buffer of verbal reflections) for the sub-task/request type where one retry isn't enough. |
+| 4 | **Grounded vs. Ungrounded Critique** | Farida | Every critique step (Self-Refine, Reflexion's evaluate, LATS's external feedback) states its real source of truth — a test run, an MCP call, a DB check — instead of asking the same model to judge itself. At least one sub-task shows a failure the grounded version catches that an ungrounded self-critique misses. |
 | 5 | **Cost & Quality Comparison** | All | Every method run against every applicable case from a fixed real-request test suite: decomposition-first vs. dynamic, PS vs. ToT vs. LATS, Self-Refine vs. Reflexion. One table scoring accuracy/task success, total LLM calls, total tokens, and latency. |
 
 ---
@@ -626,8 +626,8 @@ The demo covers, in order:
 | Member | Responsibility |
 |---|---|
 | **Ahmed** | Task Decomposition — `decomposition.py` + `dynamic_decomposition.py`, DAG construction, acyclicity check, integration into `agent/` and `mcp_server/` |
-| **Farida** | Planning Algorithms — `plan_and_solve.py`, `tree_of_thoughts.py`, `lats.py`, routing logic |
-| **Fatma** | Self-Correction & Grounding — `self_refine.py`, `reflexion.py`, real `EnvironmentFeedback`, grounded vs. ungrounded critique comparison, README |
+| **Fatma** | Planning Algorithms — `plan_and_solve.py`, `tree_of_thoughts.py`, `lats.py`, routing logic |
+| **Farida** | Self-Correction & Grounding — `self_refine.py`, `reflexion.py`, real `EnvironmentFeedback`, grounded vs. ungrounded critique comparison, README |
 | **All** | Cost & quality comparison table, evaluation harness, demo |
 
 No team member owns more than the concerns above, and everyone contributes to the shared evaluation deliverable.
