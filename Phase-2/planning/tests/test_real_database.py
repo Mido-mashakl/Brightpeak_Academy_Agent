@@ -4,7 +4,7 @@ from pathlib import Path
 from planning.algorithms.environment import Environment
 
 
-DB_PATH = Path(__file__).resolve().parents[2] / "brightpeak.db"
+DB_PATH = Path(__file__).resolve().parents[2] / "db" / "brightpeak.db"
 
 
 def test_environment_reads_real_brightpeak_database():
