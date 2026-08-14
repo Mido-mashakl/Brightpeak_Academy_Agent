@@ -20,5 +20,4 @@ Thumbs.db
 
 # --- Test / build artifacts ---
 .pytest_cache/
-artifacts/
 *.log
