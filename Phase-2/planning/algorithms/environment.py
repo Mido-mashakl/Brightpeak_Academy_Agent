@@ -18,7 +18,7 @@ from pathlib import Path
 
 from ..models import EnvironmentFeedback
 
-_DEFAULT_DB_PATH = Path(__file__).resolve().parents[2] / "db" / "brightpeak.db"
+_DEFAULT_DB_PATH = Path(__file__).resolve().parents[2] / "brightpeak.db"
 
 SCHOLARSHIP_POLICY_ID = 2
 SCHOLARSHIP_MIN_AVERAGE = 90.0
