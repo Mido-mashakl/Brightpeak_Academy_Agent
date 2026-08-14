@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, ConfigDict, Field
 
-from models import EnvironmentFeedback
-from .environment import Environment
+from ..models import EnvironmentFeedback
+
+if TYPE_CHECKING:
+    from .environment import Environment
 
 
 class LATSAction(BaseModel):
@@ -88,7 +91,7 @@ def _trajectory_reflections(node: LATSNode) -> list[str]:
 def lats(
     task: str,
     llm: BaseChatModel,
-    environment: Environment,
+    environment: "Environment",
     iterations: int = 2,
     n_actions: int = 2,
     exploration_weight: float = 1.414,

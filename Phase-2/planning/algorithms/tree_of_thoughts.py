@@ -1,7 +1,7 @@
 from langchain_core.language_models.chat_models import BaseChatModel
 from pydantic import BaseModel, ConfigDict, Field
 
-from models import Thought
+from ..models import Thought
 
 
 class ThoughtCandidates(BaseModel):
