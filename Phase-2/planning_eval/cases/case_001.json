@@ -1,0 +1,52 @@
+{
+  "case_id": "case_001",
+  "title": "Student Academic Intervention Planning",
+  "category": "academic_intervention",
+  "prompt": "Student 2 is struggling academically. Review the student's profile, enrolled courses, grades, and attendance. Check the relevant Brightpeak attendance and scholarship policies. Then produce a prioritized intervention plan for the academic advisor. Do not modify any student data.",
+  "student_id": 2,
+  "expected_tools": [
+    "get_student_profile",
+    "get_student_enrollments",
+    "get_student_grades",
+    "get_student_attendance",
+    "search_policies"
+  ],
+  "expected_dag_shape": {
+    "independent_tasks": [
+      "get_student_profile",
+      "get_student_enrollments",
+      "get_student_grades",
+      "get_student_attendance"
+    ],
+    "policy_task": {
+      "depends_on": [],
+      "tool": "search_policies"
+    },
+    "synthesis_task": {
+      "depends_on": [
+        "student_profile",
+        "student_enrollments",
+        "student_grades",
+        "student_attendance",
+        "relevant_policies"
+      ]
+    }
+  },
+  "constraints": [
+    "Do not invent student facts.",
+    "Do not modify the database.",
+    "Use the MCP server for factual student data.",
+    "Use the policy retrieval tool for policy claims.",
+    "The final recommendation must be based on the collected evidence.",
+    "The DAG must be acyclic."
+  ],
+  "success_criteria": [
+    "A valid DAG is generated.",
+    "The DAG passes cycle validation.",
+    "Independent information-gathering tasks can execute in parallel.",
+    "All expected MCP tools are used when their information is required.",
+    "The final recommendation references the collected student evidence.",
+    "No database write occurs."
+  ],
+  "expected_divergence_trigger": "If an early observation shows that the student's attendance is already below the policy threshold, the dynamic planner should prioritize attendance intervention before lower-priority academic recommendations."
+}
