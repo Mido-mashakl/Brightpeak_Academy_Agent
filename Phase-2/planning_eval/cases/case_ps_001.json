@@ -1,0 +1,8 @@
+{
+  "case_id": "case_ps_001",
+  "title": "Summarize Student 2's Enrollment Snapshot",
+  "category": "reasoning_subtask",
+  "instruction": "Using only the enrollment records already retrieved for Student 2, write a one-paragraph summary of the student's current course load (active vs completed vs dropped).",
+  "why_plan_and_solve": "Single deterministic synthesis over already-fetched facts. No competing orderings to weigh and no high-stakes decision ships from this step, so a one-pass Plan-and-Solve chain is the cheapest method that fits.",
+  "expected_router_method": "plan_and_solve"
+}

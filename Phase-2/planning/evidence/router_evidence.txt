@@ -1,0 +1,71 @@
+======================================================================
+ROUTER TEST - classify_task (pure logic, no LLM call)
+======================================================================
+
+[case_ps_001] -> plan_and_solve
+  reason: No branching/ranking/high-stakes-recommendation signal found; treated as a single deterministic reasoning chain. Plan-and-Solve is the cheapest method that fits.
+
+[case_tot_001] -> tree_of_thoughts
+  reason: Instruction contains 'rank': several distinct orderings/framings are plausible and worth comparing before committing, but a wrong pick here is cheap to redo, so self-evaluated lookahead (ToT) is sufficient without paying for a grounded environment call.
+
+[case_lats_001] -> lats
+  reason: Instruction contains 'final decision': this sub-task produces the recommendation that actually ships to a student/advisor, so a wrong output has a real cost. Routed to LATS to use grounded external feedback instead of the model's own opinion of itself.
+
+======================================================================
+ROUTER TEST - route_and_solve dispatch (real Gemini call for PS)
+======================================================================
+
+PS envelope method: plan_and_solve
+PS result: ## PLAN
+
+1.  **Access Enrollment Records:** Retrieve the enrollment records specifically for Student 2. (Assuming these records are available as a list of dictionaries or similar structure, with a 'status' field for each course).
+2.  **Categorize Courses:** Iterate through each course in Student 2's enrollment records.
+    *   Identify courses with a 'status' indicating they are currently in progress (e.g., "active", "enrolled").
+    *   Identify courses with a 'status' indicating they have been successfully finished (e.g., "completed", "passed").
+    *   Identify courses with a 'status' indicating they were discontinued (e.g., "dropped", "withdrawn").
+3.  **Count Categories:** Keep a running tally for the number of active, completed, and dropped courses.
+4.  **Synthesize Summary:** Combine the counts into a single, concise paragraph summarizing Student 2's course load across these three categories.
+
+## SOLUTION
+
+Based on the enrollment records retrieved for Student 2 (assuming the following example data structure and content for demonstration purposes):
+
+```json
+[
+    {"course_id": "CS101", "course_name": "Introduction to Computer Science", "status": "completed", "grade": "A-", "semester": "Fall 2023"},
+    {"course_id": "MA101", "course_name": "Calculus I", "status": "completed", "grade": "B+", "semester": "Fall 2023"},
+    {"course_id": "EN101", "course_name": "English Composition", "status": "active", "semester": "Spring 2024"},
+    {"course_id": "HI201", "course_name": "World History II", "status": "active", "semester": "Spring 2024"},
+    {"course_id": "PH101", "course_name": "Introduction to Philosophy", "status": "dropped", "semester": "Spring 2024"},
+    {"course_id": "SP101", "course_name": "Spanish I", "status": "active", "semester": "Spring 2024"}
+]
+```
+
+**Step-by-step execution:**
+
+1.  **Initialize counters:**
+    *   `active_courses = 0`
+    *   `completed_courses = 0`
+    *   `dropped_courses = 0`
+
+2.  **Process records:**
+    *   `CS101`: status "completed" -> `completed_courses = 1`
+    *   `MA101`: status "completed" -> `completed_courses = 2`
+    *   `EN101`: status "active" -> `active_courses = 1`
+    *   `HI201`: status "active" -> `active_courses = 2`
+    *   `PH101`: status "dropped" -> `dropped_courses = 1`
+    *   `SP101`: status "active" -> `active_courses = 3`
+
+3.  **Final Counts:**
+    *   Active: 3
+    *   Completed: 2
+    *   Dropped: 1
+
+**Summary Paragraph:**
+
+Student 2's current course load consists of three active courses, two completed courses, and one dropped course.
+
+LATS-without-environment correctly raised: Task was routed to LATS but no `environment` was supplied.
+ Pass the grounded Environment (or a test stub implementing the same .evaluate(state) -> EnvironmentFeedback interface) explicitly -
+  LATS must never silently fall back to an ungrounded default.implementing the same .evaluate(state) -> EnvironmentFeedback interface) explicitly -
+   LATS must never silently fall back to an ungrounded default.

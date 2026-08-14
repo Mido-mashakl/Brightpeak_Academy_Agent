@@ -1,0 +1,8 @@
+{
+  "case_id": "case_tot_001",
+  "title": "Rank Student 2's Overdue Assignments by Urgency",
+  "category": "reasoning_subtask",
+  "instruction": "Rank Student 2's three overdue assignments by urgency, considering deadline distance, course weight, and current grade impact, before the advisor decides which ones to flag first.",
+  "why_tree_of_thoughts": "Several defensible orderings exist depending on which factor is weighted most; worth generating and self-scoring a couple of candidate rankings before committing, but a wrong ranking is cheap to redo (no external action taken yet), so self-evaluated lookahead is sufficient.",
+  "expected_router_method": "tree_of_thoughts"
+}
