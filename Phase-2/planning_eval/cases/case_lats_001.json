@@ -1,0 +1,9 @@
+{
+  "case_id": "case_lats_001",
+  "title": "Scholarship Eligibility Decision",
+  "category": "scholarship_eligibility",
+  "instruction": "Make the final decision on whether Student 3 (Mariam Nabil) is eligible for Brightpeak Academy's scholarship. Under the Scholarship Policy, a student is eligible only if their overall average across all recorded assignment grades is strictly above 90%. Give one short sentence of reasoning, then output the decision as a JSON object with no extra keys, in exactly this form: {\"student_id\": 3, \"decision\": \"eligible\"} or {\"student_id\": 3, \"decision\": \"not_eligible\"}.",
+  "student_id": 3,
+  "notes": "student_id 3 is real seed data (db/brightpeak.db) with an actual overall average of 91.0%, just above the 90% threshold. The correct decision is intentionally not stated or hinted at here -- planning.algorithms.environment.Environment determines correctness independently by querying the DB.",
+  "expected_router_method": "lats"
+}

@@ -163,12 +163,15 @@ Phase-2/
 │   │   ├── dynamic_decomposition.py
 │   │   ├── environment.py
 │   │   ├── reflexion.py
-│   │   └── self_refine.py
+│   │   ├── self_refine.py
+│   │   ├── plan_and_solve.py
+│   │   ├── tree_of_thoughts.py
+│   │   └── lats.py
+│   ├── evidence/
 │   ├── integration.py
-│   ├── lats.py
+│   ├── llm_provider.py
 │   ├── models.py
-│   ├── plan_and_solve.py
-│   ├── tree_of_thoughts.py
+│   ├── router.py
 │   ├── demo_self_correction.py
 │   ├── demo_grounding_comparison.py
 │   └── tests/
@@ -179,9 +182,20 @@ Phase-2/
 │
 ├── planning_eval/
 │   ├── cases/
+│   │   ├── case_ps_001.json
+│   │   ├── case_tot_001.json
+│   │   └── case_lats_001.json
 │   ├── artifacts/
+│   │   ├── plan_and_solve/
+│   │   ├── tree_of_thoughts/
+│   │   ├── lats/
+│   │   └── router/
 │   ├── test_decomposition.py
-│   └── test_dynamic_decomposition.py
+│   ├── test_dynamic_decomposition.py
+│   ├── test_plan_and_solve.py
+│   ├── test_tree_of_thoughts.py
+│   ├── test_lats.py
+│   └── test_router.py
 │
 └── Tests/
     ├── integration_tests.py
@@ -370,7 +384,7 @@ Planning Agent
     ↓
 DAG Decomposition
     ↓
-Planning Algorithm
+Planning Algorithm (via Router)
     ↓
 Execution / Verification
     ↓
@@ -392,14 +406,80 @@ The repository contains both decomposition algorithms and the planning algorithm
 
 ### Planning algorithms
 
-- `planning/plan_and_solve.py` — single structured plan followed by execution.
-- `planning/tree_of_thoughts.py` — candidate generation, evaluation, search, and pruning.
-- `planning/lats.py` — MCTS-based planning with environment feedback.
+- `planning/algorithms/plan_and_solve.py` — single structured plan followed by execution. The model is instructed to explicitly separate a **PLAN** phase from a **SOLUTION** phase in one pass (temperature `0.2`, favoring deterministic output). This is the cheapest of the three methods and the router's default.
+- `planning/algorithms/tree_of_thoughts.py` — beam-search style planning. At each depth, every node in the frontier generates up to 2 candidate continuations (`ThoughtCandidates`, structured output), each candidate is scored independently by a second, judge-style structured call (`ThoughtEvaluation`, score in `[0, 1]` + rationale), and only the top `beam_width` scoring thoughts survive to the next depth. Generation uses a higher temperature (`0.5`) for diverse candidates, while judging uses a low temperature (`0.1`) to keep scoring consistent.
+- `planning/algorithms/lats.py` — Monte Carlo Tree Search (MCTS) over candidate solutions, grounded by real environment feedback. Each iteration: selects a leaf via **UCT** (`_uct`, exploration constant `√2`), expands it with `n_actions` distinct candidate solutions, evaluates every candidate against the real `Environment` (`environment.evaluate(state)` → `EnvironmentFeedback`), combines that grounded score with a model self-estimate (`0.75 × environment_score + 0.25 × model_score`) as the backpropagated value, and — for any branch that fails — asks the model to write a short reflection that later expansions can read (capped to the last 4 reflections along the trajectory). The search stops early on the first environment-verified success, or after `iterations` rounds, returning the best-scoring node found. `flatten_lats_tree` serializes the full search tree (visits, mean value, environment/model scores, feedback, reflections) for evidence/inspection.
+- `planning/router.py` — routes each instruction to one of the three algorithms above and dispatches to it through a single uniform interface (`route_and_solve`). See **🔀 Planning Router** below.
+- `planning/llm_provider.py` — shared LLM client (`get_planning_llm`) used by the planning algorithms, the router, and the evaluation scripts, so every algorithm talks to the model through one configured provider instead of instantiating its own client.
 
 ### Supporting integration
 
-- `planning/models.py` — planning data structures.
+- `planning/models.py` — planning data structures (`Thought`, `EnvironmentFeedback`, etc.) shared across algorithms.
 - `planning/integration.py` — planning integration layer.
+
+---
+
+## 🔀 Planning Router
+
+`planning/router.py` decides which planning algorithm handles a given instruction. The decision is a **pure function** (`classify_task`) over the instruction text — no LLM call is made to route — so the rationale stays inspectable and testable in isolation.
+
+Routing checks LATS signals first, then Tree-of-Thoughts signals, and anything left over falls through to Plan-and-Solve. The intent is to route on **the real cost of being wrong**, not on how "hard" the task sounds:
+
+| Signal in instruction | Routed to | Why |
+|---|---|---|
+| `recommend`, `recommendation`, `advisory`, `advise`, `final decision`, `should the advisor`, `intervention plan`, `propose` | **LATS** | This is the sub-task whose output actually ships to a student/advisor. A wrong answer here has a real cost, so it's worth paying for grounded, environment-verified search instead of trusting the model's opinion of itself. |
+| `rank`, `prioriti(ze/se)`, `compare`, `which option`, `best order`, `risk factors` | **Tree of Thoughts** | Several plausible orderings/framings exist and are worth comparing before committing, but a wrong pick is cheap to redo — self-evaluated lookahead is enough without paying for a grounded environment call. |
+| *(no signal matched)* | **Plan-and-Solve** | No branching or high-stakes recommendation is involved — treated as a single deterministic reasoning chain, the cheapest method that fits. |
+
+### Dispatch: `route_and_solve`
+
+```python
+route_and_solve(
+    instruction: str,
+    llm: Any,
+    *,
+    environment: Any = None,
+    tot_depth: int = 2,
+    tot_beam_width: int = 2,
+    lats_iterations: int = 2,
+    lats_n_actions: int = 2,
+) -> dict[str, Any]
+```
+
+`route_and_solve` calls `classify_task`, then dispatches to the matching algorithm and returns a **uniform result envelope**:
+
+- always: `method`, `reason`, `result`
+- Tree of Thoughts adds: `candidates` (all surviving thoughts, not just the best)
+- LATS adds: `success`, `best_score`, `iterations`
+
+This uniform shape is what lets `planning_eval` compare all three methods on the same basis.
+
+**Safety guard:** if `classify_task` routes to LATS but no grounded `environment` is passed in, `route_and_solve` raises a `ValueError` instead of silently falling back to an ungrounded evaluator — LATS's whole value comes from grounded feedback, so it must never run without it.
+
+### Example
+
+```python
+from planning.llm_provider import get_planning_llm
+from planning.router import route_and_solve
+
+llm = get_planning_llm()
+result = route_and_solve(
+    "Recommend whether this student should get the scholarship",
+    llm,
+    environment=environment,
+)
+print(result["method"])   # "lats"
+print(result["reason"])   # why it was routed there
+```
+
+### Running the router test
+
+```bash
+cd Phase-2
+python -m planning_eval.test_router
+```
+
+This verifies `classify_task` against three fixed cases (`case_ps_001`, `case_tot_001`, `case_lats_001`), performs one real dispatch through `route_and_solve` for Plan-and-Solve, confirms LATS refuses to run without an explicit environment, and saves evidence to `planning_eval/artifacts/router/case_router_001_result_live.json`.
 
 ---
 
@@ -431,7 +511,7 @@ The real database used by the integration tests is:
 db/brightpeak.db
 ```
 
-This makes the feedback external to the model instead of relying on the model to judge its own answer.
+This makes the feedback external to the model instead of relying on the model to judge its own answer. It is the same `Environment.evaluate(state) -> EnvironmentFeedback` interface that `planning/algorithms/lats.py` calls during its grounded MCTS search.
 
 ## ✏️ Self-Refine
 
@@ -466,6 +546,8 @@ Trial 2
 ```
 
 The reflection from a failed trial is visible to the next trial, and `planning/tests/test_reflexion.py` verifies that transfer.
+
+*(LATS uses the same idea internally, at the search-node level: every failed branch gets a short reflection, and expansions along that branch see the last 4 reflections in the trajectory.)*
 
 ## ⚖️ Grounded vs. Ungrounded Evidence
 
@@ -530,7 +612,7 @@ python -m planning.demo_grounding_comparison
 | Member | Responsibility |
 |---|---|
 | **Ahmed** | Task decomposition, including decomposition-first, dynamic decomposition, DAG construction, and related integration work. |
-| **Fatma** | Planning algorithms, including Plan-and-Solve, Tree of Thoughts, LATS, and routing between them. |
+| **Fatma** | Planning algorithms (`planning/algorithms/plan_and_solve.py`, `tree_of_thoughts.py`, `lats.py`), the algorithm router (`planning/router.py`), and the shared LLM provider layer (`planning/llm_provider.py`). |
 | **Farida** | Self-Correction & Grounding: `self_refine.py`, `reflexion.py`, real `EnvironmentFeedback`, grounded-vs-ungrounded evidence, related tests/demos, and README maintenance. |
 | **Omar** | MCP server, tools, notifications, resources, prompts, authorization, validation, progress tracking, and sampling. |
 
@@ -540,9 +622,13 @@ Memory and RAG components are shared Phase-2 work owned by the corresponding tea
 
 ## 📝 Planning Evaluation Status
 
-The repository contains planning evaluation scaffolding under `planning_eval/`, including decomposition and dynamic-decomposition tests and an artifact for the decomposition-first run.
+The repository contains planning evaluation scaffolding under `planning_eval/`, including:
 
-The final README does **not** claim completed PS/ToT/LATS benchmark numbers, a final planning comparison table, or a final planning shipping decision because those values are not present as complete evidence in the final repository snapshot.
+- decomposition and dynamic-decomposition tests (`test_decomposition.py`, `test_dynamic_decomposition.py`),
+- routing + dispatch tests (`test_router.py`) with fixed cases `case_ps_001`, `case_tot_001`, `case_lats_001`, and saved evidence under `planning_eval/artifacts/router/`,
+- per-algorithm evaluation tests (`test_plan_and_solve.py`, `test_tree_of_thoughts.py`, `test_lats.py`), with evidence saved under `planning_eval/artifacts/plan_and_solve/`, `tree_of_thoughts/`, and `lats/`.
+
+The final README does **not** claim a completed PS vs. ToT vs. LATS benchmark comparison (accuracy/success rate, LLM calls, tokens, latency across all three) because that aggregate comparison is not yet present as complete evidence in the final repository snapshot.
 
 When the team finishes the remaining planning evaluation, this section should be extended with the required fixed-request comparison of:
 
@@ -567,7 +653,8 @@ The repository contains evidence and demos across the system:
 - `context_eval/evidence/` — context strategy comparison evidence.
 - `rag/evidence/` — retrieval verification evidence.
 - `planning/` — self-correction demos and tests.
-- `planning_eval/artifacts/` — planning evaluation traces currently present in the repository.
+- `planning/evidence/` — routing decisions and dispatch evidence saved by the router evaluation.
+- `planning_eval/artifacts/` — planning evaluation traces currently present in the repository, including per-algorithm runs (`plan_and_solve/`, `tree_of_thoughts/`, `lats/`) and router dispatch runs (`router/case_router_001_result_live.json`).
 
 ---
 
@@ -588,14 +675,16 @@ The repository contains evidence and demos across the system:
                 ▼                ▼                 ▼
            Memory/RAG       Planning Agent     MCP Tools
                 │                │                 │
-                │                │                 ▼
-                │                │              MCP Server
-                │                │                 │
-                │                └───────┐         ▼
-                │                        │      SQLite DB
-                ▼                        ▼
-        Relevant memories         DAG + planning
-        + document evidence       + verification
+                │        ┌───────┴────────┐        ▼
+                │        │                │     MCP Server
+                │        ▼                │        │
+                │   Router (PS/ToT/LATS)  │        ▼
+                │        │                │     SQLite DB
+                │        ▼                │
+                │   DAG + verification ───┘
+                ▼                
+        Relevant memories         
+        + document evidence       
 ```
 
 The architecture keeps the existing MCP server and database shared across the agents while separating the Memory & RAG path from the new Planning Agent.
