@@ -10,7 +10,7 @@ PRAGMA foreign_keys = ON;
 -- ------------------------------------------------------------
 INSERT INTO Instructors (instructor_id, name, email) VALUES
     (1, 'Laila Hassan',     'laila.hassan@brightpeak.edu'),
-    (2, 'Omar El-Sayed',    'omar.elsayed@brightpeak.edu'),
+    (2, 'Amr Amin',    'amr.adib@brightpeak.edu'),
     (3, 'Karim Fathy',      'karim.fathy@brightpeak.edu'),
     (4, 'Nourhan Adel',     'nourhan.adel@brightpeak.edu'),
     (5, 'Youssef Tarek',    'youssef.tarek@brightpeak.edu');
@@ -38,8 +38,8 @@ INSERT INTO Courses (course_id, title, category, duration, instructor_id) VALUES
     (2, 'Data Structures & Algorithms',  'Programming',     45, 2),
     (3, 'Machine Learning Fundamentals', 'AI & Data',       50, 3),
     (4, 'Web Development with React',    'Web Development', 40, 4),
-    (5, 'Database Design & SQL',         'Data',            35, 5);
-
+    (5, 'Database Design & SQL',         'Data',            35, 5),
+    (6, 'Data Analysis' ,                'Data',            30, 2);        
 -- ------------------------------------------------------------
 -- Enrollments
 -- ------------------------------------------------------------
