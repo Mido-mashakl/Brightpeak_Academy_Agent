@@ -25,6 +25,41 @@ from typing import Optional
 
 DOCUMENTS_DIR = Path(__file__).resolve().parent.parent / "documents"
 
+COURSE_MATERIALS_DIR = DOCUMENTS_DIR / "course_materials"
+
+COURSE_METADATA = {
+    "python/basics.md": {
+        "course_id": 1,
+        "course_name": "Introduction to Python",
+        "material_id": 1,
+    },
+    "python/variables.md": {
+        "course_id": 1,
+        "course_name": "Introduction to Python",
+        "material_id": 2,
+    },
+    "python/functions.md": {
+        "course_id": 1,
+        "course_name": "Introduction to Python",
+        "material_id": 3,
+    },
+    "data_structures/arrays.md": {
+        "course_id": 2,
+        "course_name": "Data Structures & Algorithms",
+        "material_id": 4,
+    },
+    "data_structures/linked_lists.md": {
+        "course_id": 2,
+        "course_name": "Data Structures & Algorithms",
+        "material_id": 5,
+    },
+    "data_structures/stacks.md": {
+        "course_id": 2,
+        "course_name": "Data Structures & Algorithms",
+        "material_id": 6,
+    },
+}
+
 
 @dataclass
 class Chunk:
@@ -139,6 +174,8 @@ def _chunk_text(text: str, max_chars: int = 900, overlap: int = 120) -> list[str
 
 def chunk_document(path: Path) -> list[Chunk]:
     raw = path.read_text(encoding="utf-8")
+    relative_path = path.relative_to(DOCUMENTS_DIR).as_posix()
+    course_meta = COURSE_METADATA.get(relative_path)
     header_meta = _extract_header_meta(raw)
     document_id = header_meta.get("document_id", path.stem)
     document_title = header_meta.get("document_title", path.stem)
@@ -162,7 +199,11 @@ def chunk_document(path: Path) -> list[Chunk]:
                     section=section_heading,
                     category=category,
                     last_reviewed=last_reviewed,
-                    metadata={"source_file": path.name},
+                    metadata={
+    "source_file": str(path.relative_to(DOCUMENTS_DIR)),
+    "content_type": "course_material" if course_meta else "policy",
+    **(course_meta or {}),
+},
                 )
             )
             idx += 1
