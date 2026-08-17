@@ -121,6 +121,34 @@ CREATE TABLE IF NOT EXISTS Policies (
     content         TEXT NOT NULL
 );
 
+-- ------------------------------------------------------------
+-- CourseMaterials 
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS CourseMaterials (
+    material_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    course_id       INTEGER NOT NULL,
+    title           TEXT NOT NULL,
+    description     TEXT,
+    material_type   TEXT NOT NULL
+                        CHECK (material_type IN ('lecture', 'chapter', 'reading', 'exercise')),
+    source_file     TEXT NOT NULL,                         
+    created_at      TEXT NOT NULL DEFAULT (DATETIME('now')),
+    updated_at      TEXT NOT NULL DEFAULT (DATETIME('now')),
+    FOREIGN KEY (course_id) REFERENCES Courses(course_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    UNIQUE (course_id, source_file)
+);
+
+
+CREATE TRIGGER IF NOT EXISTS trg_course_materials_updated_at
+AFTER UPDATE ON CourseMaterials
+FOR EACH ROW
+BEGIN
+    UPDATE CourseMaterials
+    SET updated_at = DATETIME('now')
+    WHERE material_id = NEW.material_id;
+END;
 -- ============================================================
 -- Indexes for common lookups
 -- ============================================================
@@ -133,3 +161,4 @@ CREATE INDEX IF NOT EXISTS idx_grades_assignment          ON Grades(assignment_i
 CREATE INDEX IF NOT EXISTS idx_grades_graded_by           ON Grades(graded_by);
 CREATE INDEX IF NOT EXISTS idx_attendance_student         ON Attendance(student_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_course          ON Attendance(course_id);
+CREATE INDEX IF NOT EXISTS idx_course_materials_course    ON CourseMaterials(course_id);
