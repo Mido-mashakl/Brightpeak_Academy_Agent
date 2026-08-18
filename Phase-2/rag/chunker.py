@@ -28,32 +28,32 @@ DOCUMENTS_DIR = Path(__file__).resolve().parent.parent / "documents"
 COURSE_MATERIALS_DIR = DOCUMENTS_DIR / "course_materials"
 
 COURSE_METADATA = {
-    "python/basics.md": {
+    "course_materials/python/basics.md": {
         "course_id": 1,
         "course_name": "Introduction to Python",
         "material_id": 1,
     },
-    "python/variables.md": {
+    "course_materials/python/variables.md": {
         "course_id": 1,
         "course_name": "Introduction to Python",
         "material_id": 2,
     },
-    "python/functions.md": {
+    "course_materials/python/functions.md": {
         "course_id": 1,
         "course_name": "Introduction to Python",
         "material_id": 3,
     },
-    "data_structures/arrays.md": {
+    "course_materials/data_structures/arrays.md": {
         "course_id": 2,
         "course_name": "Data Structures & Algorithms",
         "material_id": 4,
     },
-    "data_structures/linked_lists.md": {
+    "course_materials/data_structures/linked_lists.md": {
         "course_id": 2,
         "course_name": "Data Structures & Algorithms",
         "material_id": 5,
     },
-    "data_structures/stacks.md": {
+    "course_materials/data_structures/stacks.md": {
         "course_id": 2,
         "course_name": "Data Structures & Algorithms",
         "material_id": 6,
@@ -213,7 +213,7 @@ def chunk_document(path: Path) -> list[Chunk]:
 def chunk_all_documents(docs_dir: Path | None = None) -> list[Chunk]:
     docs_dir = docs_dir or DOCUMENTS_DIR
     chunks: list[Chunk] = []
-    for path in sorted(docs_dir.glob("*.md")):
+    for path in sorted(docs_dir.rglob("*.md")):
         chunks.extend(chunk_document(path))
     return chunks
 
