@@ -1,18 +1,17 @@
-# Retrieval Architecture Comparison
+# Retrieval Evaluation — Legacy + Course Material
 
-| Architecture | Accuracy (12 questions) | Avg tokens/query | Avg latency/query |
-|---|---|---|---|
-| naive_rag | 86% | 469 | 0.002s |
-| hybrid_rag | 89% | 492 | 0.003s |
-| agentic_rag | 89% | 404 | 0.005s |
-| graph_rag | 40% | 435 | 0.067s |
+The benchmark keeps the original 12 policy questions and adds 50 course-material cases: grounded, wrong-course, and out-of-scope refusal tests.
 
-## Decision
+| Architecture | Overall | Policy | Course Hit@5 | Course MRR | Course Isolation | Negative Refusal | Avg Latency |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| naive | 86% | 100% | 97% | 0.926 | 100% | 43% | 0.001s |
+| hybrid | 84% | 100% | 100% | 0.958 | 100% | 29% | 0.005s |
+| agentic | 82% | 92% | 100% | 0.958 | 100% | 29% | 0.007s |
+| graph | 66% | 50% | 83% | 0.806 | 83% | 36% | 0.005s |
 
-Based on the numbers and Brightpeak's real query patterns
-(live advisory calls dominated by quick citation and general
-policy questions, with occasional multi-part eligibility questions):
+## Acceptance criteria
 
-- **Default: Hybrid Search** — best accuracy/latency trade-off for citation and general questions.
-- **Route multi-part questions to Agentic RAG** when the query needs decomposition.
-- Graph RAG is retained as a bonus path for relationship-heavy questions.
+- A grounded course question should retrieve at least one expected source.
+- Every course result must stay inside the requested `course_id` and `content_type=course_material`.
+- Wrong-course and out-of-scope cases should be rejected by Self-RAG; the teaching agent must not answer from general knowledge.
+- The original policy benchmark remains part of the same evaluation so regressions are visible.
