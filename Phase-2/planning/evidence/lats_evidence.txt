@@ -1,0 +1,16 @@
+======================================================================
+LATS TEST (real Gemini calls, iterations=1, n_actions=1)
+======================================================================
+
+Instruction:
+Given Student 2's attendance (68%, below the 75% policy floor) and current grades, propose the final intervention recommendation the advisor should act on: warn, escalate, or offer a scholarship-linked support plan.
+
+======================================================================
+RESULT
+======================================================================
+success: True
+output: Issue a formal warning to Student 2 regarding their 68% attendance, which is below the 75% policy floor, and the lack of academic attempt, outlining potential consequences.
+best_score: 1.0
+iterations run: 1
+
+Latency (s): 4.4523

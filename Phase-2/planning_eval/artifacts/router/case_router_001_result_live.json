@@ -1,0 +1,35 @@
+{
+  "classify_task": [
+    {
+      "case": "case_ps_001",
+      "instruction": "Using only the enrollment records already retrieved for Student 2, write a one-paragraph summary of the student's current course load (active vs completed vs dropped).",
+      "routed_to": "plan_and_solve",
+      "reason": "No branching/ranking/high-stakes-recommendation signal found; treated as a single deterministic reasoning chain. Plan-and-Solve is the cheapest method that fits."
+    },
+    {
+      "case": "case_tot_001",
+      "instruction": "Rank Student 2's three overdue assignments by urgency, considering deadline distance, course weight, and current grade impact, before the advisor decides which ones to flag first.",
+      "routed_to": "tree_of_thoughts",
+      "reason": "Instruction contains 'rank': several distinct orderings/framings are plausible and worth comparing before committing, but a wrong pick here is cheap to redo, so self-evaluated lookahead (ToT) is sufficient without paying for a grounded environment call."
+    },
+    {
+      "case": "case_lats_001",
+      "instruction": "Make the final decision on whether Student 3 (Mariam Nabil) is eligible for Brightpeak Academy's scholarship. Under the Scholarship Policy, a student is eligible only if their overall average across all recorded assignment grades is strictly above 90%. Give one short sentence of reasoning, then output the decision as a JSON object with no extra keys, in exactly this form: {\"student_id\": 3, \"decision\": \"eligible\"} or {\"student_id\": 3, \"decision\": \"not_eligible\"}.",
+      "routed_to": "lats",
+      "reason": "Instruction contains 'final decision': this sub-task produces the recommendation that actually ships to a student/advisor, so a wrong output has a real cost. Routed to LATS to use grounded external feedback instead of the model's own opinion of itself."
+    }
+  ],
+  "route_and_solve": {
+    "plan_and_solve": {
+      "provider": "ChatGoogleGenerativeAI (real call)",
+      "latency_s": 9.5356,
+      "envelope": {
+        "method": "plan_and_solve",
+        "reason": "No branching/ranking/high-stakes-recommendation signal found; treated as a single deterministic reasoning chain. Plan-and-Solve is the cheapest method that fits.",
+        "result": "## PLAN\n\n1.  **Access Enrollment Records:** Retrieve the enrollment records specifically for Student 2. (Assuming these records are available as a list of dictionaries or similar structure, with a 'status' field for each course).\n2.  **Categorize Courses:** Iterate through each course in Student 2's enrollment records.\n    *   Identify courses with a 'status' indicating they are currently in progress (e.g., \"active\", \"enrolled\").\n    *   Identify courses with a 'status' indicating they have been successfully finished (e.g., \"completed\", \"passed\").\n    *   Identify courses with a 'status' indicating they were discontinued (e.g., \"dropped\", \"withdrawn\").\n3.  **Count Categories:** Keep a running tally for the number of active, completed, and dropped courses.\n4.  **Synthesize Summary:** Combine the counts into a single, concise paragraph summarizing Student 2's course load across these three categories.\n\n## SOLUTION\n\nBased on the enrollment records retrieved for Student 2 (assuming the following example data structure and content for demonstration purposes):\n\n```json\n[\n    {\"course_id\": \"CS101\", \"course_name\": \"Introduction to Computer Science\", \"status\": \"completed\", \"grade\": \"A-\", \"semester\": \"Fall 2023\"},\n    {\"course_id\": \"MA101\", \"course_name\": \"Calculus I\", \"status\": \"completed\", \"grade\": \"B+\", \"semester\": \"Fall 2023\"},\n    {\"course_id\": \"EN101\", \"course_name\": \"English Composition\", \"status\": \"active\", \"semester\": \"Spring 2024\"},\n    {\"course_id\": \"HI201\", \"course_name\": \"World History II\", \"status\": \"active\", \"semester\": \"Spring 2024\"},\n    {\"course_id\": \"PH101\", \"course_name\": \"Introduction to Philosophy\", \"status\": \"dropped\", \"semester\": \"Spring 2024\"},\n    {\"course_id\": \"SP101\", \"course_name\": \"Spanish I\", \"status\": \"active\", \"semester\": \"Spring 2024\"}\n]\n```\n\n**Step-by-step execution:**\n\n1.  **Initialize counters:**\n    *   `active_courses = 0`\n    *   `completed_courses = 0`\n    *   `dropped_courses = 0`\n\n2.  **Process records:**\n    *   `CS101`: status \"completed\" -> `completed_courses = 1`\n    *   `MA101`: status \"completed\" -> `completed_courses = 2`\n    *   `EN101`: status \"active\" -> `active_courses = 1`\n    *   `HI201`: status \"active\" -> `active_courses = 2`\n    *   `PH101`: status \"dropped\" -> `dropped_courses = 1`\n    *   `SP101`: status \"active\" -> `active_courses = 3`\n\n3.  **Final Counts:**\n    *   Active: 3\n    *   Completed: 2\n    *   Dropped: 1\n\n**Summary Paragraph:**\n\nStudent 2's current course load consists of three active courses, two completed courses, and one dropped course."
+      }
+    },
+    "lats_guard_raised": true
+  },
+  "note": "ToT/LATS real dispatch through the router are exercised in test_tree_of_thoughts.py / test_lats.py, not duplicated here."
+}

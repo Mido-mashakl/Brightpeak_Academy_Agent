@@ -11,3 +11,9 @@ mcp_server/__pycache__/validation.cpython-310.pyc
 # Python cache
 __pycache__/
 *.py[cod]
+# Local environment
+.env
+
+# Local/unwanted files
+rag/grounded_reflect.py
+task_decomposition_and_planning/

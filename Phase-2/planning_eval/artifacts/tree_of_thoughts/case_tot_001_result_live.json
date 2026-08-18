@@ -1,0 +1,16 @@
+{
+  "case": "case_tot_001",
+  "method": "tree_of_thoughts",
+  "provider": "ChatGoogleGenerativeAI (real call)",
+  "instruction": "Rank Student 2's three overdue assignments by urgency, considering deadline distance, course weight, and current grade impact, before the advisor decides which ones to flag first.",
+  "depth": 1,
+  "beam_width": 1,
+  "latency_s": 21.6933,
+  "final_frontier": [
+    {
+      "state": "Establish a scoring framework or weighting system for 'urgency' based on the three criteria: deadline proximity, course importance (weight), and potential grade improvement/impact.",
+      "score": 1.0,
+      "rationale": "The candidate path directly addresses the core mechanism required to solve the problem: defining 'urgency' based on the specified criteria. Establishing a scoring framework or weighting system is a correct, feasible, and essential first step to enable the ranking of assignments by urgency. It makes significant progress towards the solution by laying the necessary foundation."
+    }
+  ]
+}
