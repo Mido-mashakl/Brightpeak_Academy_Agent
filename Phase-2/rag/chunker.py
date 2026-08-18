@@ -204,6 +204,7 @@ class Chunk:
     document_title: str
     section: str
     category: str
+    content_type: str = "policy"
     last_reviewed: Optional[str] = None
     metadata: dict = field(default_factory=dict)
 
