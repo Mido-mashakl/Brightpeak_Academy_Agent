@@ -1,37 +1,27 @@
 """
 Brightpeak Academy — RAG Ingestion Pipeline
 ============================================
-
 One-shot (or re-runnable) pipeline:
   documents/*.md  →  chunker  →  VectorStore.upsert
-
 Run:
     python -m rag.ingestion
 or:
     python rag/ingestion.py
 """
-
 from __future__ import annotations
-
 import sys
 from pathlib import Path
-
 RAG_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(RAG_DIR))
-
 from chunker import chunk_all_documents  # noqa: E402
 from vector_db import VectorStore  # noqa: E402
-
-
 def ingest(reset: bool = True) -> VectorStore:
     store = VectorStore()
     if reset:
         store.reset()
-
     chunks = chunk_all_documents()
     if not chunks:
         raise RuntimeError("No chunks produced — check documents/ folder")
-
     store.upsert(
         ids=[c.chunk_id for c in chunks],
         documents=[c.text for c in chunks],
@@ -43,13 +33,15 @@ def ingest(reset: bool = True) -> VectorStore:
                 "category": c.category,
                 "last_reviewed": c.last_reviewed or "",
                 "source_file": c.metadata.get("source_file", ""),
+                "content_type": c.metadata.get("content_type", "policy"),
+                "course_id": c.metadata.get("course_id", ""),
+                "course_name": c.metadata.get("course_name", ""),
+                "material_id": c.metadata.get("material_id", ""),
             }
             for c in chunks
         ],
     )
     print(f"[ingestion] Indexed {store.count()} chunks from {len({c.document_id for c in chunks})} documents")
     return store
-
-
 if __name__ == "__main__":
     ingest(reset=True)
