@@ -123,8 +123,33 @@ class HybridRAG:
             blocks.append(f"[{i}] ({source}, hybrid_score={h['score']:.3f})\n{h['document']}")
         return "\n\n".join(blocks)
 
-    def answer_prompt(self, query: str, hits: list[dict]) -> str:
+    def answer_prompt(
+        self,
+        query: str,
+        hits: list[dict],
+        content_type: str = "policy",
+    ) -> str:
         context = self.format_context(hits)
+
+        if content_type == "course_material":
+            return (
+                "You are the Brightpeak Academy teaching assistant. "
+                "Answer the student's question using ONLY the retrieved "
+                "course material below. "
+                "Explain the concept clearly and simply, especially for "
+                "beginner students. "
+                "Use examples only when they are supported by the course "
+                "material. "
+                "Do not invent information that is not present in the "
+                "retrieved material. "
+                "If the material does not contain enough information to "
+                "answer the question, say so clearly. "
+                "Cite the document title and section when possible.\n\n"
+                f"Course material passages:\n{context}\n\n"
+                f"Student question: {query}\n\n"
+                "Answer:"
+            )
+
         return (
             "You are the Brightpeak Academy academic assistant. "
             "Answer the user's question using ONLY the policy passages below. "
@@ -134,7 +159,6 @@ class HybridRAG:
             f"Question: {query}\n\n"
             "Answer:"
         )
-
     def run(self, query: str, where: dict | None = None) -> dict[str, Any]:
         hits = self.retrieve(query, where=where)
         return {
