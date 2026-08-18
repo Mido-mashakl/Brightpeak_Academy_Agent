@@ -58,6 +58,141 @@ COURSE_METADATA = {
         "course_name": "Data Structures & Algorithms",
         "material_id": 6,
     },
+    "course_materials/machine_learning/introduction.md": {
+        "course_id": 3,
+        "course_name": "Machine Learning Fundamentals",
+        "material_id": 7,
+    },
+    "course_materials/machine_learning/linear_regression.md": {
+        "course_id": 3,
+        "course_name": "Machine Learning Fundamentals",
+        "material_id": 8,
+    },
+    "course_materials/machine_learning/classification.md": {
+        "course_id": 3,
+        "course_name": "Machine Learning Fundamentals",
+        "material_id": 9,
+    },
+    "course_materials/react/components.md": {
+        "course_id": 4,
+        "course_name": "Web Development with React",
+        "material_id": 10,
+    },
+    "course_materials/react/state_props.md": {
+        "course_id": 4,
+        "course_name": "Web Development with React",
+        "material_id": 11,
+    },
+    "course_materials/react/hooks.md": {
+        "course_id": 4,
+        "course_name": "Web Development with React",
+        "material_id": 12,
+    },
+    "course_materials/sql/basics.md": {
+        "course_id": 5,
+        "course_name": "Database Design & SQL",
+        "material_id": 13,
+    },
+    "course_materials/sql/joins.md": {
+        "course_id": 5,
+        "course_name": "Database Design & SQL",
+        "material_id": 14,
+    },
+    "course_materials/sql/schema_design.md": {
+        "course_id": 5,
+        "course_name": "Database Design & SQL",
+        "material_id": 15,
+    },
+    "course_materials/python_advanced/oop.md": {
+        "course_id": 6,
+        "course_name": "Advanced Python & OOP",
+        "material_id": 16,
+    },
+    "course_materials/python_advanced/decorators_generators.md": {
+        "course_id": 6,
+        "course_name": "Advanced Python & OOP",
+        "material_id": 17,
+    },
+    "course_materials/python_advanced/error_handling.md": {
+        "course_id": 6,
+        "course_name": "Advanced Python & OOP",
+        "material_id": 18,
+    },
+    "course_materials/nodejs/introduction.md": {
+        "course_id": 7,
+        "course_name": "Node.js & Backend Development",
+        "material_id": 19,
+    },
+    "course_materials/nodejs/express_basics.md": {
+        "course_id": 7,
+        "course_name": "Node.js & Backend Development",
+        "material_id": 20,
+    },
+    "course_materials/nodejs/rest_apis.md": {
+        "course_id": 7,
+        "course_name": "Node.js & Backend Development",
+        "material_id": 21,
+    },
+    "course_materials/cloud/basics.md": {
+        "course_id": 8,
+        "course_name": "Cloud Computing Fundamentals",
+        "material_id": 22,
+    },
+    "course_materials/cloud/aws_fundamentals.md": {
+        "course_id": 8,
+        "course_name": "Cloud Computing Fundamentals",
+        "material_id": 23,
+    },
+    "course_materials/cloud/deployment.md": {
+        "course_id": 8,
+        "course_name": "Cloud Computing Fundamentals",
+        "material_id": 24,
+    },
+    "course_materials/cybersecurity/introduction.md": {
+        "course_id": 9,
+        "course_name": "Cybersecurity Essentials",
+        "material_id": 25,
+    },
+    "course_materials/cybersecurity/network_security.md": {
+        "course_id": 9,
+        "course_name": "Cybersecurity Essentials",
+        "material_id": 26,
+    },
+    "course_materials/cybersecurity/attack_vectors.md": {
+        "course_id": 9,
+        "course_name": "Cybersecurity Essentials",
+        "material_id": 27,
+    },
+    "course_materials/data_visualization/introduction.md": {
+        "course_id": 10,
+        "course_name": "Data Visualization with Python",
+        "material_id": 28,
+    },
+    "course_materials/data_visualization/matplotlib.md": {
+        "course_id": 10,
+        "course_name": "Data Visualization with Python",
+        "material_id": 29,
+    },
+    "course_materials/data_visualization/dashboards.md": {
+        "course_id": 10,
+        "course_name": "Data Visualization with Python",
+        "material_id": 30,
+    },
+    "course_materials/flutter/introduction.md": {
+        "course_id": 11,
+        "course_name": "Mobile App Development with Flutter",
+        "material_id": 31,
+    },
+    "course_materials/flutter/widgets_layouts.md": {
+        "course_id": 11,
+        "course_name": "Mobile App Development with Flutter",
+        "material_id": 32,
+    },
+    "course_materials/flutter/state_management.md": {
+        "course_id": 11,
+        "course_name": "Mobile App Development with Flutter",
+        "material_id": 33,
+    },
 }
 
 
@@ -177,7 +312,13 @@ def chunk_document(path: Path) -> list[Chunk]:
     relative_path = path.relative_to(DOCUMENTS_DIR).as_posix()
     course_meta = COURSE_METADATA.get(relative_path)
     header_meta = _extract_header_meta(raw)
-    document_id = header_meta.get("document_id", path.stem)
+    # Fallback document_id must be derived from the full relative path, not
+    # just the filename stem: several course_materials files share a stem
+    # across courses (e.g. "basics.md" in python/, sql/, cloud/; or
+    # "introduction.md" in machine_learning/, nodejs/, cybersecurity/,
+    # data_visualization/, flutter/). Policy docs are unaffected since they
+    # always carry an explicit "**Document ID:**" header.
+    document_id = header_meta.get("document_id", relative_path.rsplit(".", 1)[0].replace("/", "-"))
     document_title = header_meta.get("document_title", path.stem)
     category = header_meta.get("category", "General")
     last_reviewed = header_meta.get("last_reviewed")
