@@ -1,4 +1,4 @@
-````markdown
+
 # Python Variables and Data Types
 
 ## Learning Objectives
@@ -275,6 +275,3 @@ Variables provide names that allow programs to store and work with values. Pytho
 Important built-in data types include `int`, `float`, `str`, and `bool`. The `type()` function can be used to inspect the type of a value, while functions such as `int()`, `float()`, and `str()` can be used for type conversion.
 
 Understanding variables and data types is essential before studying control flow, functions, data structures, and more advanced Python programming concepts.
-
-```
-```

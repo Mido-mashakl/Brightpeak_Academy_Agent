@@ -1,4 +1,4 @@
-````markdown
+
 # Python Functions
 ## Learning Objectives
 By the end of this material, students should be able to:

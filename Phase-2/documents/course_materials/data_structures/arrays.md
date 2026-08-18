@@ -1,4 +1,4 @@
-````markdown
+
 # Arrays and Lists in Python
 ## Learning Objectives
 By the end of this material, students should be able to:

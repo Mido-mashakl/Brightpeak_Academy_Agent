@@ -1,4 +1,4 @@
-````markdown
+
 # Introduction to Python
 
 ## Course Overview
@@ -195,6 +195,3 @@ Type conversion is especially important when working with values received from `
 The fundamental concepts introduced in this material include variables, assignment, common data types, input and output, arithmetic operations, Boolean expressions, comments, naming conventions, and type conversion.
 
 Students should be comfortable with these concepts before progressing to control flow, functions, collections, and object-oriented programming.
-
-```
-```
