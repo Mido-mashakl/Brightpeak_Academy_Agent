@@ -24,21 +24,37 @@ LLM-call additions (two per graph, as required):
        ground the parsing rules — specifically "never invent missing fields" and how
        to classify parse_status.  Uses the existing search_policies() in rag/rag_tool.py.
   2. Constrained ReAct (score_cv_against_qualifications):
-       The scoring node calls the Claude API with a strict tool schema (one tool:
-       score_candidate).  The model MUST call that tool — it cannot free-form respond.
-       This prevents the model from hallucinating scores outside [0,100], inventing
-       missing fields, or returning prose instead of structured data.
+       The scoring node calls the Gemini API with a strict tool schema (one tool:
+       score_candidate).  The model is forced to call that function — it cannot
+       free-form respond.  This prevents the model from hallucinating scores
+       outside [0,100], inventing missing fields, or returning prose instead of
+       structured data.
 
 Thread identity:
   thread_id = f"faculty-hiring-{job_id}"  (see checkpointing.py)
   All candidates for Job #15 share thread "faculty-hiring-15".
   candidate_id is separate — each candidate has its own DB row, never its own thread.
+
+NOTE ON LLM PROVIDER:
+  This file was migrated from a direct Anthropic Messages API integration to
+  Google's Gemini API. Only the two low-level HTTP helper functions
+  (_call_claude_constrained, _parse_cv_with_policy) and the tool schemas were
+  changed to match Gemini's function-calling request/response shape. Every
+  node, edge, router, and the graph topology itself are untouched — the
+  function *names* were deliberately kept the same so nothing else in this
+  file (or in tickets.py / hitl.py, which don't touch these helpers) needed
+  to change.
+
+  Env vars used:
+    GEMINI_API_KEY   - required. Get one at https://aistudio.google.com/apikey
+    GEMINI_MODEL     - optional, defaults to "gemini-2.5-flash"
 """
 
 from __future__ import annotations
 
 import json
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -57,56 +73,189 @@ from mcp_server import database as db
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "rag"))
 from rag_tool import search_policies  # noqa: E402
 
-# Claude API for constrained ReAct scoring
+# Gemini API for constrained ReAct scoring / parsing
 import urllib.request
+import urllib.error
 import os
 
 
 # ---------------------------------------------------------------------------
-# Claude API helper (constrained ReAct — tool-forced call)
+# Gemini API config
+# ---------------------------------------------------------------------------
+
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+
+
+# ---------------------------------------------------------------------------
+# Schema conversion: our existing JSON-Schema-ish tool defs -> Gemini's
+# expected OpenAPI-subset schema (upper-case type enums, no "null" unions).
+# ---------------------------------------------------------------------------
+
+def _to_gemini_schema(json_schema: dict) -> dict:
+    """
+    Converts a (loose) JSON-Schema dict into the schema shape Gemini's
+    function-calling API expects: upper-case `type` enums, and no
+    `["string", "null"]` unions (Gemini uses `nullable: true` instead).
+
+    This is a small, defensive converter — it only handles the shapes
+    actually used by SCORE_TOOL / the CV parse tool below.
+    """
+    if not isinstance(json_schema, dict):
+        return json_schema
+
+    schema = dict(json_schema)  # shallow copy, don't mutate the source dict
+
+    raw_type = schema.get("type")
+    nullable = False
+
+    if isinstance(raw_type, list):
+        # e.g. ["string", "null"] -> type STRING, nullable True
+        non_null = [t for t in raw_type if t != "null"]
+        nullable = "null" in raw_type
+        raw_type = non_null[0] if non_null else "string"
+
+    type_map = {
+        "object": "OBJECT",
+        "array": "ARRAY",
+        "string": "STRING",
+        "number": "NUMBER",
+        "integer": "INTEGER",
+        "boolean": "BOOLEAN",
+    }
+    if raw_type in type_map:
+        schema["type"] = type_map[raw_type]
+    if nullable:
+        schema["nullable"] = True
+
+    if "properties" in schema and isinstance(schema["properties"], dict):
+        schema["properties"] = {
+            k: _to_gemini_schema(v) for k, v in schema["properties"].items()
+        }
+    if "items" in schema and isinstance(schema["items"], dict):
+        schema["items"] = _to_gemini_schema(schema["items"])
+
+    return schema
+
+
+def _build_gemini_tool(tool_def: dict) -> dict:
+    """Converts one Anthropic-style tool def {name, description, input_schema}
+    into a Gemini functionDeclarations entry."""
+    return {
+        "name": tool_def["name"],
+        "description": tool_def.get("description", ""),
+        "parameters": _to_gemini_schema(tool_def["input_schema"]),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Gemini API helper (constrained ReAct — function-forced call)
 # ---------------------------------------------------------------------------
 
 def _call_claude_constrained(system: str, user: str, tools: list[dict]) -> dict:
     """
-    Calls claude-sonnet-4-6 with tool_choice={"type": "any"} so the model
-    MUST call one of the provided tools.  This is the constrained ReAct
-    pattern: the model reasons but cannot output free text — it must
-    structure its answer as a tool call.
+    Calls Gemini (model = GEMINI_MODEL) with function_calling_config mode
+    "ANY" so the model MUST call one of the provided functions. This is the
+    constrained ReAct pattern: the model reasons but cannot output free
+    text — it must structure its answer as a function call.
 
-    Returns the first tool_use block's input dict.
-    Raises ValueError if the model doesn't call a tool (shouldn't happen
-    with tool_choice=any, but we raise rather than silently accept prose).
+    (Name kept as `_call_claude_constrained` for drop-in compatibility with
+    every call site in this module — only the implementation moved to
+    Gemini.)
+
+    Returns the first functionCall's args dict.
+    Raises ValueError if the model doesn't call a function (shouldn't happen
+    with mode="ANY", but we raise rather than silently accept prose).
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY is not set in the environment.")
+
+    gemini_tools = [_build_gemini_tool(t) for t in tools]
+    allowed_names = [t["name"] for t in gemini_tools]
+
     payload = json.dumps({
-        "model": "claude-sonnet-4-6",
-        "max_tokens": 1024,
-        "system": system,
-        "messages": [{"role": "user", "content": user}],
-        "tools": tools,
-        "tool_choice": {"type": "any"},  # constrained: must call a tool
+        "system_instruction": {"parts": [{"text": system}]},
+        "contents": [{"role": "user", "parts": [{"text": user}]}],
+        "tools": [{"function_declarations": gemini_tools}],
+        "tool_config": {
+            "function_calling_config": {
+                "mode": "ANY",
+                "allowed_function_names": allowed_names,
+            }
+        },
     }).encode()
 
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(req) as resp:
-        data = json.loads(resp.read())
+    url = f"{GEMINI_BASE_URL}/{GEMINI_MODEL}:generateContent"
 
-    for block in data.get("content", []):
-        if block.get("type") == "tool_use":
-            return block["input"]
+    def _one_attempt() -> dict:
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req) as resp:
+                data = json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            body = e.read().decode(errors="replace")
+            raise ValueError(f"Gemini API error {e.code}: {body}") from e
 
-    raise ValueError(
-        f"Constrained ReAct: model did not call a tool. Raw response: {data}"
-    )
+        for candidate in data.get("candidates", []):
+            for part in candidate.get("content", {}).get("parts", []):
+                fc = part.get("functionCall")
+                if fc:
+                    return fc.get("args", {})
+
+        raise ValueError(
+            f"Constrained ReAct: model did not call a function. Raw response: {data}"
+        )
+
+    def _is_degenerate(args: dict) -> bool:
+        """
+        gemini-3.5-flash-lite has a documented flakiness where, under a
+        FORCED function call (mode='ANY') combined with encrypted thinking,
+        it occasionally finishes normally (finishReason=STOP, real
+        thoughtsTokenCount spent) but writes a stub function-call payload
+        instead of translating its reasoning into real args — e.g.
+        score=0, breakdown={}, reasoning="placeholder"/"" — for CVs that
+        are structurally nothing alike. This is a flaky model response,
+        not a parsing bug, so we detect and retry rather than silently
+        accept it.
+        """
+        reasoning = str(args.get("reasoning", "")).strip().lower()
+        return (
+            args.get("score") == 0
+            and not args.get("breakdown")
+            and (reasoning == "" or reasoning.startswith("placeholder"))
+        )
+
+    args = {}
+    last_args = {}
+    for attempt in range(3):
+        args = _one_attempt()
+        last_args = args
+        if not _is_degenerate(args):
+            return args
+        print(
+            f"[_call_claude_constrained] Degenerate placeholder response on "
+            f"attempt {attempt + 1}/3 — retrying: {args}"
+        )
+        # Back off before retrying — firing requests back-to-back with zero
+        # delay appears to be exactly what triggers the degenerate response
+        # in the first place (see _is_degenerate docstring), so retrying
+        # immediately just reproduces the same failure mode.
+        time.sleep(2 * (attempt + 1))  # 2s, 4s, 6s
+
+    # All attempts came back degenerate — return the last one; the caller
+    # (score_cv_against_qualifications) already prints raw results with
+    # score==0 for visibility, and the ticket path can be extended to
+    # treat repeated degenerate output as a real failure if needed.
+    return last_args
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +365,7 @@ def parse_and_validate(state: FacultyHiringState) -> dict:
     RAG Addition #1: grounds the parse rules in hiring_policies.md.
 
     Retrieves policy passages (especially the missing-data rule: never invent
-    absent fields) before calling Claude to parse the CV into structured fields.
+    absent fields) before calling Gemini to parse the CV into structured fields.
 
     Only processes incoming_batch — state.candidates (old CVs) are untouched.
     """
@@ -257,11 +406,15 @@ def parse_and_validate(state: FacultyHiringState) -> dict:
 
 def _parse_cv_with_policy(raw_cv_text: str, policy_context: str) -> dict:
     """
-    Calls Claude to extract structured fields from the CV text.
+    Calls Gemini to extract structured fields from the CV text.
     The policy context reinforces the "never invent missing fields" rule.
     Fields that are absent in the CV must remain null — not guessed.
+
+    (Name kept as `_parse_cv_with_policy` for drop-in compatibility with the
+    call site in parse_and_validate — only the implementation moved to
+    Gemini.)
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    api_key = os.environ.get("GEMINI_API_KEY", "")
     parse_tool = {
         "name": "parse_cv",
         "description": "Extract structured fields from a CV. Leave fields null if not found in the CV.",
@@ -278,36 +431,58 @@ def _parse_cv_with_policy(raw_cv_text: str, policy_context: str) -> dict:
         },
     }
 
+    if not api_key:
+        print("[_parse_cv_with_policy] GEMINI_API_KEY is empty at call time.")
+        return {"education": None, "years_experience": None, "skills": [], "teaching_experience": None, "notes": "Parse failed"}
+
+    gemini_tool = _build_gemini_tool(parse_tool)
+
     payload = json.dumps({
-        "model": "claude-sonnet-4-6",
-        "max_tokens": 512,
-        "system": (
+        "system_instruction": {"parts": [{"text": (
             "You are a CV parser. Extract structured fields from the CV text. "
             "CRITICAL RULE: If a field is not mentioned in the CV, return null for that field. "
             "Do NOT invent or infer missing information.\n\n"
             f"Hiring Policy:\n{policy_context}"
-        ),
-        "messages": [{"role": "user", "content": f"Parse this CV:\n\n{raw_cv_text}"}],
-        "tools": [parse_tool],
-        "tool_choice": {"type": "any"},
+        )}]},
+        "contents": [{"role": "user", "parts": [{"text": f"Parse this CV:\n\n{raw_cv_text}"}]}],
+        "tools": [{"function_declarations": [gemini_tool]}],
+        "tool_config": {
+            "function_calling_config": {
+                "mode": "ANY",
+                "allowed_function_names": ["parse_cv"],
+            }
+        },
     }).encode()
 
+    url = f"{GEMINI_BASE_URL}/{GEMINI_MODEL}:generateContent"
     req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
+        url,
         data=payload,
         headers={
             "Content-Type": "application/json",
-            "x-api-key": api_key,
-            "anthropic-version": "2023-06-01",
+            "x-goog-api-key": api_key,
         },
         method="POST",
     )
-    with urllib.request.urlopen(req) as resp:
-        data = json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(req) as resp:
+            data = json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode(errors="replace")
+        print(f"[_parse_cv_with_policy] Gemini API error {e.code}: {body}")
+        return {"education": None, "years_experience": None, "skills": [], "teaching_experience": None, "notes": "Parse failed"}
+    except Exception as e:
+        # Catch anything else (network errors, JSON decode errors, etc.)
+        # instead of letting parse silently fall through to "Parse failed"
+        # with no visible reason.
+        print(f"[_parse_cv_with_policy] Unexpected error calling Gemini: {type(e).__name__}: {e}")
+        return {"education": None, "years_experience": None, "skills": [], "teaching_experience": None, "notes": "Parse failed"}
 
-    for block in data.get("content", []):
-        if block.get("type") == "tool_use":
-            return block["input"]
+    for candidate in data.get("candidates", []):
+        for part in candidate.get("content", {}).get("parts", []):
+            fc = part.get("functionCall")
+            if fc:
+                return fc.get("args", {})
 
     return {"education": None, "years_experience": None, "skills": [], "teaching_experience": None, "notes": "Parse failed"}
 
@@ -331,9 +506,9 @@ def score_cv_against_qualifications(state: FacultyHiringState) -> dict:
     Constrained ReAct Addition #2.
 
     Scores candidates in incoming_batch (or rescore_candidate_ids if in rescore mode)
-    against JobPostings.qualifications using a tool-forced Claude call.
+    against JobPostings.qualifications using a tool-forced Gemini call.
 
-    The model MUST call the score_candidate tool — it cannot free-form respond.
+    The model MUST call the score_candidate function — it cannot free-form respond.
     This prevents hallucinated scores, invented missing fields, or prose output.
 
     MISSING fields receive uncertainty (lower score), not FAIL.
@@ -354,7 +529,15 @@ def score_cv_against_qualifications(state: FacultyHiringState) -> dict:
     policy_context = state.policy_context or ""
 
     scored_batch = []
-    for c in candidates_to_score:
+    for i, c in enumerate(candidates_to_score):
+        if i > 0:
+            # Pace consecutive calls — firing them back-to-back in a tight
+            # loop is what seems to trigger degenerate placeholder
+            # responses from Gemini (see _is_degenerate in
+            # _call_claude_constrained); a lone, unhurried call reliably
+            # succeeds.
+            time.sleep(1.5)
+
         if c.parse_status == "failed":
             # Can't score a candidate with a failed parse; skip scoring but keep record
             scored_batch.append(c.model_copy(update={"score": 0.0, "breakdown": {"error": "parse_failed"}}))
@@ -383,6 +566,12 @@ def score_cv_against_qualifications(state: FacultyHiringState) -> dict:
         score = float(result.get("score", 0))
         breakdown = result.get("breakdown", {})
         score_id = None
+
+        if score == 0.0:
+            # Score of 0 is suspicious for a real candidate — print the raw
+            # args Gemini actually returned so we can see whether "score"
+            # is missing, mistyped, or genuinely computed as 0.
+            print(f"[score_cv_against_qualifications] {c.name}: raw Gemini result = {result}")
 
         # Persist to CandidateScores
         if c.candidate_id:

@@ -19,10 +19,23 @@ import os
 import sqlite3
 
 from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
+
+from .state import FacultyHiringState, CandidateResult, HiringDecisionRecord, InterviewRecord
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "db", "brightpeak.db")
 
 _checkpointer: SqliteSaver | None = None
+
+# Our own Pydantic models get stored in checkpoints (FacultyHiringState nests
+# CandidateResult, HiringDecisionRecord, InterviewRecord). Newer
+# langgraph-checkpoint versions warn — and will eventually refuse — to
+# deserialize "unregistered" types via msgpack unless explicitly allowlisted.
+# Passing the classes themselves (not raw tuples) matches exactly the
+# (module, qualname) pair the deserializer checks against.
+_ALLOWED_MSGPACK_MODULES = [
+    FacultyHiringState, CandidateResult, HiringDecisionRecord, InterviewRecord,
+]
 
 
 def get_checkpointer() -> SqliteSaver:
@@ -34,7 +47,10 @@ def get_checkpointer() -> SqliteSaver:
     global _checkpointer
     if _checkpointer is None:
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        _checkpointer = SqliteSaver(conn)
+        serde = JsonPlusSerializer(allowed_msgpack_modules=_ALLOWED_MSGPACK_MODULES)
+        _checkpointer = SqliteSaver(conn, serde=serde)
+        _checkpointer.setup()  # creates the checkpointer's own tables (checkpoints, writes)
+                                # on first use — without this, the first checkpoint write fails.
     return _checkpointer
 
 

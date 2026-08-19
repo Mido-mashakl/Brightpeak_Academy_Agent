@@ -88,6 +88,20 @@ def get_instructor(instructor_id: int):
     return _row(row)
 
 
+def get_dept_head(dept_head_id: int):
+    """Faculty Hiring HITL reviewer identity (see roles.py: _authenticate_dept_head)."""
+    with _conn() as con:
+        row = con.execute(
+            """
+            SELECT dept_head_id, name, email, department
+            FROM DeptHeads
+            WHERE dept_head_id = ?
+            """,
+            (dept_head_id,),
+        ).fetchone()
+    return _row(row)
+
+
 # -----------------------------------------------------------------------
 # READ — Courses & Assignments
 # -----------------------------------------------------------------------

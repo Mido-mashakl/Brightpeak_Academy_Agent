@@ -74,11 +74,13 @@ class _Session:
 
     role: RoleType = "guest"
     instructor_id: int | None = None
+    dept_head_id: int | None = None
 
     def reset(self) -> None:
         """Drop back to unauthenticated guest state."""
         self.role = "guest"
         self.instructor_id = None
+        self.dept_head_id = None
 
 
 # Module-level singleton — imported as `roles.SESSION` everywhere.
@@ -92,15 +94,18 @@ SESSION = _Session()
 def authenticate(
     role: str,
     instructor_id: int | None = None,
+    dept_head_id: int | None = None,
     passcode: str | None = None,
 ) -> tuple[bool, str]:
     """Verify credentials and, on success, update SESSION.
 
     Args:
-        role:          'instructor' or 'registrar'.
+        role:          'instructor', 'registrar', or 'dept_head'.
         instructor_id: required when role == 'instructor'.
                        Must be a positive integer that exists in the DB.
-        passcode:      required when role == 'registrar'.
+        dept_head_id:  required when role == 'dept_head'.
+                       Must be a positive integer that exists in DeptHeads.
+        passcode:      required when role == 'registrar' or 'dept_head'.
 
     Returns:
         (success, message) — message is shown to the caller.
@@ -110,7 +115,7 @@ def authenticate(
     if role == "registrar":
         return _authenticate_registrar(passcode)
     if role == "dept_head":
-        return _authenticate_dept_head(passcode)
+        return _authenticate_dept_head(dept_head_id, passcode)
     return False, f"Unknown role '{role}'. Use 'instructor', 'registrar', or 'dept_head'."
 
 
@@ -121,7 +126,13 @@ def _authenticate_instructor(instructor_id: int | None) -> tuple[bool, str]:
         return False, "instructor_id must be a positive integer."
 
     # Verify the instructor exists in the database.
-    import database as db  # local import to avoid circular dependency at module load
+    # Package-qualified import (not a bare `import database`): this makes
+    # the import resolve correctly no matter how roles.py itself was
+    # imported (e.g. `from mcp_server import roles` from outside the
+    # mcp_server/ folder, as state_graph/faculty_hiring's demo/platform
+    # code does) — it no longer depends on mcp_server/ happening to be
+    # directly on sys.path.
+    from mcp_server import database as db
 
     instructor = db.get_instructor(instructor_id)
     if instructor is None:
@@ -149,10 +160,19 @@ def _authenticate_registrar(passcode: str | None) -> tuple[bool, str]:
     return True, "Authenticated as registrar."
 
 
-def _authenticate_dept_head(passcode: str | None) -> tuple[bool, str]:
-    """Faculty Hiring HITL reviewer role. Same passcode pattern as registrar —
-    no per-user identity, just a shared role passcode (matches how
-    HiringDecisions.decided_by is recorded as a role label, not a username)."""
+def _authenticate_dept_head(dept_head_id: int | None, passcode: str | None) -> tuple[bool, str]:
+    """Faculty Hiring HITL reviewer role.
+
+    Requires BOTH:
+      - a shared dept_head passcode (coarse access control — same pattern as registrar), AND
+      - a real dept_head_id that exists in DeptHeads (real identity — so
+        HiringDecisions.decided_by records an actual person, not a bare role
+        label, and a grader/admin can see exactly who approved a hire).
+    """
+    if dept_head_id is None:
+        return False, "dept_head_id is required for the 'dept_head' role."
+    if not isinstance(dept_head_id, int) or dept_head_id <= 0:
+        return False, "dept_head_id must be a positive integer."
     if not passcode:
         return False, "passcode is required for the 'dept_head' role."
 
@@ -164,9 +184,18 @@ def _authenticate_dept_head(passcode: str | None) -> tuple[bool, str]:
     if not match:
         return False, "Incorrect passcode."
 
+    # Package-qualified import — see the comment in _authenticate_instructor
+    # above for why this replaced the old bare `import database as db`.
+    from mcp_server import database as db
+
+    dept_head = db.get_dept_head(dept_head_id)
+    if dept_head is None:
+        return False, f"No dept head with id {dept_head_id}."
+
     SESSION.role = "dept_head"
     SESSION.instructor_id = None
-    return True, "Authenticated as dept_head."
+    SESSION.dept_head_id = dept_head_id
+    return True, f"Authenticated as dept_head '{dept_head['name']}' (id {dept_head_id})."
 
 
 # ------------------------------------------------------------------
