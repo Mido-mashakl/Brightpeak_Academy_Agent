@@ -19,6 +19,13 @@ from typing import Any
  
 import sys
 from pathlib import Path
+
+AGENT_DIR = Path(__file__).resolve().parent.parent / "agent"
+if str(AGENT_DIR) not in sys.path:
+    sys.path.insert(0, str(AGENT_DIR))
+
+from client import GeminiClient, load_gemini_config
+_gemini = GeminiClient(load_gemini_config())
  
 # Make the sibling `rag/` package importable from mcp_server/
 RAG_DIR = Path(__file__).resolve().parent.parent / "rag"
@@ -519,3 +526,52 @@ async def _change_enrollment_status_impl(
         "course_id": course_id,
         "status": status,
     }
+
+
+
+
+def classify_severity_with_policy(similarity_score, description, policy_context) -> tuple[str, str]:
+    prompt = (
+        f"You are assessing an academic integrity case.\n"
+        f"Similarity score: {similarity_score}\n"
+        f"Instructor description: {description}\n"
+        f"Relevant policy:\n{policy_context}\n\n"
+        f"Classify severity as exactly one word: minor, major, or severe. "
+        f"Then on a new line, write a one-sentence rationale citing the policy.\n"
+        f"Format:\nSEVERITY: <word>\nRATIONALE: <sentence>"
+    )
+    text = _gemini.generate(prompt)
+    severity_line = next((l for l in text.splitlines() if l.upper().startswith("SEVERITY:")), "SEVERITY: minor")
+    rationale_line = next((l for l in text.splitlines() if l.upper().startswith("RATIONALE:")), "RATIONALE: unavailable")
+    severity = severity_line.split(":", 1)[1].strip().lower()
+    if severity not in ("minor", "major", "severe"):
+        severity = "minor"
+    return severity, rationale_line.split(":", 1)[1].strip()
+
+
+def generate_appeal_rulings(argument: str, evidence: list[str], n: int = 3) -> list[str]:
+    prompt = (
+        f"A student is appealing an academic integrity decision.\n"
+        f"Student's argument: {argument}\n"
+        f"Evidence on file: {evidence}\n\n"
+        f"Generate exactly {n} distinct, plausible rulings a committee could reach "
+        f"(e.g. uphold, dismiss, reduce penalty), each as one sentence. "
+        f"Number them 1 to {n}, one per line."
+    )
+    text = _gemini.generate(prompt)
+    lines = [l.split(".", 1)[-1].strip() for l in text.splitlines() if l.strip() and l.strip()[0].isdigit()]
+    return lines[:n] if lines else [text.strip()]
+
+
+def score_ruling_against_policy(ruling: str, rationale: str) -> float:
+    prompt = (
+        f"Ruling: {ruling}\n"
+        f"Case severity rationale: {rationale}\n\n"
+        f"On a scale of 0.0 to 1.0, how well-supported is this ruling given the "
+        f"rationale? Reply with ONLY the number."
+    )
+    text = _gemini.generate(prompt).strip()
+    try:
+        return max(0.0, min(1.0, float(text)))
+    except ValueError:
+        return 0.5

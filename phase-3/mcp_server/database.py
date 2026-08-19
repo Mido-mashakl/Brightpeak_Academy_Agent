@@ -395,3 +395,12 @@ def set_enrollment_status(
 # -----------------------------------------------------------------------
 
 _init_db()
+
+def execute(sql: str, params: tuple = ()) -> None:
+    with _conn() as conn:
+        conn.execute(sql, params)
+
+
+def query_one(sql: str, params: tuple = ()) -> dict[str, Any] | None:
+    with _conn() as conn:
+        return _row(conn.execute(sql, params).fetchone())
