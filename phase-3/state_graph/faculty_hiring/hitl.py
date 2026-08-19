@@ -42,8 +42,21 @@ def _require_dept_head() -> None:
     if not roles.is_dept_head():
         raise NotAuthorized(
             "This action requires an authenticated dept_head session. "
-            "Call authenticate_staff(role='dept_head', passcode=...) first."
+            "Call authenticate_staff(role='dept_head', dept_head_id=..., passcode=...) first."
         )
+
+
+def _current_dept_head() -> tuple[int, str]:
+    """Returns (dept_head_id, display_label) for the authenticated session.
+
+    Never trusts a caller-supplied name — HiringDecisions.decided_by must
+    reflect the real, authenticated DeptHeads row, not free text.
+    """
+    _require_dept_head()
+    dept_head_id = roles.SESSION.dept_head_id
+    row = db.get_dept_head(dept_head_id)
+    name = row["name"] if row else f"dept_head_{dept_head_id}"
+    return dept_head_id, f"{name} (id={dept_head_id})"
 
 
 # ---------------------------------------------------------------------------
@@ -72,21 +85,24 @@ def dept_head_review_hitl(state: FacultyHiringState) -> dict:
 def submit_hire_decision(
     job_id: int,
     candidate_id: int,
-    decided_by: str,
     notes: str | None = None,
 ):
     """
     Dept Head chose: Hire.
     Writes a HiringDecisions row and resumes the graph to record_hiring_decision.
+
+    The reviewer's identity comes from the authenticated session
+    (roles.authenticate(role='dept_head', dept_head_id=..., passcode=...)),
+    never from a caller-supplied string.
     """
-    _require_dept_head()
+    dept_head_id, decided_by = _current_dept_head()
     from .graph import resume_job  # local import avoids circular import
 
     db.execute(
         """INSERT INTO HiringDecisions
-               (job_id, candidate_id, decided_by, decision, notes)
-           VALUES (?, ?, ?, 'hire', ?)""",
-        (job_id, candidate_id, decided_by, notes),
+               (job_id, candidate_id, dept_head_id, decided_by, decision, notes)
+           VALUES (?, ?, ?, ?, 'hire', ?)""",
+        (job_id, candidate_id, dept_head_id, decided_by, notes),
     )
     record = HiringDecisionRecord(
         decided_by=decided_by,
@@ -100,14 +116,13 @@ def submit_hire_decision(
 def submit_interview_request(
     job_id: int,
     candidate_id: int,
-    decided_by: str,
     notes: str | None = None,
 ):
     """
     Dept Head chose: Request Interview.
     Creates an Interviews row (status='scheduled') and resumes to schedule_interview.
     """
-    _require_dept_head()
+    dept_head_id, decided_by = _current_dept_head()
     from .graph import resume_job
 
     row = db.query_one(
@@ -119,9 +134,9 @@ def submit_interview_request(
 
     db.execute(
         """INSERT INTO HiringDecisions
-               (job_id, candidate_id, decided_by, decision, notes)
-           VALUES (?, ?, ?, 'interview', ?)""",
-        (job_id, candidate_id, decided_by, notes),
+               (job_id, candidate_id, dept_head_id, decided_by, decision, notes)
+           VALUES (?, ?, ?, ?, 'interview', ?)""",
+        (job_id, candidate_id, dept_head_id, decided_by, notes),
     )
     record = HiringDecisionRecord(
         decided_by=decided_by,
@@ -146,7 +161,6 @@ def submit_interview_request(
 def submit_rescore_request(
     job_id: int,
     candidate_ids: list[int],
-    decided_by: str,
     reason: str | None = None,
 ):
     """
@@ -160,14 +174,14 @@ def submit_rescore_request(
             "reason": "Teaching experience should have higher importance"
         }
     """
-    _require_dept_head()
+    dept_head_id, decided_by = _current_dept_head()
     from .graph import resume_job
 
     db.execute(
         """INSERT INTO HiringDecisions
-               (job_id, candidate_id, decided_by, decision, notes)
-           VALUES (?, ?, ?, 'rescore', ?)""",
-        (job_id, 0, decided_by, reason),  # candidate_id=0 = "multiple/see notes"
+               (job_id, candidate_id, dept_head_id, decided_by, decision, notes)
+           VALUES (?, ?, ?, ?, 'rescore', ?)""",
+        (job_id, 0, dept_head_id, decided_by, reason),  # candidate_id=0 = "multiple/see notes"
     )
     record = HiringDecisionRecord(
         decided_by=decided_by,

@@ -25,6 +25,16 @@ CREATE TABLE IF NOT EXISTS Instructors (
 );
 
 -- ------------------------------------------------------------
+-- DeptHeads — Faculty Hiring HITL reviewers (real identity, not just a role)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS DeptHeads (
+    dept_head_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL,
+    email           TEXT NOT NULL UNIQUE,
+    department      TEXT
+);
+
+-- ------------------------------------------------------------
 -- Courses
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS Courses (
@@ -325,7 +335,8 @@ CREATE TABLE IF NOT EXISTS HiringDecisions (
     decision_id     INTEGER PRIMARY KEY AUTOINCREMENT,
     job_id          INTEGER NOT NULL REFERENCES JobPostings(job_id),
     candidate_id    INTEGER NOT NULL,   -- 0 = "multiple/see notes" (used by rescore decisions)
-    decided_by      TEXT NOT NULL,      -- role identifier, e.g. 'dept_head' (passcode-based role, no per-user identity)
+    dept_head_id    INTEGER REFERENCES DeptHeads(dept_head_id),  -- real identity of the reviewer
+    decided_by      TEXT NOT NULL,      -- display label, e.g. "Laila Hassan (id=1)" — derived from dept_head_id, not caller-supplied
     decision        TEXT NOT NULL
                         CHECK (decision IN ('hire','reject','interview','rescore')),
     notes           TEXT,
