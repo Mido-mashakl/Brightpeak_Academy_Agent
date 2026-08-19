@@ -1,0 +1,3 @@
+{
+  "python.analysis.extraPaths": ["./phase-3/agent", "./phase-3/rag"]
+}
