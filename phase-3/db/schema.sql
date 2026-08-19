@@ -258,6 +258,88 @@ CREATE TABLE IF NOT EXISTS ScholarshipApplications (
 );
 
 -- ------------------------------------------------------------
+-- Faculty Hiring — Certificate & Scholarship Eligibility sibling graph
+-- (Farida/graph-team: Faculty Hiring State Graph)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS JobPostings (
+    job_id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    title           TEXT NOT NULL,
+    qualifications  TEXT NOT NULL,      -- JSON list of qualification strings
+    application_deadline TEXT,          -- display/validation only; MVP uses admin "close" button, no scheduler
+    status          TEXT NOT NULL DEFAULT 'open'
+                        CHECK (status IN ('open','closed','hitl_review','completed')),
+    created_at      TEXT NOT NULL DEFAULT (DATETIME('now')),
+    updated_at      TEXT NOT NULL DEFAULT (DATETIME('now'))
+);
+
+CREATE TABLE IF NOT EXISTS Candidates (
+    candidate_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id          INTEGER NOT NULL REFERENCES JobPostings(job_id),
+    name            TEXT NOT NULL,
+    raw_cv_text     TEXT NOT NULL,
+    parsed_profile  TEXT,               -- JSON column (flexible CV structure — see design decisions)
+    parse_status    TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (parse_status IN ('pending','parsed','failed','missing_fields')),
+    submitted_at    TEXT NOT NULL DEFAULT (DATETIME('now'))
+);
+
+CREATE TABLE IF NOT EXISTS CandidateScores (
+    score_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    candidate_id    INTEGER NOT NULL REFERENCES Candidates(candidate_id),
+    score           REAL NOT NULL,
+    breakdown       TEXT,               -- JSON: per-qualification PASS/FAIL/MISSING + evidence
+    trigger         TEXT NOT NULL DEFAULT 'initial'
+                        CHECK (trigger IN ('initial','rescore')),
+    scored_at       TEXT NOT NULL DEFAULT (DATETIME('now'))
+);
+
+CREATE TABLE IF NOT EXISTS Shortlists (
+    shortlist_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id          INTEGER NOT NULL REFERENCES JobPostings(job_id),
+    generated_at    TEXT NOT NULL DEFAULT (DATETIME('now'))
+);
+
+CREATE TABLE IF NOT EXISTS ShortlistEntries (
+    entry_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    shortlist_id    INTEGER NOT NULL REFERENCES Shortlists(shortlist_id),
+    candidate_id    INTEGER NOT NULL REFERENCES Candidates(candidate_id),
+    score           REAL NOT NULL,
+    rank            INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS Interviews (
+    interview_id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id          INTEGER NOT NULL REFERENCES JobPostings(job_id),
+    candidate_id    INTEGER NOT NULL REFERENCES Candidates(candidate_id),
+    status          TEXT NOT NULL DEFAULT 'scheduled'
+                        CHECK (status IN ('scheduled','completed','cancelled')),
+    scheduled_at    TEXT,
+    result          TEXT CHECK (result IN ('pass','fail','pending') OR result IS NULL),
+    score           REAL,
+    notes           TEXT,
+    created_at      TEXT NOT NULL DEFAULT (DATETIME('now')),
+    updated_at      TEXT NOT NULL DEFAULT (DATETIME('now'))
+);
+
+CREATE TABLE IF NOT EXISTS HiringDecisions (
+    decision_id     INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id          INTEGER NOT NULL REFERENCES JobPostings(job_id),
+    candidate_id    INTEGER NOT NULL,   -- 0 = "multiple/see notes" (used by rescore decisions)
+    decided_by      TEXT NOT NULL,      -- role identifier, e.g. 'dept_head' (passcode-based role, no per-user identity)
+    decision        TEXT NOT NULL
+                        CHECK (decision IN ('hire','reject','interview','rescore')),
+    notes           TEXT,
+    decided_at      TEXT NOT NULL DEFAULT (DATETIME('now'))
+);
+
+CREATE TRIGGER IF NOT EXISTS trg_job_postings_updated_at
+AFTER UPDATE ON JobPostings
+FOR EACH ROW
+BEGIN
+    UPDATE JobPostings SET updated_at = DATETIME('now') WHERE job_id = NEW.job_id;
+END;
+
+-- ------------------------------------------------------------
 -- Tickets (shared failure/recovery path — both Phase-3 graphs)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS Tickets (
@@ -297,3 +379,11 @@ CREATE INDEX IF NOT EXISTS idx_tickets_thread              ON Tickets(thread_id)
 CREATE INDEX IF NOT EXISTS idx_tickets_status               ON Tickets(status);
 CREATE INDEX IF NOT EXISTS idx_cert_requests_student        ON CertificateRequests(student_id);
 CREATE INDEX IF NOT EXISTS idx_scholarship_apps_student     ON ScholarshipApplications(student_id);
+CREATE INDEX IF NOT EXISTS idx_candidates_job               ON Candidates(job_id);
+CREATE INDEX IF NOT EXISTS idx_candidate_scores_candidate    ON CandidateScores(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_shortlists_job                ON Shortlists(job_id);
+CREATE INDEX IF NOT EXISTS idx_shortlist_entries_shortlist    ON ShortlistEntries(shortlist_id);
+CREATE INDEX IF NOT EXISTS idx_shortlist_entries_candidate    ON ShortlistEntries(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_interviews_job                 ON Interviews(job_id);
+CREATE INDEX IF NOT EXISTS idx_interviews_candidate            ON Interviews(candidate_id);
+CREATE INDEX IF NOT EXISTS idx_hiring_decisions_job            ON HiringDecisions(job_id);

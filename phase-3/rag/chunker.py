@@ -254,6 +254,8 @@ def _extract_header_meta(raw: str) -> dict:
         meta["category"] = "Examination"
     elif "handbook" in title:
         meta["category"] = "Handbook"
+    elif "hiring" in title:
+        meta["category"] = "Hiring"
     else:
         meta["category"] = "General"
     return meta
