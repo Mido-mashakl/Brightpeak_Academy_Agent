@@ -294,6 +294,43 @@ def get_policy(policy_id: int) -> dict[str, Any] | None:
     return _row(row)
 
 
+
+# -----------------------------------------------------------------------
+# READ — Course Materials
+# -----------------------------------------------------------------------
+ 
+def get_course_materials(course_id: int) -> list[dict[str, Any]]:
+    """List every material row registered for a course (metadata only —
+    the actual text lives in documents/course_materials/ and is reached
+    through rag.search_course_material, not through this table)."""
+    with _conn() as con:
+        rows = con.execute(
+            """
+            SELECT material_id, course_id, title, description,
+                   material_type, source_file, created_at, updated_at
+            FROM   CourseMaterials
+            WHERE  course_id = ?
+            ORDER  BY material_id
+            """,
+            (course_id,),
+        ).fetchall()
+    return _rows(rows)
+ 
+ 
+def get_course_material(material_id: int) -> dict[str, Any] | None:
+    with _conn() as con:
+        row = con.execute(
+            """
+            SELECT material_id, course_id, title, description,
+                   material_type, source_file, created_at, updated_at
+            FROM   CourseMaterials
+            WHERE  material_id = ?
+            """,
+            (material_id,),
+        ).fetchone()
+    return _row(row)
+ 
+
 # -----------------------------------------------------------------------
 # WRITE — Grades
 # -----------------------------------------------------------------------

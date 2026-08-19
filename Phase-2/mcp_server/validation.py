@@ -72,3 +72,10 @@ def is_large_override(student_id: int, assignment_id: int, new_score: float, thr
     if existing is None:
         return False
     return abs(existing["score"] - new_score) > threshold
+
+
+def validate_course_id(course_id: int) -> tuple[bool, str | None]:
+    """Confirm `course_id` actually exists before spending a RAG call on it."""
+    if db.get_course(course_id) is None:
+        return False, f"No course with id {course_id}"
+    return True, None

@@ -3,10 +3,6 @@ Brightpeak Academy — RAG Ingestion Pipeline
 ============================================
 One-shot (or re-runnable) pipeline:
   documents/*.md  →  chunker  →  VectorStore.upsert
-Run:
-    python -m rag.ingestion
-or:
-    python rag/ingestion.py
 """
 from __future__ import annotations
 import sys

@@ -16,19 +16,20 @@ Concerns addressed here:
 
 import asyncio
 from typing import Any
-
+ 
 import sys
 from pathlib import Path
-
+ 
 # Make the sibling `rag/` package importable from mcp_server/
 RAG_DIR = Path(__file__).resolve().parent.parent / "rag"
 if str(RAG_DIR) not in sys.path:
     sys.path.insert(0, str(RAG_DIR))
-
+ 
 from rag_tool import search_policies as rag_search_policies  # noqa: E402
-
+from rag_tool import search_course_material as rag_search_course_material  # noqa: E402
+ 
 from mcp.server.fastmcp import Context
-
+ 
 import database as db
 import roles
 from auth import client_supports_elicitation, client_supports_sampling
@@ -37,6 +38,7 @@ from schemas import GradeOverrideConfirmation, WithdrawalConfirmation
 from validation import (
     is_large_override,
     scholarship_would_change,
+    validate_course_id,
     validate_enrollment_status,
     validate_percentage,
     validate_score,
@@ -120,6 +122,67 @@ def register_readonly_tools(mcp) -> None:
             category: optional category filter, e.g. "Attendance".
         """
         return rag_search_policies(query, architecture=architecture, category=category)
+
+        # -------------------------------------------------------------------
+    # === Teaching assistant: course-material listing + RAG search ===
+    # Kept as two separate tools on purpose:
+    #   - list_course_materials is cheap metadata (DB only) so the agent
+    #     can show a student "here's what's available" without spending
+    #     a retrieval call.
+    #   - ask_course_material is the actual RAG-backed Q&A tool, scoped
+    #     to one course_id so a student can never pull answers meant for
+    #     another course's material.
+    # -------------------------------------------------------------------
+ 
+    @mcp.tool()
+    def list_course_materials(course_id: int) -> dict[str, Any]:
+        """List the study materials registered for a course (title,
+        description, type — lecture/chapter/reading/exercise). Does not
+        return material content; use ask_course_material for that.
+ 
+        Args:
+            course_id: the course's numeric ID.
+        """
+        ok, err = validate_course_id(course_id)
+        if not ok:
+            return {"error": err}
+        return {
+            "course_id": course_id,
+            "materials": db.get_course_materials(course_id),
+        }
+ 
+    @mcp.tool()
+    def ask_course_material(
+        query: str,
+        course_id: int,
+        architecture: str = "auto",
+        top_k: int = 5,
+    ) -> dict[str, Any]:
+        """Answer a student's question using a specific course's study
+        material (lectures, chapters, readings, exercises), using RAG
+        retrieval with Self-RAG verification before returning an answer.
+ 
+        Retrieval is restricted to this course_id only, so a question
+        about one course can never be answered with another course's
+        material.
+ 
+        Args:
+            query: the student's question about the course content.
+            course_id: the course whose material should be searched.
+            architecture: "auto" | "naive" | "hybrid" | "agentic" | "graph".
+            top_k: number of relevant passages to retrieve.
+        """
+        ok, err = validate_course_id(course_id)
+        if not ok:
+            return {"error": err}
+        return rag_search_course_material(
+            query=query,
+            course_id=course_id,
+            architecture=architecture,
+            top_k=top_k,
+        )
+ 
+
 
     # -------------------------------------------------------------------
     # === CONCERN: Sampling ===

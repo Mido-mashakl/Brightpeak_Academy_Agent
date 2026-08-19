@@ -44,3 +44,18 @@ def register_resources(mcp) -> None:
         if policy is None:
             return f"No policy with id {policy_id}"
         return f"# {policy['title']} ({policy['category']})\n{policy['content']}"
+
+    
+    @mcp.resource("course_material://{course_id}")
+    def course_material_list(course_id: str) -> str:
+        """The list of study materials registered for a course (title,
+        type, description) — static reference data, not the material
+        content itself. Use the ask_course_material tool to answer
+        questions grounded in the actual text."""
+        materials = db.get_course_materials(int(course_id))
+        if not materials:
+            return f"No materials registered for course {course_id}"
+        return "\n\n".join(
+            f"# {m['title']} ({m['material_type']})\n{m['description'] or ''}"
+            for m in materials
+        )

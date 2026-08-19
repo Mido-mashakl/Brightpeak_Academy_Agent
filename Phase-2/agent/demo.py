@@ -12,7 +12,8 @@ in the order required by the project README:
   5. Prompt
   6. Elicitation
   7. Progress Tracking
-  8. Final Result
+  8.Course Material Teaching / RAG
+  9. Final Result
 
 This file does not introduce anything new -- it just wires together
 what was already proven working in agent_stage1.py through
@@ -28,6 +29,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from google import genai
+
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.types import (
@@ -42,16 +44,36 @@ PHASE2_DIR = AGENT_DIR.parent
 SERVER_SCRIPT = PHASE2_DIR / "mcp_server" / "server.py"
 
 # ---------------------------------------------------------------------
-# Gemini setup (used by the sampling callback)
+# Gemini setup
 # ---------------------------------------------------------------------
-load_dotenv(AGENT_DIR / ".env")
+
+# Try both common project locations.
+ENV_CANDIDATES = [
+    PHASE2_DIR / ".env",
+    AGENT_DIR / ".env",
+]
+
+for env_file in ENV_CANDIDATES:
+    if env_file.exists():
+        load_dotenv(env_file)
+        break
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+GEMINI_MODEL = os.getenv(
+    "GEMINI_MODEL",
+    "gemini-flash-latest",
+)
 
 if not GEMINI_API_KEY:
-    raise RuntimeError("GEMINI_API_KEY is missing from .env")
+    raise RuntimeError(
+        "GEMINI_API_KEY is missing.\n"
+        "Create a .env file in Phase-2 or Phase-2/agent with:\n\n"
+        "GEMINI_API_KEY=your_api_key_here\n"
+    )
 
-gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+gemini_client = genai.Client(
+    api_key=GEMINI_API_KEY
+)
 
 
 def print_tool_result(result) -> None:
@@ -246,20 +268,88 @@ async def main() -> None:
                 arguments={"course_id": 1},
                 progress_callback=progress_callback,
             )
+            # ---------------------------------------------------------
+            # STEP 8 — NEW
+            # Course Material Teaching
+            # ---------------------------------------------------------
 
-            # ---- 8. Final Result (Sampling) -----------------------------
             print("\n" + "=" * 70)
-            print("STEP 8 — Final Result (generate_academic_advisory / sampling)")
-            print("=" * 70)
-            result = await session.call_tool(
-                "generate_academic_advisory", arguments={"student_id": 3}
+            print(
+                "STEP 8 — Course Material Teaching Assistant"
             )
+            print("=" * 70)
+
+            student_id = 7
+            course_id = 1
+
+            question = (
+                "Can you explain Python functions "
+                "in a simple way?"
+            )
+
+            print(
+                f"Student ID : {student_id}"
+            )
+
+            print(
+                f"Course ID  : {course_id}"
+            )
+
+            print(
+                f"Question   : {question}"
+            )
+
+            print(
+                "\nCalling ask_course_material..."
+            )
+
+            teaching_result = await session.call_tool(
+                "ask_course_material",
+                arguments={
+                    "query": question,
+                    "course_id": course_id,
+                    "architecture": "auto",
+                    "top_k": 5,
+                },
+            )
+
+            print(
+                "\nCourse Material RAG Result:"
+            )
+
+            print_tool_result(
+                teaching_result
+            )
+
+            # ---------------------------------------------------------
+            # STEP 9 — Final Sampling
+            # ---------------------------------------------------------
+
+            print("\n" + "=" * 70)
+            print(
+                "STEP 9 — Final Result "
+                "(generate_academic_advisory / sampling)"
+            )
+            print("=" * 70)
+
+            result = await session.call_tool(
+                "generate_academic_advisory",
+                arguments={
+                    "student_id": 3
+                },
+            )
+
             print_tool_result(result)
 
             print("\n" + "=" * 70)
-            print("DEMO COMPLETE — every protocol concern fired above.")
+            print(
+                "DEMO COMPLETE"
+            )
+            print(
+                "MCP protocol + Course Material Teaching "
+                "were demonstrated."
+            )
             print("=" * 70)
-
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -4,83 +4,1040 @@
     "question": "What is the minimum attendance percentage required to remain eligible for final assessments?",
     "category": "general",
     "favors": "naive_rag",
-    "expected_keywords": ["75%", "attendance", "eligible"]
+    "expected_keywords": [
+      "75%",
+      "attendance",
+      "eligible"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q2",
     "question": "What grade average is required to apply for a merit-based scholarship?",
     "category": "general",
     "favors": "naive_rag",
-    "expected_keywords": ["90%", "scholarship", "average"]
+    "expected_keywords": [
+      "90%",
+      "scholarship",
+      "average"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q3",
     "question": "What does Protocol 4.2b say about special examination arrangements?",
     "category": "citation",
     "favors": "hybrid_rag",
-    "expected_keywords": ["4.2b", "extra time", "special", "disability"]
+    "expected_keywords": [
+      "4.2b",
+      "extra time",
+      "special",
+      "disability"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q4",
     "question": "According to document BP-ATT-2025-01, what happens when attendance drops below 75%?",
     "category": "citation",
     "favors": "hybrid_rag",
-    "expected_keywords": ["warning", "75%", "ineligible"]
+    "expected_keywords": [
+      "warning",
+      "75%",
+      "ineligible"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q5",
     "question": "What is the late submission penalty for an assignment submitted 2 days after the deadline?",
     "category": "general",
     "favors": "naive_rag",
-    "expected_keywords": ["20%", "10%", "day"]
+    "expected_keywords": [
+      "20%",
+      "10%",
+      "day"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q6",
     "question": "How many days does a student have for early course withdrawal without academic penalty?",
     "category": "general",
     "favors": "naive_rag",
-    "expected_keywords": ["14", "days", "withdraw"]
+    "expected_keywords": [
+      "14",
+      "days",
+      "withdraw"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q7",
     "question": "For a student whose attendance is below 75% and who also wants to apply for a scholarship, what do the policies say about eligibility?",
     "category": "multi_part",
     "favors": "agentic_rag",
-    "expected_keywords": ["75%", "90%", "attendance", "scholarship"]
+    "expected_keywords": [
+      "75%",
+      "90%",
+      "attendance",
+      "scholarship"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q8",
     "question": "A student committed plagiarism. What sanctions apply and how does this affect scholarship eligibility?",
     "category": "multi_part",
     "favors": "agentic_rag",
-    "expected_keywords": ["zero", "probation", "scholarship", "ineligible"]
+    "expected_keywords": [
+      "zero",
+      "probation",
+      "scholarship",
+      "ineligible"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q9",
     "question": "What tracks does Brightpeak Academy offer and what is the recommended prior level for the AI track?",
     "category": "multi_part",
     "favors": "agentic_rag",
-    "expected_keywords": ["AI", "Machine Learning", "Intermediate", "Advanced"]
+    "expected_keywords": [
+      "AI",
+      "Machine Learning",
+      "Intermediate",
+      "Advanced"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q10",
     "question": "What is the scholarship maintenance average and what attendance is required to keep the scholarship?",
     "category": "multi_part",
     "favors": "agentic_rag",
-    "expected_keywords": ["88%", "75%", "attendance"]
+    "expected_keywords": [
+      "88%",
+      "75%",
+      "attendance"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q11",
     "question": "Explain the relationship between the attendance threshold and examination eligibility under Protocol rules.",
     "category": "graph",
     "favors": "graph_rag",
-    "expected_keywords": ["75%", "eligible", "final", "assessment"]
+    "expected_keywords": [
+      "75%",
+      "eligible",
+      "final",
+      "assessment"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
   },
   {
     "id": "q12",
     "question": "Which roles are involved when an academic integrity investigation is triggered and what is the typical first major offence sanction?",
     "category": "graph",
     "favors": "graph_rag",
-    "expected_keywords": ["Committee", "zero", "probation"]
+    "expected_keywords": [
+      "Committee",
+      "zero",
+      "probation"
+    ],
+    "scope": "policy",
+    "expected_action": "retrieve",
+    "expected_content_type": "policy",
+    "expected_sources": []
+  },
+  {
+    "id": "cm_01",
+    "question": "What is the difference between a parameter and an argument in a Python function?",
+    "scope": "course_material",
+    "course_id": 1,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "python/functions.md"
+    ],
+    "expected_keywords": [
+      "parameter",
+      "argument"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_02",
+    "question": "What happens if a Python function reaches the end without a return statement?",
+    "scope": "course_material",
+    "course_id": 1,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "python/functions.md"
+    ],
+    "expected_keywords": [
+      "None",
+      "return"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_03",
+    "question": "How do positional arguments differ from keyword arguments in Python?",
+    "scope": "course_material",
+    "course_id": 1,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "python/functions.md"
+    ],
+    "expected_keywords": [
+      "positional",
+      "keyword"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_04",
+    "question": "Why does Python use zero-based indexing for lists, and how can the last element be accessed?",
+    "scope": "course_material",
+    "course_id": 2,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "data_structures/arrays.md"
+    ],
+    "expected_keywords": [
+      "zero-based",
+      "-1"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_05",
+    "question": "What is the difference between append(), insert(), and pop() for a Python list?",
+    "scope": "course_material",
+    "course_id": 2,
+    "category": "multi_concept",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "data_structures/arrays.md"
+    ],
+    "expected_keywords": [
+      "append",
+      "insert",
+      "pop"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_06",
+    "question": "When would sorted() be preferable to sort() according to the material?",
+    "scope": "course_material",
+    "course_id": 2,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "data_structures/arrays.md"
+    ],
+    "expected_keywords": [
+      "sorted",
+      "sort",
+      "original"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_07",
+    "question": "What is the difference between a node and a link in a linked list?",
+    "scope": "course_material",
+    "course_id": 2,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "data_structures/linked_lists.md"
+    ],
+    "expected_keywords": [
+      "node",
+      "link"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_08",
+    "question": "How does a singly linked list differ from a doubly linked list?",
+    "scope": "course_material",
+    "course_id": 2,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "data_structures/linked_lists.md"
+    ],
+    "expected_keywords": [
+      "singly",
+      "doubly"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_09",
+    "question": "What does LIFO mean in a stack, and which operations are used to add and remove elements?",
+    "scope": "course_material",
+    "course_id": 2,
+    "category": "multi_concept",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "data_structures/stacks.md"
+    ],
+    "expected_keywords": [
+      "LIFO",
+      "push",
+      "pop"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_10",
+    "question": "What is the difference between supervised and unsupervised learning?",
+    "scope": "course_material",
+    "course_id": 3,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "machine_learning/introduction.md"
+    ],
+    "expected_keywords": [
+      "supervised",
+      "unsupervised"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_11",
+    "question": "What do the slope and intercept represent in the linear regression material?",
+    "scope": "course_material",
+    "course_id": 3,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "machine_learning/linear_regression.md"
+    ],
+    "expected_keywords": [
+      "slope",
+      "intercept"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_12",
+    "question": "How does classification differ from regression, and what does accuracy measure?",
+    "scope": "course_material",
+    "course_id": 3,
+    "category": "multi_concept",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "machine_learning/classification.md"
+    ],
+    "expected_keywords": [
+      "classification",
+      "regression",
+      "accuracy"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_13",
+    "question": "What is the difference between props and state in React?",
+    "scope": "course_material",
+    "course_id": 4,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "react/state_props.md"
+    ],
+    "expected_keywords": [
+      "props",
+      "state",
+      "read-only"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_14",
+    "question": "What does useEffect use its dependency array for?",
+    "scope": "course_material",
+    "course_id": 4,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "react/hooks.md"
+    ],
+    "expected_keywords": [
+      "useEffect",
+      "dependency array",
+      "re-run"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_15",
+    "question": "What are the two Rules of Hooks?",
+    "scope": "course_material",
+    "course_id": 4,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "react/hooks.md"
+    ],
+    "expected_keywords": [
+      "top level",
+      "function components",
+      "custom hooks"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_16",
+    "question": "What is the difference between INNER JOIN and LEFT JOIN?",
+    "scope": "course_material",
+    "course_id": 5,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "sql/joins.md"
+    ],
+    "expected_keywords": [
+      "INNER JOIN",
+      "LEFT JOIN",
+      "match"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_17",
+    "question": "How can WHERE and ORDER BY be combined in one SQL query?",
+    "scope": "course_material",
+    "course_id": 5,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "sql/basics.md"
+    ],
+    "expected_keywords": [
+      "WHERE",
+      "ORDER BY",
+      "SELECT"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_18",
+    "question": "What is the purpose of a primary key and a foreign key in a relational schema?",
+    "scope": "course_material",
+    "course_id": 5,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "sql/schema_design.md"
+    ],
+    "expected_keywords": [
+      "primary key",
+      "foreign key",
+      "relationship"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_19",
+    "question": "What are the main benefits of normalization described in the material?",
+    "scope": "course_material",
+    "course_id": 5,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "sql/schema_design.md"
+    ],
+    "expected_keywords": [
+      "inconsistent data",
+      "duplicate",
+      "relationships"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_20",
+    "question": "What is the difference between IaaS, PaaS, and SaaS?",
+    "scope": "course_material",
+    "course_id": 8,
+    "category": "multi_concept",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "cloud/basics.md"
+    ],
+    "expected_keywords": [
+      "IaaS",
+      "PaaS",
+      "SaaS"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_21",
+    "question": "What does an EC2 security group control?",
+    "scope": "course_material",
+    "course_id": 8,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "cloud/aws_fundamentals.md"
+    ],
+    "expected_keywords": [
+      "security group",
+      "network traffic",
+      "virtual firewall"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_22",
+    "question": "What is the difference between an IAM user, role, and policy?",
+    "scope": "course_material",
+    "course_id": 8,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "cloud/aws_fundamentals.md"
+    ],
+    "expected_keywords": [
+      "Users",
+      "Roles",
+      "Policies"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_23",
+    "question": "What are the general steps for deploying an application to an EC2 instance?",
+    "scope": "course_material",
+    "course_id": 8,
+    "category": "multi_step",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "cloud/deployment.md"
+    ],
+    "expected_keywords": [
+      "connect",
+      "dependencies",
+      "copy",
+      "start"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_24",
+    "question": "What are confidentiality, integrity, and availability in the CIA triad?",
+    "scope": "course_material",
+    "course_id": 9,
+    "category": "multi_concept",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "cybersecurity/introduction.md"
+    ],
+    "expected_keywords": [
+      "Confidentiality",
+      "Integrity",
+      "Availability"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_25",
+    "question": "What are common signs of a phishing attempt?",
+    "scope": "course_material",
+    "course_id": 9,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "cybersecurity/attack_vectors.md"
+    ],
+    "expected_keywords": [
+      "urgent",
+      "sender address",
+      "unexpected"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_26",
+    "question": "How does a VPN help when using an untrusted network?",
+    "scope": "course_material",
+    "course_id": 9,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "cybersecurity/network_security.md"
+    ],
+    "expected_keywords": [
+      "VPN",
+      "untrusted",
+      "traffic"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_27",
+    "question": "What is the difference between a virus, ransomware, spyware, and a trojan?",
+    "scope": "course_material",
+    "course_id": 9,
+    "category": "multi_concept",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "cybersecurity/attack_vectors.md"
+    ],
+    "expected_keywords": [
+      "virus",
+      "ransomware",
+      "spyware",
+      "Trojans"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_28",
+    "question": "What is a React custom hook and why is it useful?",
+    "scope": "course_material",
+    "course_id": 4,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "react/hooks.md"
+    ],
+    "expected_keywords": [
+      "custom hook",
+      "reuse",
+      "stateful logic"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_29",
+    "question": "What is the difference between a Node.js runtime and Express.js routing?",
+    "scope": "course_material",
+    "course_id": 7,
+    "category": "multi_source",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "nodejs/introduction.md",
+      "nodejs/express_basics.md"
+    ],
+    "expected_keywords": [
+      "Node.js",
+      "Express",
+      "routing"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_30",
+    "question": "What makes a REST API endpoint different from a normal Express route according to the material?",
+    "scope": "course_material",
+    "course_id": 7,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "nodejs/rest_apis.md"
+    ],
+    "expected_keywords": [
+      "REST",
+      "endpoint",
+      "HTTP"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_31",
+    "question": "What is the difference between a class and an object in Python OOP?",
+    "scope": "course_material",
+    "course_id": 6,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "python_advanced/oop.md"
+    ],
+    "expected_keywords": [
+      "class",
+      "object"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_32",
+    "question": "Why are generators described as supporting lazy evaluation?",
+    "scope": "course_material",
+    "course_id": 6,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "python_advanced/decorators_generators.md"
+    ],
+    "expected_keywords": [
+      "generators",
+      "lazy evaluation"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_33",
+    "question": "What happens to a program when an exception is not handled?",
+    "scope": "course_material",
+    "course_id": 6,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "python_advanced/error_handling.md"
+    ],
+    "expected_keywords": [
+      "exception",
+      "stops",
+      "traceback"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_34",
+    "question": "What is a stateful widget versus a stateless widget in Flutter?",
+    "scope": "course_material",
+    "course_id": 11,
+    "category": "conceptual",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "flutter/widgets_layouts.md"
+    ],
+    "expected_keywords": [
+      "stateful",
+      "stateless",
+      "widget"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_35",
+    "question": "What does Provider do in the Flutter state-management material?",
+    "scope": "course_material",
+    "course_id": 11,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "flutter/state_management.md"
+    ],
+    "expected_keywords": [
+      "Provider",
+      "state"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_36",
+    "question": "What does Matplotlib provide for Python data visualization?",
+    "scope": "course_material",
+    "course_id": 10,
+    "category": "direct",
+    "expected_action": "retrieve",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "data_visualization/matplotlib.md"
+    ],
+    "expected_keywords": [
+      "Matplotlib",
+      "plot"
+    ],
+    "note": ""
+  },
+  {
+    "id": "cm_37",
+    "question": "Explain linear regression.",
+    "scope": "course_material",
+    "course_id": 2,
+    "category": "wrong_course",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "machine_learning/linear_regression.md"
+    ],
+    "expected_keywords": [
+      "linear regression"
+    ],
+    "note": "The concept exists elsewhere but not in the requested course."
+  },
+  {
+    "id": "cm_38",
+    "question": "Explain LIFO stacks.",
+    "scope": "course_material",
+    "course_id": 3,
+    "category": "wrong_course",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "data_structures/stacks.md"
+    ],
+    "expected_keywords": [
+      "LIFO",
+      "stack"
+    ],
+    "note": "The concept exists elsewhere but not in the requested course."
+  },
+  {
+    "id": "cm_39",
+    "question": "How do React hooks work?",
+    "scope": "course_material",
+    "course_id": 5,
+    "category": "wrong_course",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "react/hooks.md"
+    ],
+    "expected_keywords": [
+      "hooks",
+      "useState",
+      "useEffect"
+    ],
+    "note": "The concept exists elsewhere but not in the requested course."
+  },
+  {
+    "id": "cm_40",
+    "question": "What is a primary key?",
+    "scope": "course_material",
+    "course_id": 1,
+    "category": "wrong_course",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "sql/schema_design.md"
+    ],
+    "expected_keywords": [
+      "primary key"
+    ],
+    "note": "The concept exists elsewhere but not in the requested course."
+  },
+  {
+    "id": "cm_41",
+    "question": "What is an IAM security group?",
+    "scope": "course_material",
+    "course_id": 9,
+    "category": "wrong_course",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [
+      "cloud/aws_fundamentals.md"
+    ],
+    "expected_keywords": [
+      "IAM",
+      "security group"
+    ],
+    "note": "The concept exists elsewhere but not in the requested course."
+  },
+  {
+    "id": "cm_42",
+    "question": "What is a convolutional neural network (CNN)?",
+    "scope": "course_material",
+    "course_id": 3,
+    "category": "out_of_scope",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [],
+    "expected_keywords": [
+      "CNN"
+    ],
+    "note": "Not covered by any course-material document; agent must not answer from general knowledge."
+  },
+  {
+    "id": "cm_43",
+    "question": "How does Python async/await work?",
+    "scope": "course_material",
+    "course_id": 1,
+    "category": "out_of_scope",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [],
+    "expected_keywords": [
+      "async",
+      "await"
+    ],
+    "note": "Not covered by any course-material document; agent must not answer from general knowledge."
+  },
+  {
+    "id": "cm_44",
+    "question": "What are SQL window functions such as ROW_NUMBER and RANK?",
+    "scope": "course_material",
+    "course_id": 5,
+    "category": "out_of_scope",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [],
+    "expected_keywords": [
+      "window functions",
+      "ROW_NUMBER",
+      "RANK"
+    ],
+    "note": "Not covered by any course-material document; agent must not answer from general knowledge."
+  },
+  {
+    "id": "cm_45",
+    "question": "How does Redux Toolkit manage state in React?",
+    "scope": "course_material",
+    "course_id": 4,
+    "category": "out_of_scope",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [],
+    "expected_keywords": [
+      "Redux",
+      "Redux Toolkit"
+    ],
+    "note": "Not covered by any course-material document; agent must not answer from general knowledge."
+  },
+  {
+    "id": "cm_46",
+    "question": "What is AWS Lambda and how does serverless cold start work?",
+    "scope": "course_material",
+    "course_id": 8,
+    "category": "out_of_scope",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [],
+    "expected_keywords": [
+      "Lambda",
+      "cold start"
+    ],
+    "note": "Not covered by any course-material document; agent must not answer from general knowledge."
+  },
+  {
+    "id": "cm_47",
+    "question": "What is a binary search tree and how is its complexity analyzed?",
+    "scope": "course_material",
+    "course_id": 2,
+    "category": "out_of_scope",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [],
+    "expected_keywords": [
+      "binary search tree",
+      "complexity"
+    ],
+    "note": "Not covered by any course-material document; agent must not answer from general knowledge."
+  },
+  {
+    "id": "cm_48",
+    "question": "What is zero-trust architecture in cybersecurity?",
+    "scope": "course_material",
+    "course_id": 9,
+    "category": "out_of_scope",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [],
+    "expected_keywords": [
+      "zero trust"
+    ],
+    "note": "Not covered by any course-material document; agent must not answer from general knowledge."
+  },
+  {
+    "id": "cm_49",
+    "question": "How does Docker container orchestration with Kubernetes work?",
+    "scope": "course_material",
+    "course_id": 8,
+    "category": "out_of_scope",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [],
+    "expected_keywords": [
+      "Docker",
+      "Kubernetes"
+    ],
+    "note": "Not covered by any course-material document; agent must not answer from general knowledge."
+  },
+  {
+    "id": "cm_50",
+    "question": "How do Python decorators work with functools.wraps?",
+    "scope": "course_material",
+    "course_id": 6,
+    "category": "out_of_scope",
+    "expected_action": "reject",
+    "expected_content_type": "course_material",
+    "expected_sources": [],
+    "expected_keywords": [
+      "functools.wraps"
+    ],
+    "note": "Not covered by any course-material document; agent must not answer from general knowledge."
   }
 ]
