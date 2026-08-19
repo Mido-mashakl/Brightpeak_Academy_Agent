@@ -224,6 +224,40 @@ CREATE TABLE IF NOT EXISTS AssessmentAnswers (
 );
 
 -- ------------------------------------------------------------
+-- Student Advisor: Certificate & Scholarship Eligibility
+-- (state_graph/advisory/ — written by data.py's create_request_row() /
+-- finalize_request_row(); request_id/application_id doubles as the
+-- LangGraph thread_id source, see advisory/checkpointing.py)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS CertificateRequests (
+    request_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id      INTEGER NOT NULL REFERENCES Students(student_id),
+    course_id       INTEGER REFERENCES Courses(course_id),
+    purpose         TEXT,
+    status          TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending','eligible','ineligible',
+                                           'needs_review')),
+    recommendation  TEXT,
+    decided_by      TEXT,
+    created_at      TEXT NOT NULL DEFAULT (DATETIME('now')),
+    decided_at      TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ScholarshipApplications (
+    application_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id      INTEGER NOT NULL REFERENCES Students(student_id),
+    course_id       INTEGER REFERENCES Courses(course_id),
+    purpose         TEXT,
+    status          TEXT NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending','eligible','ineligible',
+                                           'needs_review')),
+    recommendation  TEXT,
+    decided_by      TEXT,
+    created_at      TEXT NOT NULL DEFAULT (DATETIME('now')),
+    decided_at      TEXT
+);
+
+-- ------------------------------------------------------------
 -- Tickets (shared failure/recovery path — both Phase-3 graphs)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS Tickets (
@@ -261,3 +295,5 @@ CREATE INDEX IF NOT EXISTS idx_assessment_sessions_student ON AssessmentSessions
 CREATE INDEX IF NOT EXISTS idx_assessment_answers_session  ON AssessmentAnswers(session_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_thread              ON Tickets(thread_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_status               ON Tickets(status);
+CREATE INDEX IF NOT EXISTS idx_cert_requests_student        ON CertificateRequests(student_id);
+CREATE INDEX IF NOT EXISTS idx_scholarship_apps_student     ON ScholarshipApplications(student_id);
