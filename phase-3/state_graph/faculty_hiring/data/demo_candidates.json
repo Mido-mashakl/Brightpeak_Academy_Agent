@@ -1,0 +1,22 @@
+{
+  "initial_batch": [
+    {
+      "name": "Sara Ahmed",
+      "raw_cv_text": "Sara Ahmed\nB.Sc. Computer Science, Cairo University\n3 years experience in data science and ML engineering\nSkills: Python, Machine Learning, TensorFlow, scikit-learn\n2 years teaching experience as a lab instructor at Cairo University\n"
+    },
+    {
+      "name": "Omar Ali",
+      "raw_cv_text": "Omar Ali\nB.Sc. Computer Science, Ain Shams University\n4 years experience as a data scientist at a fintech company\nSkills: Python, Machine Learning, deep learning, SQL\nNo teaching experience mentioned.\n"
+    },
+    {
+      "name": "Mariam Hassan",
+      "raw_cv_text": "Mariam Hassan\nB.Sc. Computer Science\nSkills: Python, Machine Learning\n"
+    }
+  ],
+  "later_arrivals": [
+    {
+      "name": "Youssef Mostafa",
+      "raw_cv_text": "Youssef Mostafa\nM.Sc. Artificial Intelligence, Alexandria University\n5 years experience in AI and ML research\nSkills: Python, Machine Learning, NLP, Computer Vision, PyTorch\n3 years teaching experience as a teaching assistant and course instructor\n"
+    }
+  ]
+}

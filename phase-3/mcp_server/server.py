@@ -71,13 +71,19 @@ async def authenticate_staff(
     instructor_id: int | None = None,
     passcode: str | None = None,
 ) -> dict[str, Any]:
-    """Authenticate as 'instructor' (requires instructor_id) or 'registrar'
-    (requires passcode) to unlock write tools for this session.
+    """Authenticate as 'instructor' (requires instructor_id), 'registrar'
+    (requires passcode), or 'dept_head' (requires passcode) to unlock write
+    tools / hiring decisions for this session.
 
     Args:
-        role: 'instructor' or 'registrar'.
+        role: 'instructor', 'registrar', or 'dept_head'.
         instructor_id: required if role is 'instructor'.
-        passcode: required if role is 'registrar'.
+        passcode: required if role is 'registrar' or 'dept_head'.
+
+    Note: 'dept_head' does not unlock any MCP write_tool_fns here — Faculty
+    Hiring HITL actions (state_graph/faculty_hiring/hitl.py) are called
+    directly by the platform, not exposed as MCP tools, and check
+    roles.is_dept_head() themselves.
     """
     return await authenticate_staff_impl(
         role=role,
