@@ -46,6 +46,14 @@ from .checkpointing import get_checkpointer, thread_id_for_case
 from .hitl import committee_review_hitl, final_decision_hitl
 from .tickets import with_ticket_on_failure
 
+
+import sys as _sys
+from pathlib import Path as _Path
+MCP_SERVER_DIR = _Path(__file__).resolve().parent.parent.parent / "mcp_server"
+if str(MCP_SERVER_DIR) not in _sys.path:
+    _sys.path.insert(0, str(MCP_SERVER_DIR))
+
+
 # Real, existing modules only.
 from mcp_server import database as db
 from mcp_server import tools as mcp_tools
@@ -85,7 +93,7 @@ def analyze_severity(state: AcademicIntegrityState) -> dict:
     via the real search_policies() retrieval + Self-RAG verification pipeline."""
     result = search_policies(
         query=f"similarity_score={state.similarity_score}; {state.description}",
-        category="academic_integrity",
+        category="Academic Integrity",
     )
     policy_context = result.get("context") or "\n".join(
         h.get("document", "") for h in result.get("hits", [])
@@ -97,6 +105,19 @@ def analyze_severity(state: AcademicIntegrityState) -> dict:
     )
     return {"severity": severity, "severity_rationale": rationale}
 
+
+def route_after_committee_review(state: AcademicIntegrityState) -> str:
+    """Real cycle: reads the admin's committee_review decision. 'dismiss'
+    closes the case immediately, 'request_more_evidence' loops back to
+    gather_evidence instead of forcing every case through the appeal flow."""
+    last = state.decisions[-1] if state.decisions else None
+    if last is None:
+        return "notify_student"
+    if last.decision == "dismiss":
+        return "log_and_close"
+    if last.decision == "request_more_evidence":
+        return "gather_evidence"
+    return "notify_student"
 
 def route_by_severity(state: AcademicIntegrityState) -> str:
     """Pure routing function — reads state, returns next node name, no side effects."""
@@ -183,7 +204,15 @@ def build_academic_integrity_graph():
         {"minor_warning": "minor_warning", "needs_committee_review": "needs_committee_review"},
     )
     builder.add_edge("minor_warning", END)
-    builder.add_edge("needs_committee_review", "notify_student")
+    builder.add_conditional_edges(
+        "needs_committee_review",
+        route_after_committee_review,
+        {
+        "gather_evidence": "gather_evidence",
+        "log_and_close": "log_and_close",
+        "notify_student": "notify_student",
+    },
+)
     builder.add_edge("notify_student", "await_appeal")
     builder.add_edge("await_appeal", "evaluate_appeal")
     builder.add_edge("evaluate_appeal", "committee_final_decision")
