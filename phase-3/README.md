@@ -16,7 +16,7 @@ scrutiny — the strongest 3 get selected for final submission.
 |---|---|---|
 | Farida | Academic Integrity Investigation & Appeal (state graph candidate) | Adaptive Assessment & Mastery Evaluation (state graph candidate) |
 | Fatma | _TBD_ | _TBD_ |
-| Ahmed | _TBD_ | _TBD_ |
+| Ahmed | Student Advisor — Certificate & Scholarship Eligibility | _TBD_ |
 
 > Note: an earlier draft used "Teaching Flow" (plain course-scoped RAG, question in/answer out) as
 > Farida's second candidate. Dropped — per the assignment brief, a single-pass RAG pipeline
@@ -31,7 +31,7 @@ scrutiny — the strongest 3 get selected for final submission.
 |---|---|---|---|---|
 | 1 | Farida | Academic Integrity Investigation & Appeal | Waits days for a student appeal; requires two separate human sign-offs (committee review + final decision); a single retry can't fix "no appeal ever arrives" | RAG (pull real academic-integrity policy to assess severity) + Tree of Thoughts (evaluate multiple interpretations of the student's appeal against the evidence) |
 | 2 | Farida | Adaptive Assessment & Mastery Evaluation | Genuinely cycles (select question ↔ evaluate answer until mastery or question-cap is reached, not a single pass); a student can close the browser mid-assessment and resume later from checkpoint; a suspicious answer pattern must pause official grading for a human instructor review, not auto-record | Task decomposition (build the next-question sequence based on performance so far) + Constrained ReAct (grade answers, including free-text, against a fixed rubric/partial-credit tool set, not free LLM judgment) |
-| 3 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+| 3 | Ahmed | Student Advisor — Certificate & Scholarship Eligibility | The advisor workflow may wait for missing student information or human review, can return to eligibility evaluation after new evidence arrives, and must preserve the collected profile and analysis across interruptions. | RAG + Task Decomposition |
 | 4 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
 | 5 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
 | 6 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
@@ -154,29 +154,49 @@ CREATE TABLE IF NOT EXISTS Tickets (
 ## Repository Layout (this phase)
 
 ```
-Phase-3/
-  README.md                      <- this file
-  state_graph/
-    academic_integrity/          <- Farida's graph 1
-      graph.py                   <- nodes, edges, cycles
-      state.py                   <- typed state schema
-      checkpointing.py           <- checkpointer wiring
-      hitl.py                    <- HITL node(s)
-      tickets.py                 <- failure/ticket path
-    adaptive_assessment/         <- Farida's graph 2
-      graph.py
-      state.py
-      checkpointing.py
-      hitl.py
-      tickets.py
-    <fatma's problems>/
-    <ahmed's problems>/
-  teaching_flow/
-    pipeline.py                  <- course-scoped RAG fix (question -> chunks -> answer + source; NOT a state graph)
-  platform/
-    admin/                       <- tool add/remove, RAG doc add/remove, HITL + ticket resolution
-    user/                        <- agent switcher + chat
-  evidence/                      <- demo recordings/transcripts (HITL pause+resume, ticket resolve+resume, crash+resume)
+phase-3/
+│
+├── README.md
+│
+├── state_graph/
+│   │
+│   ├── common/
+│   │   ├── state.py
+│   │   ├── checkpointing.py
+│   │   ├── hitl.py
+│   │   └── tickets.py
+│   │
+│   ├── academic_integrity/
+│   │   ├── graph.py
+│   │   ├── state.py
+│   │   ├── checkpointing.py
+│   │   ├── hitl.py
+│   │   └── tickets.py
+│   │
+│   ├── adaptive_assessment/
+│   │   ├── graph.py
+│   │   ├── state.py
+│   │   ├── checkpointing.py
+│   │   ├── hitl.py
+│   │   └── tickets.py
+│   │
+│   ├── student_advisor/
+│   │   ├── graph.py
+│   │   ├── state.py
+│   │   ├── checkpointing.py
+│   │   ├── hitl.py
+│   │   └── tickets.py
+│   │
+│   └── <additional problems>/
+│
+├── teaching_flow/
+│   └── pipeline.py
+│
+├── platform/
+│   ├── admin/
+│   └── user/
+│
+└── evidence/
 ```
 
 ## Locatable Concerns (per grading rubric)
