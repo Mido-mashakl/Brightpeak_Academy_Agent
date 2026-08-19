@@ -1,0 +1,34 @@
+Self-RAG relevance check — false positive on irrelevant passages
+==================================================================
+
+Failure observed:
+------------------
+test_self_rag_refuses_irrelevant_passages (test_rag_pipeline.py) failed.
+
+query    = "What is the attendance threshold?"
+passage  = "The cafeteria menu changes every Monday."
+
+Expected: verifier.verify() should REFUSE (passage is unrelated to the query).
+Actual:   verifier.verify() returned action="pass".
+
+Root cause:
+-----------
+_tokenize() in self_rag.py split text into tokens without removing
+stopwords. Both strings share only the word "the", but that was enough
+to push the overlap ratio to 0.20 — above the relevance_threshold of
+0.15 — because the denominator (len(query tokens) = 5) was small and
+"the" alone counted as a real match.
+
+  query tokens   = {what, is, the, attendance, threshold}
+  passage tokens = {the, cafeteria, menu, changes, every, monday}
+  overlap        = {the}  ->  1 / 5 = 0.20  ->  passed threshold (0.15)
+
+Fix:
+----
+Added a _STOPWORDS set and filtered stopwords out inside _tokenize(),
+so overlap is only computed over content-bearing words.
+
+Verification after fix:
+------------------------
+Same query/passage pair now scores 0.0 overlap -> action="refuse".
+Full suite re-run: 7 passed, 0 failed (test_rag_pipeline.py).
