@@ -20,6 +20,14 @@ from __future__ import annotations
 
 from datetime import datetime
 
+
+import sys as _sys
+from pathlib import Path as _Path
+MCP_SERVER_DIR = _Path(__file__).resolve().parent.parent.parent / "mcp_server"
+if str(MCP_SERVER_DIR) not in _sys.path:
+    _sys.path.insert(0, str(MCP_SERVER_DIR))
+
+    
 from mcp_server import database as db
 from .state import AcademicIntegrityState, DecisionRecord
 from .checkpointing import thread_id_for_case
