@@ -575,3 +575,113 @@ def score_ruling_against_policy(ruling: str, rationale: str) -> float:
         return max(0.0, min(1.0, float(text)))
     except ValueError:
         return 0.5
+
+
+# =======================================================================
+# Adaptive Assessment & Mastery Evaluation — LLM-call additions
+#   1. Task decomposition   -> decompose_and_pick_question()
+#   2. Constrained ReAct    -> evaluate_answer_constrained_react()
+# =======================================================================
+
+def decompose_and_pick_question(
+    topic: str,
+    subskills_covered: list[str],
+    current_difficulty: str,
+    running_score: float,
+) -> tuple[str, str, str, str]:
+    """Task decomposition: breaks `topic` into subskills and picks the next
+    one to probe (skipping ones already covered), at a difficulty adapted
+    to running_score. Also asks for a short expected answer, so
+    evaluate_answer_constrained_react's GRADE_EXACT action has something
+    real to compare against instead of nothing.
+    Returns (subskill, difficulty, question_text, expected_answer)."""
+    prompt = (
+        f"You are building an adaptive quiz on the topic: {topic}\n"
+        f"Subskills already tested: {subskills_covered or 'none yet'}\n"
+        f"Student's running score so far: {running_score:.2f} (0.0-1.0)\n"
+        f"Current difficulty band: {current_difficulty}\n\n"
+        f"Step 1 - Decompose '{topic}' into the key subskills a student must "
+        f"master (pick one NOT already tested).\n"
+        f"Step 2 - Choose a difficulty (easy, medium, or hard): raise it if "
+        f"running_score is high, lower it if it's low.\n"
+        f"Step 3 - Write ONE short question testing that subskill at that "
+        f"difficulty.\n"
+        f"Step 4 - Write the single short expected answer to your own "
+        f"question (a word, number, or one short phrase).\n\n"
+        f"Reply in exactly this format:\n"
+        f"SUBSKILL: <short name>\nDIFFICULTY: <easy|medium|hard>\n"
+        f"QUESTION: <question text>\nEXPECTED_ANSWER: <short answer>"
+    )
+    text = _gemini.generate(prompt)
+    lines = {l.split(":", 1)[0].strip().upper(): l.split(":", 1)[1].strip()
+             for l in text.splitlines() if ":" in l}
+    subskill = lines.get("SUBSKILL", topic)
+    difficulty = lines.get("DIFFICULTY", current_difficulty).lower()
+    if difficulty not in ("easy", "medium", "hard"):
+        difficulty = current_difficulty
+    question = lines.get("QUESTION", f"Explain a key idea in {subskill}.")
+    expected_answer = lines.get("EXPECTED_ANSWER", "")
+    return subskill, difficulty, question, expected_answer
+
+
+def _decide_grading_action(question_text: str, difficulty: str) -> str:
+    """Thought step: the LLM's ONLY job here is to pick one of exactly two
+    whitelisted actions -- it does not grade anything in this call."""
+    prompt = (
+        f"Question ({difficulty}): {question_text}\n\n"
+        f"Pick exactly one action:\n"
+        f"  GRADE_EXACT - the question has one clearly correct short answer "
+        f"(a number, a keyword, a short fact) that can be checked directly.\n"
+        f"  GRADE_JUDGE - the question needs free-text judgement.\n\n"
+        f"Reply with ONLY the action name, nothing else."
+    )
+    text = _gemini.generate(prompt).strip().upper()
+    return "GRADE_EXACT" if "EXACT" in text else "GRADE_JUDGE"
+
+
+def _grade_exact(student_answer: str, expected_answer: str) -> tuple[bool, float, str]:
+    """Action #1: pure Python, NO LLM call. Real comparison against the
+    expected_answer select_next_question generated alongside the question --
+    not a placeholder with nothing to check against."""
+    norm_student = student_answer.strip().lower()
+    norm_expected = (expected_answer or "").strip().lower()
+    correct = bool(norm_expected) and (
+        norm_expected in norm_student or norm_student in norm_expected
+    )
+    score = 1.0 if correct else 0.0
+    rationale = f"Compared directly against expected answer '{expected_answer}'."
+    return correct, score, rationale
+
+
+def _grade_judge(question_text: str, difficulty: str, student_answer: str) -> tuple[bool, float, str]:
+    """Action #2: the one LLM call allowed for actual grading judgement."""
+    prompt = (
+        f"Question ({difficulty}): {question_text}\n"
+        f"Student's answer: {student_answer}\n\n"
+        f"Judge this free-text answer.\n"
+        f"CORRECT: <yes|no>\nSCORE: <0.0-1.0>\nRATIONALE: <one sentence>"
+    )
+    text = _gemini.generate(prompt)
+    lines = {l.split(":", 1)[0].strip().upper(): l.split(":", 1)[1].strip()
+             for l in text.splitlines() if ":" in l}
+    correct = lines.get("CORRECT", "no").lower().startswith("y")
+    try:
+        score = max(0.0, min(1.0, float(lines.get("SCORE", "0.0"))))
+    except ValueError:
+        score = 1.0 if correct else 0.0
+    rationale = lines.get("RATIONALE", "No rationale returned.")
+    return correct, score, rationale
+
+
+def evaluate_answer_constrained_react(
+    question_text: str, difficulty: str, student_answer: str, expected_answer: str = ""
+) -> tuple[bool, float, str]:
+    """Constrained ReAct: Thought (_decide_grading_action) picks ONE of
+    exactly two whitelisted actions; a real PYTHON dispatcher -- not the
+    LLM narrating a format -- then calls the matching function. Hard-capped
+    at 2 LLM calls total: one to decide, at most one more to judge.
+    GRADE_EXACT makes zero further LLM calls."""
+    action = _decide_grading_action(question_text, difficulty)
+    if action == "GRADE_EXACT" and expected_answer:
+        return _grade_exact(student_answer, expected_answer)
+    return _grade_judge(question_text, difficulty, student_answer)
