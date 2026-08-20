@@ -169,6 +169,13 @@ phase-3/
 │   │   ├── hitl.py
 │   │   └── tickets.py
 │   │
+│   ├── adaptive_assessment/       # built
+│   │   ├── graph.py
+│   │   ├── state.py
+│   │   ├── checkpointing.py
+│   │   ├── hitl.py
+│   │   └── tickets.py
+│   │
 │   ├── advisory/                  # built (Student Advisor — Ahmed's problem)
 │   │   ├── graph.py
 │   │   ├── state.py
@@ -177,19 +184,21 @@ phase-3/
 │   │   ├── hitl.py
 │   │   └── tickets.py
 │   │
-│   ├── faculty_hiring/            # built (Fatma Saber's problem)
-│   │   ├── graph.py
-│   │   ├── state.py
-│   │   ├── checkpointing.py
-│   │   ├── hitl.py
-│   │   ├── tickets.py
-│   │   ├── cv_text_extraction.py
-│   │   ├── demo_faculty_hiring.py
-│   │   ├── seed_demo.py
-│   │   └── data/                  # demo_job.json, demo_candidates.json
-│   │
-│   └── adaptive_assessment/       # planned, not yet built
-│       └── ...
+│   └── faculty_hiring/            # built (Fatma Saber's problem)
+│       ├── graph.py
+│       ├── state.py
+│       ├── checkpointing.py
+│       ├── hitl.py
+│       ├── tickets.py
+│       ├── cv_text_extraction.py
+│       ├── demo_faculty_hiring.py
+│       ├── seed_demo.py
+│       └── data/                  # demo_job.json, demo_candidates.json
+│
+├── test_academic_integrity_graph.py
+├── test_adaptive_assessment_graph.py
+├── crash_test_start.py
+├── crash_test_resume.py
 │
 ├── agent/
 ├── db/
@@ -212,4 +221,4 @@ phase-3/
 > automatically on `429`/`503` and back off using the API's own `retryDelay` when present, but a
 > daily-quota `429` won't clear until the quota resets — swap in a different API key/account or a
 > lighter model if you hit that mid-demo.
-```
+``` 
