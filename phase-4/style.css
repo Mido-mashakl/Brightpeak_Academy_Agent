@@ -1,0 +1,710 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --background: #05050B;
+
+    --text: #F1F1F1;
+
+    --muted: #B0B3C1;
+
+    /* Premium Purple + Baby Blue */
+    --purple: #8B5CF6;
+    --light-purple: #BFA7FF;
+    --baby-blue: #60A5FA;
+    --soft-blue: #A7D8FF;
+    --lavender: #D0BCFF;
+}
+
+
+/* =========================
+   BASE
+========================= */
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    font-family: "Montserrat", sans-serif;
+
+    background: var(--background);
+
+    color: var(--text);
+
+    overflow-x: hidden;
+}
+
+
+/* =========================
+   NAVBAR
+========================= */
+
+.navbar {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+
+    height: 64px;
+
+    z-index: 100;
+
+    background: rgba(5, 5, 11, 0.72);
+
+    backdrop-filter: blur(18px);
+
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+
+.nav-container {
+    max-width: 1400px;
+
+    height: 100%;
+
+    margin: auto;
+
+    padding: 0 32px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+}
+
+
+/* =========================
+   BRAND
+========================= */
+
+.brand {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    font-size: 16px;
+
+    font-weight: 600;
+
+    letter-spacing: -0.02em;
+}
+
+
+.brand-icon {
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: var(--lavender);
+
+    color: #3c0091;
+
+    box-shadow:
+        0 0 12px rgba(208,188,255,0.45);
+}
+
+
+/* =========================
+   NAVIGATION
+========================= */
+
+.nav-links {
+    display: flex;
+
+    gap: 34px;
+}
+
+
+.nav-links a,
+.login {
+    color: var(--muted);
+
+    text-decoration: none;
+
+    font-size: 14px;
+
+    transition: 0.25s;
+}
+
+
+.nav-links a:hover,
+.login:hover {
+    color: white;
+}
+
+
+.nav-links .active {
+    color: var(--lavender);
+
+    font-weight: 600;
+}
+
+
+/* =========================
+   NAV ACTIONS
+========================= */
+
+.nav-actions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 24px;
+}
+
+
+.get-started {
+    border: none;
+
+    padding: 11px 25px;
+
+    border-radius: 999px;
+
+    background: var(--lavender);
+
+    color: #3c0091;
+
+    font-family: "Montserrat";
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+}
+
+
+.get-started:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 0 20px rgba(208,188,255,0.4);
+}
+
+
+/* =========================
+   HERO
+========================= */
+
+.hero {
+    min-height: calc(100vh - 96px);
+
+    margin-top: 64px;
+
+    position: relative;
+
+    overflow: hidden;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 70px 24px 80px;
+}
+
+
+/* =========================
+   BACKGROUND GLOW
+   DISABLED
+========================= */
+
+.ambient-glow {
+    display: none;
+}
+
+
+/* =========================
+   HERO CONTENT
+========================= */
+
+.hero-content {
+    position: relative;
+
+    z-index: 2;
+
+    width: 100%;
+
+    max-width: 1100px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+}
+
+
+/* =========================
+   LOGO
+========================= */
+
+.logo-wrapper {
+    position: relative;
+
+    /* اللوجو أكبر */
+    width: 430px;
+    height: 430px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 18px;
+
+    animation: floating 6s ease-in-out infinite;
+
+    overflow: visible;
+}
+
+
+/* =========================
+   LOGO GLOW
+   DISABLED
+========================= */
+
+.logo-glow {
+    display: none;
+}
+
+
+/* =========================
+   LOGO IMAGE
+========================= */
+
+.academy-logo {
+    position: relative;
+
+    z-index: 1;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+
+    /*
+       يخلي الأسود الموجود في الصورة
+       يندمج مع خلفية الموقع
+    */
+    mix-blend-mode: screen;
+
+    /*
+       إخفاء أطراف الصورة تدريجياً
+       عشان ميبانش شكل مربع حوالين اللوجو
+    */
+    mask-image:
+        radial-gradient(
+            ellipse at center,
+            black 55%,
+            rgba(0, 0, 0, 0.95) 68%,
+            rgba(0, 0, 0, 0.45) 82%,
+            transparent 96%
+        );
+
+    -webkit-mask-image:
+        radial-gradient(
+            ellipse at center,
+            black 55%,
+            rgba(0, 0, 0, 0.95) 68%,
+            rgba(0, 0, 0, 0.45) 82%,
+            transparent 96%
+        );
+
+    /*
+       مهم:
+       مفيش أي Glow حوالين اللوجو
+    */
+    filter: none;
+}
+
+
+/* =========================
+   TITLE
+========================= */
+
+h1 {
+    font-size: clamp(48px, 6vw, 82px);
+
+    line-height: 1.05;
+
+    font-weight: 800;
+
+    letter-spacing: -0.035em;
+
+    background:
+        linear-gradient(
+            90deg,
+
+            #BFA7FF,
+
+            #8B5CF6,
+
+            #60A5FA,
+
+            #A7D8FF
+        );
+
+    -webkit-background-clip: text;
+
+    background-clip: text;
+
+    color: transparent;
+
+    text-shadow:
+        0 0 30px rgba(139,92,246,0.28);
+}
+
+
+/* =========================
+   TAGLINE
+========================= */
+
+.tagline {
+    margin-top: 18px;
+
+    font-size: clamp(17px, 2vw, 22px);
+
+    font-weight: 600;
+
+    letter-spacing: 0.055em;
+
+    color: #DDD7E5;
+}
+
+
+/* =========================
+   SUBTITLE
+========================= */
+
+.subtitle {
+    margin-top: 9px;
+
+    font-size: 16px;
+
+    color: rgba(176,179,193,0.72);
+}
+
+
+/* =========================
+   CTA BUTTON
+========================= */
+
+.cta-button {
+    position: relative;
+
+    margin-top: 30px;
+
+    border: 1px solid rgba(255,255,255,0.24);
+
+    border-radius: 999px;
+
+    padding: 14px 29px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    color: white;
+
+    font-family: "Montserrat";
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    letter-spacing: 0.12em;
+
+    background:
+        linear-gradient(
+            100deg,
+
+            #7C3AED,
+
+            #8B5CF6,
+
+            #60A5FA,
+
+            #93C5FD
+        );
+
+    background-size: 220% 220%;
+
+    cursor: pointer;
+
+    animation: premiumGradient 6s ease infinite;
+
+    box-shadow:
+        0 0 18px rgba(139,92,246,0.35),
+
+        0 0 35px rgba(96,165,250,0.18);
+
+    transition: all 0.35s ease;
+}
+
+
+/* =========================
+   SOFT GLOW BEHIND BUTTON
+========================= */
+
+.cta-button::before {
+    content: "";
+
+    position: absolute;
+
+    inset: -8px;
+
+    z-index: -1;
+
+    border-radius: inherit;
+
+    background:
+        linear-gradient(
+            90deg,
+
+            #8B5CF6,
+
+            #60A5FA,
+
+            #93C5FD
+        );
+
+    filter: blur(16px);
+
+    opacity: 0.35;
+
+    transition: 0.35s ease;
+}
+
+
+/* =========================
+   HOVER
+========================= */
+
+.cta-button:hover {
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 0 25px rgba(139,92,246,0.5),
+
+        0 0 50px rgba(96,165,250,0.28);
+}
+
+
+.cta-button:hover::before {
+    opacity: 0.65;
+
+    filter: blur(20px);
+}
+
+
+/* =========================
+   ARROW
+========================= */
+
+.arrow {
+    font-size: 21px;
+
+    transition: transform 0.3s ease;
+}
+
+
+.cta-button:hover .arrow {
+    transform: translateX(5px);
+}
+
+
+/* =========================
+   FOOTER
+========================= */
+
+footer {
+    height: 96px;
+
+    background: rgba(11,13,32,0.85);
+
+    border-top: 1px solid rgba(255,255,255,0.06);
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 0 64px;
+
+    color: var(--muted);
+
+    font-size: 12px;
+}
+
+
+.footer-links {
+    display: flex;
+
+    align-items: center;
+
+    gap: 28px;
+}
+
+
+.footer-links a {
+    color: var(--muted);
+
+    text-decoration: none;
+
+    transition: 0.25s;
+}
+
+
+.footer-links a:hover {
+    color: var(--soft-blue);
+}
+
+
+.user-button {
+    width: 34px;
+    height: 34px;
+
+    border-radius: 50%;
+
+    display: grid;
+
+    place-items: center;
+
+    background: var(--lavender);
+
+    color: #3c0091;
+
+    margin-left: 10px;
+}
+
+
+/* =========================
+   ANIMATIONS
+========================= */
+
+@keyframes floating {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+
+@keyframes premiumGradient {
+
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+
+    .nav-links {
+        display: none;
+    }
+
+    .logo-wrapper {
+        width: 360px;
+        height: 360px;
+    }
+
+    footer {
+        padding: 0 24px;
+    }
+}
+
+
+@media (max-width: 600px) {
+
+    .nav-container {
+        padding: 0 16px;
+    }
+
+    .brand {
+        font-size: 13px;
+    }
+
+    .login {
+        display: none;
+    }
+
+    .get-started {
+        padding: 10px 17px;
+    }
+
+    .hero {
+        padding-top: 45px;
+    }
+
+    .logo-wrapper {
+        width: 300px;
+        height: 300px;
+    }
+
+    h1 {
+        font-size: 46px;
+    }
+
+    .tagline {
+        font-size: 15px;
+    }
+
+    .subtitle {
+        font-size: 14px;
+    }
+
+    footer {
+        height: auto;
+
+        min-height: 96px;
+
+        padding: 22px 16px;
+
+        flex-direction: column;
+
+        gap: 18px;
+    }
+}
