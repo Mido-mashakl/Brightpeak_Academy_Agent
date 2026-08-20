@@ -3,9 +3,9 @@ nodes_evaluation.py — RAG retrieval (+ its Ticket failure path), ToT
 comparison, and the confidence/policy check that decides whether we
 can auto-finalize or need the Advisor.
 
-      rag_node <--------------------------------------\
-          |(doc invalid)-> ticket_node --(admin fixes)-/   [resumes from checkpoint]
-          |(all ok)
+      rag_node <--------------------------------------------\
+          |(doc invalid)-> open_ticket_node -> await_ticket_resolution -/
+          |(all ok)                              [resumes RAG from checkpoint]
           v
       tot_node
           |
@@ -13,12 +13,31 @@ can auto-finalize or need the Advisor.
           |(unclear / policy issue / forced review)
           v
       hitl_node   (defined in nodes_hitl.py)
+
+FIXED: `import rag` / `import tot` pointed at nothing — no such modules
+existed in this package (and the real top-level `rag/` package + Phase-2
+`tree_of_thoughts()` don't match this graph's contract — see
+rag_adapter.py / tot_adapter.py docstrings for why). Now imports the two
+real adapter modules.
+
+FIXED — CRITICAL BUG #1 (side effects before interrupt()), same class of
+bug as awaiting_diagnostic in nodes_intake.py: `ticket_node` used to call
+db.open_ticket() and then interrupt() in the same node body, guarded by
+`open_ticket_id` — but that guard was only returned AFTER interrupt(),
+so it was never actually committed before the pause. On resume the node
+re-ran from the top, saw open_ticket_id still None, and opened a SECOND
+ticket for the same failure.
+
+Fix: split into open_ticket_node (writes the Tickets row, returns
+open_ticket_id — committed before the pause) and
+await_ticket_resolution (interrupt(), then resolves the ticket and
+resumes the same rag_node loop via rag_pending_tracks).
 """
 from langgraph.types import interrupt
 
 import db
-import rag
-import tot
+import rag_adapter as rag
+import tot_adapter as tot
 from state import State, log_step, CONFIDENCE_GAP_THRESHOLD
 
 
@@ -53,37 +72,49 @@ def rag_node(state: State) -> dict:
 
 
 def route_rag(state: State) -> str:
-    return "ticket_node" if state.get("rag_failed_track") else "tot_node"
+    return "open_ticket_node" if state.get("rag_failed_track") else "tot_node"
 
 
-def ticket_node(state: State) -> dict:
-    """Independent failure/recovery path — NOT a human decision, just a
-    broken document being flagged for an admin. Resuming here continues
-    the SAME rag_node loop (via rag_pending_tracks), not a restart.
-
-    Idempotency guard: `open_ticket_id` is only opened the first time
-    this node body runs; on resume after interrupt() the guard sees a
-    non-None id and skips re-opening a duplicate ticket."""
-    track = state["rag_failed_track"]
+def open_ticket_node(state: State) -> dict:
+    """DB-write half of the ticket pause. Idempotent: open_ticket_id is
+    read from (committed) state first — on resume after interrupt() this
+    node body doesn't even run again unless the graph re-enters it
+    through a fresh RAG failure, and even then a track that already has
+    an open ticket from this pass is not re-ticketed."""
     ticket_id = state.get("open_ticket_id")
-    if ticket_id is None:
-        ticket_id = db.open_ticket(
-            source_id=state["recommendation_id"],
-            thread_id=state["thread_id"],
-            failure_type="schema_validation_failed",
-            details=f"Track document for '{track}' is missing required fields.",
-        )
-        db.update_recommendation(state["recommendation_id"], status="failed")
+    if ticket_id is not None:
+        return {}
+    track = state["rag_failed_track"]
+    ticket_id = db.open_ticket(
+        source_id=state["recommendation_id"],
+        thread_id=state["thread_id"],
+        failure_type="schema_validation_failed",
+        details=f"Track document for '{track}' is missing required fields.",
+    )
+    db.update_recommendation(state["recommendation_id"], status="failed")
+    update = {"open_ticket_id": ticket_id}
+    update.update(log_step(state, f"🎫 Ticket #{ticket_id} opened for admin: '{track}' document incomplete."))
+    return update
 
-    print(f"\n  ⏸  PAUSED — ticket_node. 🎫 Ticket #{ticket_id} open for admin: "
+
+def await_ticket_resolution(state: State) -> dict:
+    """TRUE waiting state: pauses until an admin fixes the broken track
+    document. Resuming here continues the SAME rag_node loop (via
+    rag_pending_tracks), not a restart of the whole workflow."""
+    track = state["rag_failed_track"]
+    ticket_id = state["open_ticket_id"]
+
+    print(f"\n  ⏸  PAUSED — await_ticket_resolution. 🎫 Ticket #{ticket_id} open for admin: "
           f"'{track}' document incomplete.")
-    resolution = interrupt({
+    interrupt({
         "type": "ticket_needs_admin",
         "ticket_id": ticket_id,
         "track": track,
         "message": f"Track document '{track}' failed validation. Admin must fix it.",
     })
-    # resolution: {"fixed": True}
+    # resume value: {"fixed": True} — the admin's actual fix (re-uploading
+    # a corrected document) happens outside this graph; what matters here
+    # is that the ticket is now resolvable and RAG can be retried.
     db.resolve_ticket(ticket_id)
     db.update_recommendation(state["recommendation_id"], status="pending")
     update = {
@@ -96,14 +127,12 @@ def ticket_node(state: State) -> dict:
 
 
 def tot_node(state: State) -> dict:
-    """Always flows straight into confidence_policy_node now — no more
-    `_route_hint` branch that used to skip the confidence/policy check
-    (and therefore leave a stale confidence_gap/policy_ok in state) when
-    `force_hitl_review` was set. The forced-review flag is still honored,
-    just later: confidence_policy_node recomputes gap/policy on the new
-    `ranked` first, and route_confidence (below) checks the flag to
-    force a trip back to the Advisor regardless of how clear the new
-    numbers look."""
+    """Always flows straight into confidence_policy_node — no branch that
+    skips it (that's what caused the stale confidence_gap/policy_ok bug;
+    see nodes_hitl.hitl_node). confidence_policy_node recomputes gap/
+    policy on the new `ranked` first, and route_confidence checks
+    force_hitl_review to decide whether to force a trip back to the
+    Advisor regardless of how clear the new numbers look."""
     result = tot.compare_track_candidates(state["grades"], state["track_requirements"])
     update = {"tot_result": result, "ranked": result["ranked"]}
     lines = [f"{t}: {s}%" for t, s in result["ranked"]]
