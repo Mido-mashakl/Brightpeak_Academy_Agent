@@ -189,21 +189,57 @@ def _call_claude_constrained(system: str, user: str, tools: list[dict]) -> dict:
     url = f"{GEMINI_BASE_URL}/{GEMINI_MODEL}:generateContent"
 
     def _one_attempt() -> dict:
-        req = urllib.request.Request(
-            url,
-            data=payload,
-            headers={
-                "Content-Type": "application/json",
-                "x-goog-api-key": api_key,
-            },
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req) as resp:
-                data = json.loads(resp.read())
-        except urllib.error.HTTPError as e:
-            body = e.read().decode(errors="replace")
-            raise ValueError(f"Gemini API error {e.code}: {body}") from e
+        # Transient-error retry (429 rate limit / 503 overloaded). These are
+        # not degenerate-content problems (see _is_degenerate below) — the
+        # request never even got a real answer — so they get their own
+        # backoff loop, separate from the degenerate-response retry loop.
+        transient_attempts = 4
+        last_error: Exception | None = None
+        for t_attempt in range(transient_attempts):
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": api_key,
+                },
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req) as resp:
+                    data = json.loads(resp.read())
+                break  # success — fall through to parse the function call below
+            except urllib.error.HTTPError as e:
+                body = e.read().decode(errors="replace")
+                if e.code in (429, 503) and t_attempt < transient_attempts - 1:
+                    # Try to honor the server's suggested retryDelay (present
+                    # on 429 responses as retry_delay.seconds); otherwise
+                    # fall back to a fixed backoff. Add a small buffer since
+                    # the server's own timer starts before ours does.
+                    wait_s = 15 * (t_attempt + 1)
+                    try:
+                        parsed_body = json.loads(body)
+                        for detail in parsed_body.get("error", {}).get("details", []):
+                            if detail.get("@type", "").endswith("RetryInfo"):
+                                delay_str = detail.get("retryDelay", "")
+                                if delay_str.endswith("s"):
+                                    wait_s = float(delay_str[:-1]) + 3
+                    except (json.JSONDecodeError, ValueError, TypeError):
+                        pass
+                    print(
+                        f"[_call_claude_constrained] Gemini {e.code} "
+                        f"(attempt {t_attempt + 1}/{transient_attempts}) — "
+                        f"waiting {wait_s:.0f}s before retry"
+                    )
+                    time.sleep(wait_s)
+                    last_error = e
+                    continue
+                raise ValueError(f"Gemini API error {e.code}: {body}") from e
+        else:
+            # Exhausted all transient-error retries without success.
+            raise ValueError(
+                f"Gemini API kept failing after {transient_attempts} attempts: {last_error}"
+            )
 
         for candidate in data.get("candidates", []):
             for part in candidate.get("content", {}).get("parts", []):
@@ -455,27 +491,53 @@ def _parse_cv_with_policy(raw_cv_text: str, policy_context: str) -> dict:
     }).encode()
 
     url = f"{GEMINI_BASE_URL}/{GEMINI_MODEL}:generateContent"
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "x-goog-api-key": api_key,
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req) as resp:
-            data = json.loads(resp.read())
-    except urllib.error.HTTPError as e:
-        body = e.read().decode(errors="replace")
-        print(f"[_parse_cv_with_policy] Gemini API error {e.code}: {body}")
-        return {"education": None, "years_experience": None, "skills": [], "teaching_experience": None, "notes": "Parse failed"}
-    except Exception as e:
-        # Catch anything else (network errors, JSON decode errors, etc.)
-        # instead of letting parse silently fall through to "Parse failed"
-        # with no visible reason.
-        print(f"[_parse_cv_with_policy] Unexpected error calling Gemini: {type(e).__name__}: {e}")
+    data = None
+    transient_attempts = 4
+    for t_attempt in range(transient_attempts):
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req) as resp:
+                data = json.loads(resp.read())
+            break
+        except urllib.error.HTTPError as e:
+            body = e.read().decode(errors="replace")
+            if e.code in (429, 503) and t_attempt < transient_attempts - 1:
+                wait_s = 15 * (t_attempt + 1)
+                try:
+                    parsed_body = json.loads(body)
+                    for detail in parsed_body.get("error", {}).get("details", []):
+                        if detail.get("@type", "").endswith("RetryInfo"):
+                            delay_str = detail.get("retryDelay", "")
+                            if delay_str.endswith("s"):
+                                wait_s = float(delay_str[:-1]) + 3
+                except (json.JSONDecodeError, ValueError, TypeError):
+                    pass
+                print(
+                    f"[_parse_cv_with_policy] Gemini {e.code} "
+                    f"(attempt {t_attempt + 1}/{transient_attempts}) — "
+                    f"waiting {wait_s:.0f}s before retry"
+                )
+                time.sleep(wait_s)
+                continue
+            print(f"[_parse_cv_with_policy] Gemini API error {e.code}: {body}")
+            return {"education": None, "years_experience": None, "skills": [], "teaching_experience": None, "notes": "Parse failed"}
+        except Exception as e:
+            # Catch anything else (network errors, JSON decode errors, etc.)
+            # instead of letting parse silently fall through to "Parse failed"
+            # with no visible reason.
+            print(f"[_parse_cv_with_policy] Unexpected error calling Gemini: {type(e).__name__}: {e}")
+            return {"education": None, "years_experience": None, "skills": [], "teaching_experience": None, "notes": "Parse failed"}
+
+    if data is None:
+        print("[_parse_cv_with_policy] Gave up after repeated transient errors.")
         return {"education": None, "years_experience": None, "skills": [], "teaching_experience": None, "notes": "Parse failed"}
 
     for candidate in data.get("candidates", []):
