@@ -20,18 +20,16 @@ _checkpointer: SqliteSaver | None = None
 
 
 def get_checkpointer() -> SqliteSaver:
-    """Returns a singleton checkpointer backed by brightpeak.db.
-
-    check_same_thread=False because the platform (web server) and any
-    background resume calls may run on different threads than the one
-    that created the connection.
-    """
     global _checkpointer
     if _checkpointer is None:
+        from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-        _checkpointer = SqliteSaver(conn)
+        serde = JsonPlusSerializer(allowed_msgpack_modules=[
+            ("state_graph.academic_integrity.state", "EvidenceItem"),
+            ("state_graph.academic_integrity.state", "DecisionRecord"),
+        ])
+        _checkpointer = SqliteSaver(conn, serde=serde)
     return _checkpointer
-
 
 def thread_id_for_case(case_id: int) -> str:
     return f"academic-integrity-{case_id}"

@@ -49,13 +49,11 @@ def _open_hitl_task(case_id: int, stage: str, context: dict) -> None:
 # --- Node functions (run once, right when the graph arrives, before the interrupt) ---
 
 def committee_review_hitl(state: AcademicIntegrityState) -> dict:
-    _open_hitl_task(state.case_id, "committee_review", {"status": "under_review"})
-    return {}  # the interrupt (configured in graph.py) does the actual waiting
+    return {}  # true no-op; the "open task" call moved to analyze_severity (see graph.py)
 
 
 def final_decision_hitl(state: AcademicIntegrityState) -> dict:
-    _open_hitl_task(state.case_id, "final_decision", {"status": "appeal_under_review"})
-    return {}
+    return {}  # true no-op; the "open task" call moved to evaluate_appeal (see graph.py)
 
 
 # --- Called by the platform's admin surface when an admin actually decides ---

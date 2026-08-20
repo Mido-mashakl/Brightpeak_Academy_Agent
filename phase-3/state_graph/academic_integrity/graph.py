@@ -43,9 +43,8 @@ from langgraph.graph import StateGraph, END
 
 from .state import AcademicIntegrityState, EvidenceItem, DecisionRecord
 from .checkpointing import get_checkpointer, thread_id_for_case
-from .hitl import committee_review_hitl, final_decision_hitl
 from .tickets import with_ticket_on_failure
-
+from .hitl import committee_review_hitl, final_decision_hitl, _open_hitl_task
 
 import sys as _sys
 from pathlib import Path as _Path
@@ -103,6 +102,8 @@ def analyze_severity(state: AcademicIntegrityState) -> dict:
         description=state.description,
         policy_context=policy_context,
     )
+    if severity != "minor":
+        _open_hitl_task(state.case_id, "committee_review", {"status": "under_review"})
     return {"severity": severity, "severity_rationale": rationale}
 
 
@@ -144,9 +145,15 @@ def notify_student(state: AcademicIntegrityState) -> dict:
 
 
 def await_appeal(state: AcademicIntegrityState) -> dict:
-    """No-op node: the real wait is the interrupt configured in graph compile below.
-    The platform's user surface calls graph.update_state(...) with the student's
-    appeal_argument, then graph.invoke(None, config) to resume past this node."""
+    """Runs once, on resume: the platform calls update_state() with the
+    student's appeal_argument before invoking past the interrupt, so by the
+    time this node actually executes it has the real argument to persist
+    into IntegrityAppeals (the interrupt only delayed execution, it didn't
+    skip it)."""
+    db.execute(
+        "INSERT INTO IntegrityAppeals (case_id, student_argument) VALUES (?, ?)",
+        (state.case_id, state.appeal_argument),
+    )
     return {}
 
 
@@ -164,6 +171,13 @@ def evaluate_appeal(state: AcademicIntegrityState) -> dict:
         for c in candidates
     ]
     best = max(scored, key=lambda pair: pair[1])[0]
+    _open_hitl_task(state.case_id, "final_decision", {"status": "appeal_under_review"})
+    db.execute(
+        """UPDATE IntegrityAppeals SET evaluation = ?, status = 'evaluated'
+           WHERE appeal_id = (SELECT appeal_id FROM IntegrityAppeals
+                               WHERE case_id = ? ORDER BY appeal_id DESC LIMIT 1)""",
+        (best, state.case_id),
+    )
     return {
         "appeal_options_considered": [c for c, _ in scored],
         "appeal_evaluation": best,
