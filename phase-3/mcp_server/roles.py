@@ -40,12 +40,26 @@ REGISTRAR_PASSCODE_HASH: bytes = (
     or _DEFAULT_HASH
 )
 
+# ------------------------------------------------------------------
+# Dept Head passcode (hashed) — Faculty Hiring HITL reviewer role
+# ------------------------------------------------------------------
+# Default is the bcrypt hash of "brightpeak-depthead-2026" — change before prod.
+# Override by setting the DEPT_HEAD_PASSCODE_HASH environment variable.
+# Generate a new hash the same way as REGISTRAR_PASSCODE_HASH above.
+
+_DEPT_HEAD_DEFAULT_HASH = b"$2b$12$Jz0cIIW4w3Q2XYC0PZXHNuTJtsYS.uIyR9AbkxBniszS15SHllQn2"
+
+DEPT_HEAD_PASSCODE_HASH: bytes = (
+    os.environ.get("DEPT_HEAD_PASSCODE_HASH", "").encode()
+    or _DEPT_HEAD_DEFAULT_HASH
+)
+
 
 # ------------------------------------------------------------------
 # Session state
 # ------------------------------------------------------------------
 
-RoleType = Literal["guest", "instructor", "registrar"]
+RoleType = Literal["guest", "instructor", "registrar", "dept_head"]
 
 
 @dataclass
@@ -60,11 +74,13 @@ class _Session:
 
     role: RoleType = "guest"
     instructor_id: int | None = None
+    dept_head_id: int | None = None
 
     def reset(self) -> None:
         """Drop back to unauthenticated guest state."""
         self.role = "guest"
         self.instructor_id = None
+        self.dept_head_id = None
 
 
 # Module-level singleton — imported as `roles.SESSION` everywhere.
@@ -78,15 +94,18 @@ SESSION = _Session()
 def authenticate(
     role: str,
     instructor_id: int | None = None,
+    dept_head_id: int | None = None,
     passcode: str | None = None,
 ) -> tuple[bool, str]:
     """Verify credentials and, on success, update SESSION.
 
     Args:
-        role:          'instructor' or 'registrar'.
+        role:          'instructor', 'registrar', or 'dept_head'.
         instructor_id: required when role == 'instructor'.
                        Must be a positive integer that exists in the DB.
-        passcode:      required when role == 'registrar'.
+        dept_head_id:  required when role == 'dept_head'.
+                       Must be a positive integer that exists in DeptHeads.
+        passcode:      required when role == 'registrar' or 'dept_head'.
 
     Returns:
         (success, message) — message is shown to the caller.
@@ -95,7 +114,9 @@ def authenticate(
         return _authenticate_instructor(instructor_id)
     if role == "registrar":
         return _authenticate_registrar(passcode)
-    return False, f"Unknown role '{role}'. Use 'instructor' or 'registrar'."
+    if role == "dept_head":
+        return _authenticate_dept_head(dept_head_id, passcode)
+    return False, f"Unknown role '{role}'. Use 'instructor', 'registrar', or 'dept_head'."
 
 
 def _authenticate_instructor(instructor_id: int | None) -> tuple[bool, str]:
@@ -105,7 +126,13 @@ def _authenticate_instructor(instructor_id: int | None) -> tuple[bool, str]:
         return False, "instructor_id must be a positive integer."
 
     # Verify the instructor exists in the database.
-    import database as db  # local import to avoid circular dependency at module load
+    # Package-qualified import (not a bare `import database`): this makes
+    # the import resolve correctly no matter how roles.py itself was
+    # imported (e.g. `from mcp_server import roles` from outside the
+    # mcp_server/ folder, as state_graph/faculty_hiring's demo/platform
+    # code does) — it no longer depends on mcp_server/ happening to be
+    # directly on sys.path.
+    from mcp_server import database as db
 
     instructor = db.get_instructor(instructor_id)
     if instructor is None:
@@ -131,6 +158,44 @@ def _authenticate_registrar(passcode: str | None) -> tuple[bool, str]:
     SESSION.role = "registrar"
     SESSION.instructor_id = None
     return True, "Authenticated as registrar."
+
+
+def _authenticate_dept_head(dept_head_id: int | None, passcode: str | None) -> tuple[bool, str]:
+    """Faculty Hiring HITL reviewer role.
+
+    Requires BOTH:
+      - a shared dept_head passcode (coarse access control — same pattern as registrar), AND
+      - a real dept_head_id that exists in DeptHeads (real identity — so
+        HiringDecisions.decided_by records an actual person, not a bare role
+        label, and a grader/admin can see exactly who approved a hire).
+    """
+    if dept_head_id is None:
+        return False, "dept_head_id is required for the 'dept_head' role."
+    if not isinstance(dept_head_id, int) or dept_head_id <= 0:
+        return False, "dept_head_id must be a positive integer."
+    if not passcode:
+        return False, "passcode is required for the 'dept_head' role."
+
+    try:
+        match = bcrypt.checkpw(passcode.encode(), DEPT_HEAD_PASSCODE_HASH)
+    except Exception:
+        match = False
+
+    if not match:
+        return False, "Incorrect passcode."
+
+    # Package-qualified import — see the comment in _authenticate_instructor
+    # above for why this replaced the old bare `import database as db`.
+    from mcp_server import database as db
+
+    dept_head = db.get_dept_head(dept_head_id)
+    if dept_head is None:
+        return False, f"No dept head with id {dept_head_id}."
+
+    SESSION.role = "dept_head"
+    SESSION.instructor_id = None
+    SESSION.dept_head_id = dept_head_id
+    return True, f"Authenticated as dept_head '{dept_head['name']}' (id {dept_head_id})."
 
 
 # ------------------------------------------------------------------
@@ -160,3 +225,13 @@ def can_grade_course(course_id: int, course_instructor_id: int | None) -> bool:
             and SESSION.instructor_id == course_instructor_id
         )
     return False
+
+
+def is_dept_head() -> bool:
+    """Return True if the current session authenticated as dept_head.
+
+    Used by the Faculty Hiring HITL surface (state_graph/faculty_hiring/hitl.py)
+    to gate hire/interview/rescore decisions — the AI must never make the
+    final hiring call, only an authenticated dept_head session may.
+    """
+    return SESSION.role == "dept_head"
