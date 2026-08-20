@@ -1,10 +1,10 @@
 """
-Academic Integrity — checkpointing layer.
+Adaptive Assessment — checkpointing layer.
 
-Uses LangGraph's SQLite checkpointer pointed at the SAME brightpeak.db used
-by the rest of Phase-3 (not a separate checkpoint file), so a killed process
-resumes with `graph.invoke(None, config)` using the same thread_id, no
-re-execution of completed nodes, no state loss.
+Same pattern as state_graph/academic_integrity/checkpointing.py: LangGraph's
+SQLite checkpointer pointed at the SAME brightpeak.db used by the rest of
+Phase-3, so a killed process resumes with graph.invoke(None, config) using
+the same thread_id -- no re-execution of completed nodes, no state loss.
 """
 
 from __future__ import annotations
@@ -25,11 +25,11 @@ def get_checkpointer() -> SqliteSaver:
         from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
         conn = sqlite3.connect(DB_PATH, check_same_thread=False)
         serde = JsonPlusSerializer(allowed_msgpack_modules=[
-            ("state_graph.academic_integrity.state", "EvidenceItem"),
-            ("state_graph.academic_integrity.state", "DecisionRecord"),
+            ("state_graph.adaptive_assessment.state", "AnsweredQuestion"),
         ])
         _checkpointer = SqliteSaver(conn, serde=serde)
     return _checkpointer
 
-def thread_id_for_case(case_id: int) -> str:
-    return f"academic-integrity-{case_id}"
+
+def thread_id_for_session(session_id: int) -> str:
+    return f"adaptive-assessment-{session_id}"
