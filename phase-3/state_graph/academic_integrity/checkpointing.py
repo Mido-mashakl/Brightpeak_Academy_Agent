@@ -29,6 +29,7 @@ def get_checkpointer() -> SqliteSaver:
             ("state_graph.academic_integrity.state", "DecisionRecord"),
         ])
         _checkpointer = SqliteSaver(conn, serde=serde)
+        _checkpointer.setup() 
     return _checkpointer
 
 def thread_id_for_case(case_id: int) -> str:

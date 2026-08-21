@@ -418,3 +418,11 @@ def execute(sql: str, params: tuple = ()) -> None:
 def query_one(sql: str, params: tuple = ()) -> dict[str, Any] | None:
     with _conn() as conn:
         return _row(conn.execute(sql, params).fetchone())
+
+
+def query_all(sql: str, params: tuple = ()) -> list[dict[str, Any]]:
+    """Added for the Final Project platform surface (tickets listing for
+    academic_integrity and adaptive_assessment): query_one only returns a
+    single row, and the admin panel needs the full open-tickets list."""
+    with _conn() as conn:
+        return _rows(conn.execute(sql, params).fetchall())
