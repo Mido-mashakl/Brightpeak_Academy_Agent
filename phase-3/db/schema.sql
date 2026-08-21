@@ -390,6 +390,7 @@ CREATE TABLE IF NOT EXISTS TrackRecommendations (
     advisor_id         INTEGER REFERENCES Advisors(advisor_id),
 
     recommended_track  TEXT, 
+    decided_by TEXT,
     runner_up_track    TEXT, 
     confidence         REAL, 
 
