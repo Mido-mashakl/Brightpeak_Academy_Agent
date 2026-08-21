@@ -1,0 +1,326 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+:root {
+    --background: #05050B;
+    --card: #111022;
+    --border: rgba(255,255,255,0.12);
+
+    --purple: #8B5CF6;
+    --light-purple: #BFA7FF;
+
+    --text: #F1F1F1;
+    --muted: #A8A8B8;
+}
+
+
+body {
+    min-height: 100vh;
+
+    font-family: "Montserrat", sans-serif;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(88, 45, 170, 0.16),
+            transparent 45%
+        ),
+        var(--background);
+
+    color: var(--text);
+}
+
+
+.login-page {
+    min-height: 100vh;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px;
+}
+
+
+.login-card {
+    width: 100%;
+    max-width: 430px;
+
+    padding: 38px;
+
+    border-radius: 26px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(43, 17, 88, 0.72),
+            rgba(14, 13, 31, 0.95)
+        );
+
+    border: 1px solid var(--border);
+
+    box-shadow:
+        0 25px 80px rgba(0,0,0,0.55);
+}
+
+
+/* =========================
+   LOGO
+========================= */
+
+.login-logo {
+    width: 62px;
+    height: 62px;
+
+    margin: 0 auto 28px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 16px;
+
+    border: 1px solid rgba(191,167,255,0.25);
+
+    background: rgba(139,92,246,0.08);
+
+    color: var(--light-purple);
+
+    font-size: 28px;
+
+    overflow: hidden;
+}
+
+.login-logo img {
+    width: 72%;
+    height: 72%;
+
+    object-fit: contain;
+
+    display: block;
+}
+
+
+/* =========================
+   TITLE
+========================= */
+
+h1 {
+    text-align: center;
+
+    font-size: 30px;
+
+    font-weight: 700;
+
+    margin-bottom: 10px;
+}
+
+
+.login-description {
+    text-align: center;
+
+    color: var(--muted);
+
+    font-size: 14px;
+
+    line-height: 1.6;
+
+    margin-bottom: 32px;
+}
+
+
+/* =========================
+   FORM
+========================= */
+
+label {
+    display: block;
+
+    margin-bottom: 9px;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    letter-spacing: 0.08em;
+
+    color: #C9C7D5;
+}
+
+
+.input-wrapper {
+    position: relative;
+
+    width: 100%;
+}
+
+
+.input-icon {
+    position: absolute;
+
+    left: 16px;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: #77778A;
+}
+
+
+input {
+    width: 100%;
+
+    height: 54px;
+
+    padding: 0 16px 0 45px;
+
+    border-radius: 12px;
+
+    border: 1px solid rgba(255,255,255,0.14);
+
+    background: rgba(5,5,11,0.35);
+
+    color: white;
+
+    font-family: "Montserrat";
+
+    font-size: 14px;
+
+    outline: none;
+
+    transition: 0.25s;
+}
+
+
+input::placeholder {
+    color: #77778A;
+}
+
+
+input:focus {
+    border-color: var(--purple);
+
+    box-shadow:
+        0 0 0 3px rgba(139,92,246,0.12);
+}
+
+
+/* =========================
+   BUTTON
+========================= */
+
+.login-button {
+    width: 100%;
+
+    height: 54px;
+
+    margin-top: 24px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background:
+        linear-gradient(
+            100deg,
+            #7C3AED,
+            #9B5CF6,
+            #60A5FA
+        );
+
+    color: white;
+
+    font-family: "Montserrat";
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+}
+
+
+.login-button:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 10px 30px rgba(139,92,246,0.35);
+}
+
+
+.login-button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =========================
+   ERROR
+========================= */
+
+.error-message {
+    min-height: 20px;
+
+    margin-top: 14px;
+
+    text-align: center;
+
+    color: #ff8d9c;
+
+    font-size: 13px;
+}
+
+
+/* =========================
+   BACK
+========================= */
+
+.back-home {
+    margin-top: 26px;
+
+    text-align: center;
+}
+
+
+.back-home a {
+    color: var(--muted);
+
+    text-decoration: none;
+
+    font-size: 13px;
+
+    transition: 0.25s;
+}
+
+
+.back-home a:hover {
+    color: var(--light-purple);
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 500px) {
+
+    .login-card {
+        padding: 28px 22px;
+    }
+
+    h1 {
+        font-size: 26px;
+    }
+}

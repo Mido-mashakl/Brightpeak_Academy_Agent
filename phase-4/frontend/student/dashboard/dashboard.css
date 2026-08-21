@@ -1,0 +1,107 @@
+/* Dashboard page — styles specific to this page only.
+   Shared tokens/reset live in shared/base.css */
+
+
+/* =========================================================
+   NOVA ROBOT
+   ========================================================= */
+
+.float-bot {
+  position: absolute;
+
+  /* Vertical center */
+  top: 50%;
+
+  /* Move toward the right side of the hero */
+  right: 2rem;
+
+  /* Robot size */
+  width: 340px;
+  max-width: 42%;
+
+  z-index: 10;
+
+  pointer-events: none;
+  user-select: none;
+
+  transform: translateY(-50%);
+
+  transform-origin: center;
+
+  will-change: transform;
+
+  animation: floatBot 6s ease-in-out infinite;
+}
+
+
+/* =========================================================
+   Floating / waving effect
+   ========================================================= */
+
+@keyframes floatBot {
+
+  0%,
+  100% {
+    transform: translateY(-50%);
+  }
+
+  50% {
+    transform: translateY(calc(-50% - 12px));
+  }
+
+}
+
+
+/* =========================================================
+   Purple / Pink Nova Glow
+   ========================================================= */
+
+.bot-glow {
+  filter:
+    drop-shadow(0 0 12px rgba(192, 193, 255, 0.55))
+    drop-shadow(0 0 28px rgba(128, 131, 255, 0.45))
+    drop-shadow(0 0 50px rgba(255, 176, 205, 0.30))
+    drop-shadow(0 0 80px rgba(128, 131, 255, 0.18));
+}
+
+
+/* =========================================================
+   Tablet
+   ========================================================= */
+
+@media (max-width: 1100px) {
+
+  .float-bot {
+    width: 300px;
+    max-width: 40%;
+    right: 1.5rem;
+  }
+
+}
+
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  .float-bot {
+    display: none;
+  }
+
+}
+
+
+/* =========================================================
+   Accessibility
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .float-bot {
+    animation: none;
+    transform: translateY(-50%);
+  }
+
+}

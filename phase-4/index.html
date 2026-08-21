@@ -54,7 +54,7 @@
             <div class="logo-glow"></div>
 
             <img
-                src="images/logo.png"
+                src="frontend/images/logo.png"
                 alt="BrightPeak Academy Logo"
                 class="academy-logo"
             >
@@ -71,13 +71,10 @@
         </p>
 
 
-        <button class="cta-button" id="startButton">
-
-            <span>START YOUR ASCENT</span>
-
-            <span class="arrow">→</span>
-
-        </button>
+        <button class="cta-button" onclick="goToLogin()">
+    <span>START YOUR ASCENT</span>
+    <span class="arrow">→</span>
+</button>
 
     </div>
 
@@ -104,7 +101,11 @@
 </footer>
 
 
-<script src="script.js"></script>
+<script>
+function goToLogin() {
+    window.location.href = "frontend/login/login.html";
+}
+</script>
 
 </body>
 </html>

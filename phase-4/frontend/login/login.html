@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Login | BrightPeak Academy</title>
+
+    <link rel="preconnect"
+          href="https://fonts.googleapis.com">
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="login.css">
+</head>
+
+
+<body>
+
+    <div class="login-page">
+
+        <div class="login-card">
+
+            <!-- Logo -->
+            <div class="login-logo">
+                <img src="../images/logo.png" alt="BrightPeak Academy logo">
+            </div>
+
+
+            <!-- Title -->
+            <h1>Welcome Back</h1>
+
+            <p class="login-description">
+                Login to your BrightPeak Academy account.
+            </p>
+
+
+            <!-- Login Form -->
+            <form id="loginForm">
+
+                <label for="email">
+                    EMAIL ADDRESS
+                </label>
+
+                <div class="input-wrapper">
+
+                    <span class="input-icon">
+                        ✉
+                    </span>
+
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="name@brightpeak.edu"
+                        required
+                    >
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    class="login-button"
+                    id="loginButton"
+                >
+                    LOGIN
+                </button>
+
+
+                <p
+                    id="errorMessage"
+                    class="error-message"
+                ></p>
+
+            </form>
+
+
+            <div class="back-home">
+                <a href="index.html">
+                    ← Back to Home
+                </a>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="login.js"></script>
+
+</body>
+
+</html>

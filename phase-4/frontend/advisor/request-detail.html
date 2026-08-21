@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Request #104 · Brightpeak Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" />
+<link rel="stylesheet" href="style.css" />
+<script src="auth-guard.js"></script>
+<style>
+  .confidence-ring{ --pct: 82; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-avatar"><img src="assets/robot-avatar.png" alt="Brightpeak robot mascot"></div>
+      <div class="brand-text">
+        <div class="name">Brightpeak Academy</div>
+        <div class="sub">Advisor Portal</div>
+      </div>
+    </div>
+
+    <div class="nav-label">Dashboard</div>
+    <nav class="nav">
+      <a href="index.html" class="nav-item">
+        <span class="material-symbols-outlined">grid_view</span> Dashboard
+      </a>
+      <a href="requests.html" class="nav-item active">
+        <span class="material-symbols-outlined">description</span> Requests
+      </a>
+      <a href="#" class="nav-item">
+        <span class="material-symbols-outlined">settings</span> Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+    <a href="#" class="logout">
+      <span class="material-symbols-outlined">logout</span> Logout
+    </a>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn" aria-label="Notifications">
+        <span class="material-symbols-outlined">notifications</span>
+        <span class="dot"></span>
+      </button>
+      <div class="user-chip">
+        <span>Sarah</span>
+        <div class="avatar"><img src="assets/avatar-sarah.png" alt="Sarah's avatar"></div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- Header -->
+      <section class="card detail-header">
+        <div>
+          <div class="req-id">
+            Request #104 &nbsp;·&nbsp; <span class="tag">boltAI Pre-screened</span>
+          </div>
+          <h1>Certificate Request: Ahmed Mostafa</h1>
+        </div>
+        <div class="status-box">
+          <div class="lbl">Status</div>
+          <div class="val" id="statusVal">Needs Your Review</div>
+        </div>
+      </section>
+
+      <!-- AI Eligibility Analysis -->
+      <section class="card analysis-card">
+        <div class="eyebrow"><span class="material-symbols-outlined">query_stats</span> Analytics</div>
+        <h2 style="margin:6px 0 0; font-size:17px;">AI Eligibility Analysis</h2>
+
+        <div class="analysis-body">
+          <div class="confidence-ring">
+            <div class="val">82<span>%</span></div>
+            <div class="confidence-sub">Confidence</div>
+          </div>
+
+          <div class="flow">
+            <div class="flow-step">
+              <div class="flow-icon"><span class="material-symbols-outlined">person</span></div>
+              <div class="flow-labels">
+                <div class="t1">Student Profile</div>
+                <div class="t2">Records reviewed</div>
+              </div>
+            </div>
+            <span class="material-symbols-outlined flow-arrow">arrow_forward</span>
+            <div class="flow-step">
+              <div class="flow-icon"><span class="material-symbols-outlined">gavel</span></div>
+              <div class="flow-labels">
+                <div class="t1">Policy Rules</div>
+                <div class="t2">Eligibility checked</div>
+              </div>
+            </div>
+            <span class="material-symbols-outlined flow-arrow">arrow_forward</span>
+            <div class="flow-step">
+              <div class="flow-icon"><span class="material-symbols-outlined">fact_check</span></div>
+              <div class="flow-labels">
+                <div class="t1">Evidence Log</div>
+                <div class="t2">Documents verified</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Advisor review required -->
+      <section class="card review-card">
+        <div class="eyebrow" style="color:var(--warning);">Advisor Review Required</div>
+
+        <div class="review-flag" style="margin-top:14px;">
+          <span class="material-symbols-outlined">priority_high</span>
+          <div>
+            <div class="flag-title">Priority: High</div>
+            <p>The AI engine has identified missing information regarding the Capstone Project. Please review the available evidence and make a final determination.</p>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button class="btn btn-success" id="approveBtn">
+            <span class="material-symbols-outlined">check_circle</span> Approve
+          </button>
+          <button class="btn btn-danger" id="rejectBtn">
+            <span class="material-symbols-outlined">cancel</span> Reject
+          </button>
+          <button class="btn btn-info-outline" id="infoBtn">
+            <span class="material-symbols-outlined">info</span> Request More Info
+          </button>
+        </div>
+
+        <label class="field-label" for="reviewNotes">Review Notes (Optional)</label>
+        <textarea id="reviewNotes" placeholder="Enter context or instructions regarding the missing information..."></textarea>
+
+        <div class="review-footer">
+          <div class="review-bot">
+            <img src="assets/robot-thinking.png" alt="Robot mascot reviewing documents">
+          </div>
+          <button class="btn btn-primary" id="submitDecisionBtn" style="padding:12px 26px;">
+            Send Submit Decision
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

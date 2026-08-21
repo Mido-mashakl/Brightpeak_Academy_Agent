@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Brightpeak · Nova AI Assistant</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="../shared/theme.config.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+<link rel="stylesheet" href="../shared/base.css"/>
+<link rel="stylesheet" href="ai-assistant.css"/>
+</head>
+<body class="bg-background font-body-md text-on-background">
+
+<!-- Sidebar -->
+<aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low/40 backdrop-blur-xl border-r border-white/10 z-50 flex flex-col pt-8 pb-8">
+  <div class="px-8 mb-12 flex items-center gap-3">
+    <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-[0_0_20px_rgba(128,131,255,0.35)]">
+      <span class="material-symbols-outlined text-[20px] text-on-primary" style="font-variation-settings:'FILL' 1;">bolt</span>
+    </div>
+    <span class="font-headline-md text-headline-md text-on-surface tracking-tight">Brightpeak</span>
+  </div>
+  <nav class="flex-1 px-4 space-y-2">
+    <a href="../dashboard/dashboard.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">dashboard</span>Dashboard
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">school</span>My Courses
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">folder_open</span>Materials
+    </a>
+    <a href="../ai-assistant/ai-assistant.html" aria-current="page" class="flex items-center px-4 py-3 rounded-xl transition-all group bg-primary-container text-on-primary-container shadow-[0_0_20px_rgba(128,131,255,0.3)]">
+      <span class="material-symbols-outlined mr-4" style="font-variation-settings:'FILL' 1;">smart_toy</span>AI Assistant
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">analytics</span>Grades
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">how_to_reg</span>Attendance
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">assignment</span>Assignments
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">calendar_today</span>Calendar
+    </a>
+    <div class="pt-8 pb-4 px-4 text-label-caps font-label-caps text-on-surface-variant/50">Account</div>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">person</span>Profile
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">settings</span>Settings
+    </a>
+    <a href="#" id="logout-link" class="flex items-center px-4 py-3 rounded-xl text-error/70 hover:bg-error-container/20 hover:text-error transition-all group">
+      <span class="material-symbols-outlined mr-4">logout</span>Log out
+    </a>
+  </nav>
+</aside>
+
+<div class="pl-72">
+  <!-- Header -->
+  <header class="fixed top-0 left-72 right-0 h-20 bg-background/60 backdrop-blur-md z-40 flex items-center justify-between px-margin-desktop border-b border-white/5">
+    <div class="flex items-center bg-surface-container-low/50 border border-white/10 rounded-full px-4 py-2 w-96">
+      <span class="material-symbols-outlined text-on-surface-variant mr-3">search</span>
+      <input class="bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant/40 w-full font-body-sm" placeholder="Search curriculum..." type="text"/>
+    </div>
+    <div class="flex items-center gap-6">
+      <div class="relative cursor-pointer">
+        <span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+        <span class="absolute top-0 right-0 w-2 h-2 bg-secondary rounded-full border-2 border-background"></span>
+      </div>
+      <div class="flex items-center gap-3 pl-4 border-l border-white/10">
+        <div class="text-right hidden sm:block">
+          <p class="text-body-sm font-medium text-on-surface" id="student-name">Julian Vos</p>
+          <p class="text-[10px] font-label-caps text-primary" id="student-track">Advanced Bio-Eng</p>
+        </div>
+        <img alt="Profile" class="w-10 h-10 rounded-full border border-primary/30 object-cover" id="student-avatar"
+             src="https://lh3.googleusercontent.com/aida/AEtjO1Vx8d5t0PfRmJtRla9HP9jobizN6ktrzBpqjWhnkZigdp44WyQyiDOrKWOA6-4RbnwiJ1WVloOPrXaUaMli7HkBDfpjeRZi57W943sLaPATyFLFQJZ3_9JO3CpAcBeIOhYf8ImQmHaeqP9NRvKEJLzcLZRssy5A621kAq3Vzpwsy2XfkeemeOh0AZJs23lKBJyMTVJL39e8F3QVjBRugCwo9h8PNbkGLtdKbDuSn6tHu8m5jS5Fvy8mBbA"/>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative pt-20 px-margin-desktop bg-background min-h-screen">
+    <div class="flex flex-col w-full h-[calc(100vh-80px)]">
+
+      <!-- Chat Header -->
+      <div class="flex items-center justify-between px-6 py-4 bg-surface-container-low/50 backdrop-blur-xl shrink-0 z-10 sticky top-0">
+        <div class="flex items-center gap-4">
+          <a href="../dashboard/dashboard.html" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors text-on-surface">
+            <span class="material-symbols-outlined text-xl">arrow_back</span>
+          </a>
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <img src="../assets/nova-mascot.png" alt="Nova"
+                   class="w-10 h-10 rounded-full bg-surface-container-high object-cover border border-white/10 bot-glow-sm"/>
+              <span class="absolute bottom-0 right-0 w-3 h-3 bg-secondary rounded-full border-2 border-surface-container-low"></span>
+            </div>
+            <div>
+              <h2 class="font-headline-md text-[16px] leading-[20px] font-semibold text-on-surface">Nova — AI Assistant</h2>
+              <p class="font-body-sm text-label-caps text-on-surface-variant/70 flex items-center gap-1.5 mt-0.5">
+                <span class="w-1.5 h-1.5 bg-secondary rounded-full animate-pulse shadow-[0_0_8px_rgba(255,176,205,0.6)]"></span>
+                Online
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-variant transition-colors text-on-surface-variant">
+            <span class="material-symbols-outlined text-xl">more_vert</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Chat Area -->
+      <div class="flex-1 overflow-y-auto px-4 py-8 custom-scrollbar relative scroll-smooth flex flex-col justify-between">
+        <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          <div class="absolute top-[20%] left-[10%] w-[40vw] h-[40vw] bg-primary/5 rounded-full blur-[100px] mix-blend-screen"></div>
+          <div class="absolute bottom-[20%] right-[10%] w-[30vw] h-[30vw] bg-secondary/5 rounded-full blur-[80px] mix-blend-screen"></div>
+        </div>
+
+        <div class="max-w-3xl w-full mx-auto flex flex-col gap-8 z-10" id="chat-thread">
+          <!-- Bot Message 1 -->
+          <div class="flex gap-4 items-end slide-up" style="animation-delay:.1s;">
+            <img src="../assets/nova-mascot.png" alt="Nova" class="w-8 h-8 rounded-full bg-surface-container-high object-cover shrink-0 border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"/>
+            <div class="bg-surface-container-high/80 backdrop-blur-md rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-white/10 shadow-lg text-body-md text-on-surface leading-relaxed">
+              Hi Alex! 👋 I'm Nova. How can I help you manage your university life today? I've analyzed your current progress and I'm ready to assist.
+            </div>
+          </div>
+
+          <!-- User Message 1 -->
+          <div class="flex gap-4 items-end justify-end slide-up" style="animation-delay:.3s;">
+            <div class="bg-gradient-to-br from-primary-container to-secondary-container rounded-2xl rounded-br-sm px-5 py-4 max-w-[85%] shadow-[0_8px_24px_rgba(128,131,255,0.2)] text-body-md text-on-primary-container leading-relaxed">
+              Can you recommend a track for me?
+            </div>
+            <img alt="Profile" class="w-8 h-8 rounded-full border border-primary/30 object-cover shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+                 src="https://lh3.googleusercontent.com/aida/AEtjO1Vx8d5t0PfRmJtRla9HP9jobizN6ktrzBpqjWhnkZigdp44WyQyiDOrKWOA6-4RbnwiJ1WVloOPrXaUaMli7HkBDfpjeRZi57W943sLaPATyFLFQJZ3_9JO3CpAcBeIOhYf8ImQmHaeqP9NRvKEJLzcLZRssy5A621kAq3Vzpwsy2XfkeemeOh0AZJs23lKBJyMTVJL39e8F3QVjBRugCwo9h8PNbkGLtdKbDuSn6tHu8m5jS5Fvy8mBbA"/>
+          </div>
+
+          <!-- Bot Message 2 with Inline Card -->
+          <div class="flex gap-4 items-end slide-up" style="animation-delay:.5s;">
+            <img src="../assets/nova-mascot.png" alt="Nova" class="w-8 h-8 rounded-full bg-surface-container-high object-cover shrink-0 border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"/>
+            <div class="flex flex-col gap-3 max-w-[85%]">
+              <div class="bg-surface-container-high/80 backdrop-blur-md rounded-2xl rounded-bl-sm px-5 py-4 border border-white/10 shadow-lg text-body-md text-on-surface leading-relaxed">
+                Based on your outstanding grades in Advanced Bio-Eng and strong quantitative analysis skills, I highly suggest the Data Science specialization. Here is my analysis:
+              </div>
+
+              <div class="bg-surface-container/60 backdrop-blur-lg rounded-xl p-5 border border-primary/20 shadow-[0_12px_32px_rgba(0,0,0,0.3)] group cursor-pointer hover:bg-surface-container-high/80 transition-all duration-300 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-primary group-hover:bg-secondary transition-colors duration-300"></div>
+                <div class="flex items-center justify-between mb-4">
+                  <h4 class="font-headline-md text-[18px] leading-[24px] font-semibold text-on-surface flex items-center gap-2">
+                    Recommended Track: Data Science 🎯
+                  </h4>
+                  <span class="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex justify-between font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">
+                    <span>AI Match Confidence</span>
+                    <span class="text-secondary font-semibold">94%</span>
+                  </div>
+                  <div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_12px_rgba(192,193,255,0.6)]" style="width:94%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Typing indicator -->
+          <div class="hidden flex gap-4 items-end slide-up" id="typing-indicator">
+            <img src="../assets/nova-mascot.png" alt="Nova" class="w-8 h-8 rounded-full bg-surface-container-high object-cover shrink-0 border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"/>
+            <div class="bg-surface-container-high/80 backdrop-blur-md rounded-2xl rounded-bl-sm px-5 py-4 border border-white/10 shadow-lg flex items-center gap-1.5 h-12">
+              <span class="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"></span>
+              <span class="w-1.5 h-1.5 bg-primary/80 rounded-full animate-bounce" style="animation-delay:.15s;"></span>
+              <span class="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style="animation-delay:.3s;"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Section: Quick Actions & Input -->
+      <div class="max-w-4xl w-full mx-auto mt-12 z-20 sticky bottom-0 bg-gradient-to-t from-background via-background/90 to-transparent pt-8 pb-4">
+        <div class="flex gap-3 overflow-x-auto pb-4 custom-scrollbar snap-x scroll-smooth no-scrollbar" id="quick-actions-row">
+          <button data-prompt="Can you recommend a track for me?" class="quick-action snap-start shrink-0 px-4 py-2 rounded-full bg-surface-container-low/80 backdrop-blur-md border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap group">
+            <span class="mr-1.5 group-hover:scale-110 transition-transform inline-block">🎯</span> Recommend my Track
+          </button>
+          <button data-prompt="I have a question about a course material." class="quick-action snap-start shrink-0 px-4 py-2 rounded-full bg-surface-container-low/80 backdrop-blur-md border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap group">
+            <span class="mr-1.5 group-hover:scale-110 transition-transform inline-block">📖</span> Ask about course material
+          </button>
+          <button data-prompt="I'd like to start an assessment." class="quick-action snap-start shrink-0 px-4 py-2 rounded-full bg-surface-container-low/80 backdrop-blur-md border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap group">
+            <span class="mr-1.5 group-hover:scale-110 transition-transform inline-block">🧠</span> Start an Assessment
+          </button>
+          <button data-prompt="Tell me about certificates and scholarships." class="quick-action snap-start shrink-0 px-4 py-2 rounded-full bg-surface-container-low/80 backdrop-blur-md border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap group">
+            <span class="mr-1.5 group-hover:scale-110 transition-transform inline-block">🎓</span> Certificate &amp; Scholarship
+          </button>
+          <button data-prompt="I need to open a case or appeal." class="quick-action snap-start shrink-0 px-4 py-2 rounded-full bg-surface-container-low/80 backdrop-blur-md border border-white/10 hover:border-error/40 hover:bg-error-container/20 transition-all text-body-sm font-medium text-on-surface-variant hover:text-error whitespace-nowrap group">
+            <span class="mr-1.5 group-hover:scale-110 transition-transform inline-block">⚠️</span> My Cases &amp; Appeals
+          </button>
+        </div>
+
+        <div class="relative group">
+          <div class="absolute inset-0 bg-gradient-to-r from-primary-container to-secondary-container rounded-2xl blur-md opacity-30 group-focus-within:opacity-60 transition-opacity duration-500"></div>
+          <div class="relative flex items-center bg-surface-container-highest/60 backdrop-blur-xl border border-white/10 focus-within:border-primary/50 rounded-2xl p-2 transition-colors duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+            <button class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 transition-colors text-on-surface-variant shrink-0">
+              <span class="material-symbols-outlined text-xl">attach_file</span>
+            </button>
+            <input class="flex-1 bg-transparent border-none outline-none text-body-md text-on-surface placeholder:text-on-surface-variant/50 px-3 min-w-0" id="chat-input" placeholder="Ask Nova anything..." type="text"/>
+            <button class="w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary to-inverse-primary hover:shadow-[0_0_20px_rgba(192,193,255,0.4)] transition-all text-on-primary shrink-0 ml-2" id="send-btn">
+              <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1;">send</span>
+            </button>
+          </div>
+        </div>
+        <p class="text-center text-[10px] font-label-caps text-on-surface-variant/40 mt-3 tracking-widest uppercase">Nova AI can make mistakes. Consider verifying important information.</p>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="ai-assistant.js"></script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Brightpeak · Dashboard</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="../shared/theme.config.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+<link rel="stylesheet" href="../shared/base.css"/>
+<link rel="stylesheet" href="dashboard.css"/>
+</head>
+<body class="bg-background font-body-md text-on-background">
+
+<!-- Sidebar -->
+<aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low/40 backdrop-blur-xl border-r border-white/10 z-50 flex flex-col pt-8 pb-8">
+  <div class="px-8 mb-12 flex items-center gap-3">
+    <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-[0_0_20px_rgba(128,131,255,0.35)]">
+      <span class="material-symbols-outlined text-[20px] text-on-primary" style="font-variation-settings:'FILL' 1;">bolt</span>
+    </div>
+    <span class="font-headline-md text-headline-md text-on-surface tracking-tight">Brightpeak</span>
+  </div>
+  <nav class="flex-1 px-4 space-y-2">
+    <a href="../dashboard/dashboard.html" aria-current="page" class="flex items-center px-4 py-3 rounded-xl transition-all group bg-primary-container text-on-primary-container shadow-[0_0_20px_rgba(128,131,255,0.3)]">
+      <span class="material-symbols-outlined mr-4" style="font-variation-settings:'FILL' 1;">dashboard</span>Dashboard
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">school</span>My Courses
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">folder_open</span>Materials
+    </a>
+    <a href="../ai-assistant/ai-assistant.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">smart_toy</span>AI Assistant
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">analytics</span>Grades
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">how_to_reg</span>Attendance
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">assignment</span>Assignments
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">calendar_today</span>Calendar
+    </a>
+    <div class="pt-8 pb-4 px-4 text-label-caps font-label-caps text-on-surface-variant/50">Account</div>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">person</span>Profile
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">settings</span>Settings
+    </a>
+    <a href="#" id="logout-link" class="flex items-center px-4 py-3 rounded-xl text-error/70 hover:bg-error-container/20 hover:text-error transition-all group">
+      <span class="material-symbols-outlined mr-4">logout</span>Log out
+    </a>
+  </nav>
+</aside>
+
+<div class="pl-72">
+  <!-- Header -->
+  <header class="fixed top-0 left-72 right-0 h-20 bg-background/60 backdrop-blur-md z-40 flex items-center justify-between px-margin-desktop border-b border-white/5">
+    <div class="flex items-center bg-surface-container-low/50 border border-white/10 rounded-full px-4 py-2 w-96">
+      <span class="material-symbols-outlined text-on-surface-variant mr-3">search</span>
+      <input id="curriculum-search" class="bg-transparent border-none outline-none text-sm text-on-surface placeholder:text-on-surface-variant/40 w-full font-body-sm" placeholder="Search curriculum..." type="text"/>
+    </div>
+    <div class="flex items-center gap-6">
+      <div class="relative cursor-pointer">
+        <span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+        <span class="absolute top-0 right-0 w-2 h-2 bg-secondary rounded-full border-2 border-background"></span>
+      </div>
+      <div class="flex items-center gap-3 pl-4 border-l border-white/10">
+        <div class="text-right hidden sm:block">
+          <p class="text-body-sm font-medium text-on-surface" id="student-name">Julian Vos</p>
+          <p class="text-[10px] font-label-caps text-primary" id="student-track">Advanced Bio-Eng</p>
+        </div>
+        <img alt="Profile" class="w-10 h-10 rounded-full border border-primary/30 object-cover" id="student-avatar"
+             src="https://lh3.googleusercontent.com/aida/AEtjO1Vx8d5t0PfRmJtRla9HP9jobizN6ktrzBpqjWhnkZigdp44WyQyiDOrKWOA6-4RbnwiJ1WVloOPrXaUaMli7HkBDfpjeRZi57W943sLaPATyFLFQJZ3_9JO3CpAcBeIOhYf8ImQmHaeqP9NRvKEJLzcLZRssy5A621kAq3Vzpwsy2XfkeemeOh0AZJs23lKBJyMTVJL39e8F3QVjBRugCwo9h8PNbkGLtdKbDuSn6tHu8m5jS5Fvy8mBbA"/>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative pt-32 pb-12 px-margin-desktop bg-transparent min-h-screen">
+    <div class="max-w-[1200px] mx-auto flex flex-col gap-8">
+
+      <!-- Hero / Nova greeting panel -->
+     <!-- Hero / Nova greeting panel -->
+<div class="relative">
+  <div
+    class="relative overflow-hidden bg-surface-container/60 backdrop-blur-xl border border-white/10 rounded-xl shadow-[0_20px_60px_rgba(0,0,0,0.35)] px-10 py-10 md:pr-72 min-h-[300px] flex flex-col justify-center gap-6"
+  >
+
+    <!-- Ambient background glow -->
+    <div class="absolute inset-0 rounded-xl overflow-hidden pointer-events-none z-0">
+      <div class="absolute -top-10 right-10 w-[26rem] h-[26rem] bg-primary/10 rounded-full blur-[110px]"></div>
+      <div class="absolute bottom-0 right-40 w-72 h-72 bg-secondary/10 rounded-full blur-[90px]"></div>
+    </div>
+
+    <!-- Hero content -->
+    <div class="relative z-10 max-w-xl slide-up">
+
+      <h1 class="font-headline-md text-[32px] leading-[40px] font-semibold text-on-surface">
+        Hi
+        <span id="hero-first-name">Alex</span>,
+        I'm
+        <span class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          Nova
+        </span>
+        👋
+      </h1>
+
+      <p class="mt-3 text-body-md text-on-surface-variant leading-relaxed">
+        Manage your entire university life from right here. I'm actively monitoring
+        your track progress and curating your daily study objectives.
+      </p>
+
+      <button
+        id="start-chat-btn"
+        class="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-primary to-secondary text-on-primary font-semibold text-body-sm shadow-[0_8px_24px_rgba(128,131,255,0.35)] hover:shadow-[0_0_28px_rgba(255,176,205,0.45)] transition-all"
+      >
+        <span
+          class="material-symbols-outlined text-[18px]"
+          style="font-variation-settings:'FILL' 1;"
+        >
+          chat_bubble
+        </span>
+        Start Chatting with Nova
+      </button>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+
+        <button
+          data-quick-action="recommend-track"
+          class="quick-action px-4 py-2 rounded-full bg-surface-container-low/80 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap"
+        >
+          🎯 Recommend my Track
+        </button>
+
+        <button
+          data-quick-action="ask-material"
+          class="quick-action px-4 py-2 rounded-full bg-surface-container-low/80 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap"
+        >
+          📖 Ask about material
+        </button>
+
+        <button
+          data-quick-action="assessment"
+          class="quick-action px-4 py-2 rounded-full bg-surface-container-low/80 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap"
+        >
+          🧠 Start an Assessment
+        </button>
+
+        <button
+          data-quick-action="certificate"
+          class="quick-action px-4 py-2 rounded-full bg-surface-container-low/80 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap"
+        >
+          🎓 Certificate &amp; Scholarship
+        </button>
+
+        <button
+          data-quick-action="appeals"
+          class="quick-action px-4 py-2 rounded-full bg-surface-container-low/60 border border-white/10 hover:border-error/40 hover:bg-error-container/20 transition-all text-body-sm font-medium text-on-surface-variant hover:text-error whitespace-nowrap"
+        >
+          ⚠️ My Cases &amp; Appeals
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Nova mascot -->
+    <img
+  src="../assets/robots.png"
+  alt="Nova, your AI study assistant"
+  class="float-bot hidden md:block absolute top-1/2 -translate-y-1/2 right-4 lg:right-8 w-72 lg:w-80 z-20 pointer-events-none select-none"
+/>
+
+  </div>
+</div>
+
+      <!-- Bottom row: stats + deadlines -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Stats card -->
+        <div class="lg:col-span-2 bg-surface-container/60 backdrop-blur-xl border border-white/10 rounded-xl p-6 md:p-8">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-6">
+            <div>
+              <p class="font-label-caps text-[11px] text-on-surface-variant/70 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span>ENROLLED</p>
+              <p class="mt-2 font-headline-md text-[28px] text-on-surface" id="stat-enrolled">4</p>
+            </div>
+            <div>
+              <p class="font-label-caps text-[11px] text-on-surface-variant/70 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>COMPLETED</p>
+              <p class="mt-2 font-headline-md text-[28px] text-on-surface" id="stat-completed">18</p>
+            </div>
+            <div>
+              <p class="font-label-caps text-[11px] text-on-surface-variant/70 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>AVG SCORE</p>
+              <p class="mt-2 font-headline-md text-[28px] text-on-surface" id="stat-avg">94%</p>
+            </div>
+            <div>
+              <p class="font-label-caps text-[11px] text-on-surface-variant/70 flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>STUDY HRS</p>
+              <p class="mt-2 font-headline-md text-[28px] text-on-surface" id="stat-hours">112</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deadlines card -->
+        <div class="bg-surface-container/60 backdrop-blur-xl border border-white/10 rounded-xl p-6">
+          <p class="font-label-caps text-[11px] text-on-surface-variant/70 flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-[16px] text-secondary">event_upcoming</span>
+            UPCOMING DEADLINES
+          </p>
+          <div class="space-y-3" id="deadlines-list">
+            <div class="flex items-center gap-3 bg-surface-container-high/60 rounded-lg p-3">
+              <div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0 font-label-caps text-[13px] text-on-surface">14</div>
+              <div class="min-w-0">
+                <p class="text-body-sm text-on-surface truncate">Advanced Bio-Ethics Essay</p>
+                <p class="text-[11px] text-on-surface-variant/60 flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">schedule</span>Tomorrow, 11:59 PM</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-3 bg-surface-container-high/60 rounded-lg p-3">
+              <div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0 font-label-caps text-[13px] text-on-surface">18</div>
+              <div class="min-w-0">
+                <p class="text-body-sm text-on-surface truncate">Neural Network Lab Report</p>
+                <p class="text-[11px] text-on-surface-variant/60 flex items-center gap-1"><span class="material-symbols-outlined text-[12px]">schedule</span>Friday, 10:00 AM</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

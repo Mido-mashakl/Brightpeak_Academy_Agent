@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Requests · Brightpeak Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" />
+<link rel="stylesheet" href="style.css" />
+<script src="auth-guard.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-avatar"><img src="assets/robot-avatar.png" alt="Brightpeak robot mascot"></div>
+      <div class="brand-text">
+        <div class="name">Brightpeak Academy</div>
+        <div class="sub">Advisor Portal</div>
+      </div>
+    </div>
+
+    <div class="nav-label">Dashboard</div>
+    <nav class="nav">
+      <a href="index.html" class="nav-item">
+        <span class="material-symbols-outlined">grid_view</span> Dashboard
+      </a>
+      <a href="requests.html" class="nav-item active">
+        <span class="material-symbols-outlined">description</span> Requests
+      </a>
+      <a href="#" class="nav-item">
+        <span class="material-symbols-outlined">settings</span> Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+    <a href="#" class="logout">
+      <span class="material-symbols-outlined">logout</span> Logout
+    </a>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn" aria-label="Notifications">
+        <span class="material-symbols-outlined">notifications</span>
+      </button>
+      <div class="user-chip">
+        <span>Sarah</span>
+        <div class="avatar"><img src="assets/avatar-sarah.png" alt="Sarah's avatar"></div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <div style="margin-bottom:22px;">
+        <h1 class="page-title">Requests</h1>
+        <p class="page-sub">Certificate and scholarship requests</p>
+      </div>
+
+      <div class="search-wrap">
+        <span class="material-symbols-outlined">search</span>
+        <input type="text" id="searchInput" placeholder="Search requests...">
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-pill active" data-filter="all">All</button>
+        <button class="filter-pill" data-filter="certificate">Certificate</button>
+        <button class="filter-pill" data-filter="scholarship">Scholarship</button>
+      </div>
+
+      <div class="req-list">
+
+        <div class="card req-row" data-type="certificate" data-name="ahmed mostafa">
+          <div class="type-icon certificate"><span class="material-symbols-outlined">description</span></div>
+          <div class="info">
+            <div class="rname">Ahmed Mostafa</div>
+            <div class="rtype">Certificate</div>
+          </div>
+          <div class="meta">
+            <span class="pill danger">Needs Your Review</span>
+            <a href="request-detail.html" class="btn btn-ghost btn-sm">View <span class="material-symbols-outlined" style="font-size:15px">arrow_forward</span></a>
+          </div>
+        </div>
+
+        <div class="card req-row" data-type="scholarship" data-name="sara ali">
+          <div class="type-icon scholarship"><span class="material-symbols-outlined">school</span></div>
+          <div class="info">
+            <div class="rname">Sara Ali</div>
+            <div class="rtype">Scholarship</div>
+          </div>
+          <div class="meta">
+            <span class="pill warning">Waiting for Student</span>
+            <a href="#" class="btn btn-ghost btn-sm">View <span class="material-symbols-outlined" style="font-size:15px">arrow_forward</span></a>
+          </div>
+        </div>
+
+        <div class="card req-row" data-type="certificate" data-name="omar hassan">
+          <div class="type-icon completed"><span class="material-symbols-outlined">task_alt</span></div>
+          <div class="info">
+            <div class="rname">Omar Hassan</div>
+            <div class="rtype">Certificate</div>
+          </div>
+          <div class="meta">
+            <span class="pill success">Completed</span>
+            <a href="#" class="btn btn-ghost btn-sm">View <span class="material-symbols-outlined" style="font-size:15px">arrow_forward</span></a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card empty-state" id="emptyState">
+        <span class="material-symbols-outlined">search_off</span>
+        No requests match your search.
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>

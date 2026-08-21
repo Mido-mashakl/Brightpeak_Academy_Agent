@@ -1,0 +1,6 @@
+node_modules/
+brightpeak.db
+*.db
+npm
+__pycache__/
+*.pyc

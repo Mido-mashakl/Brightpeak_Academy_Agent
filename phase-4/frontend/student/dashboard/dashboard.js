@@ -1,0 +1,97 @@
+// Dashboard page logic.
+// BASE_URL: point this at your phase-4 backend origin once the routers are ready.
+const BASE_URL = "http://localhost:3000";
+
+const els = {
+  name: document.getElementById("student-name"),
+  firstName: document.getElementById("hero-first-name"),
+  track: document.getElementById("student-track"),
+  avatar: document.getElementById("student-avatar"),
+  enrolled: document.getElementById("stat-enrolled"),
+  completed: document.getElementById("stat-completed"),
+  avg: document.getElementById("stat-avg"),
+  hours: document.getElementById("stat-hours"),
+  deadlines: document.getElementById("deadlines-list"),
+};
+
+async function loadDashboard() {
+  try {
+    const res = await fetch(`${BASE_URL}/api/dashboard`, { credentials: "include" });
+    if (!res.ok) throw new Error(`dashboard request failed (${res.status})`);
+    const data = await res.json();
+
+    if (data.student) {
+      if (data.student.name) {
+        els.name.textContent = data.student.name;
+        els.firstName.textContent = data.student.name.split(" ")[0];
+      }
+      if (data.student.track) els.track.textContent = data.student.track;
+      if (data.student.avatarUrl) els.avatar.src = data.student.avatarUrl;
+    }
+
+    if (data.stats) {
+      els.enrolled.textContent = data.stats.enrolled ?? "—";
+      els.completed.textContent = data.stats.completed ?? "—";
+      els.avg.textContent = (data.stats.avgScore ?? "—") + "%";
+      els.hours.textContent = data.stats.studyHours ?? "—";
+    }
+
+    if (Array.isArray(data.deadlines)) {
+      renderDeadlines(data.deadlines);
+    }
+  } catch (err) {
+    // Backend not wired yet — keep the static demo values already in the markup.
+    console.info("Dashboard: using static demo data —", err.message);
+  }
+}
+
+function renderDeadlines(deadlines) {
+  els.deadlines.innerHTML = deadlines
+    .map(
+      (d) => `
+      <div class="flex items-center gap-3 bg-surface-container-high/60 rounded-lg p-3">
+        <div class="w-9 h-9 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0 font-label-caps text-[13px] text-on-surface">${d.day}</div>
+        <div class="min-w-0">
+          <p class="text-body-sm text-on-surface truncate">${d.title}</p>
+          <p class="text-[11px] text-on-surface-variant/60 flex items-center gap-1">
+            <span class="material-symbols-outlined text-[12px]">schedule</span>${d.when}
+          </p>
+        </div>
+      </div>`
+    )
+    .join("");
+}
+
+function goToNova(prompt) {
+  const url = new URL("../ai-assistant/ai-assistant.html", window.location.href);
+  if (prompt) url.searchParams.set("prompt", prompt);
+  window.location.href = url.toString();
+}
+
+document.getElementById("start-chat-btn").addEventListener("click", () => goToNova());
+
+document.querySelectorAll(".quick-action").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const prompts = {
+      "recommend-track": "Can you recommend a track for me?",
+      "ask-material": "I have a question about a course material.",
+      "assessment": "I'd like to start an assessment.",
+      "certificate": "Tell me about certificates and scholarships.",
+      "appeals": "I need to open a case or appeal.",
+    };
+    goToNova(prompts[btn.dataset.quickAction]);
+  });
+});
+
+document.getElementById("logout-link").addEventListener("click", async (e) => {
+  e.preventDefault();
+  try {
+    await fetch(`${BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" });
+  } catch (err) {
+    console.info("Logout: backend not reachable —", err.message);
+  } finally {
+    window.location.href = "../login.html";
+  }
+});
+
+loadDashboard();

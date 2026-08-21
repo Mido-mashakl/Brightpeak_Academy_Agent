@@ -1,0 +1,9 @@
+/* AI Assistant page — styles specific to this page only. Shared tokens/reset live in shared/base.css */
+
+.bot-glow-sm {
+  box-shadow: 0 0 12px rgba(192, 193, 255, 0.35);
+}
+
+#chat-thread .slide-up {
+  animation-fill-mode: both;
+}
