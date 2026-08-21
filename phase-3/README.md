@@ -15,7 +15,7 @@ scrutiny — the strongest 3 get selected for final submission.
 | Owner | Candidate Problem 1 | Candidate Problem 2 |
 |---|---|---|
 | Farida | Academic Integrity Investigation & Appeal (state graph candidate) | Adaptive Assessment & Mastery Evaluation (state graph candidate) |
-| Fatma Saber | Faculty Hiring — CV Intake, Scoring & Shortlisting (state graph candidate) | _TBD_ |
+| Fatma Saber | Faculty Hiring — CV Intake, Scoring & Shortlisting (state graph candidate) | Track Recommendation & Prerequisite Assessment |
 | Ahmed | Student Advisor — Certificate & Scholarship Eligibility | Teaching feature: RAG-based Q&A over course material |
 
 > Note: an earlier draft used "Teaching Flow" (plain course-scoped RAG, question in/answer out) as
