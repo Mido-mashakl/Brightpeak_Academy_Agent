@@ -67,6 +67,10 @@ from .hitl import dept_head_review_hitl
 from .tickets import with_ticket_on_failure
 
 # Real, existing modules only.
+_PHASE3_DIR = Path(__file__).resolve().parent.parent.parent
+if str(_PHASE3_DIR) not in sys.path:
+    sys.path.insert(0, str(_PHASE3_DIR))
+
 from mcp_server import database as db
 
 # RAG — same pattern as academic_integrity/graph.py

@@ -22,6 +22,22 @@ from __future__ import annotations
 
 import sys
 import uuid
+from pathlib import Path
+
+# ── path bootstrap ────────────────────────────────────────────────────────────
+# Must happen before ANY project import so Python can locate:
+#   db / assessment_bridge / graph / state  <- mcp_server/ and this folder
+#   adaptive_assessment.*                   <- state_graph/
+#   mcp_server.*                            <- phase-3/
+_HERE     = Path(__file__).resolve().parent          # track_recommendation/
+_SG_DIR   = _HERE.parent                             # state_graph/
+_PH3_DIR  = _SG_DIR.parent                          # phase-3/
+_MCP_DIR  = _PH3_DIR / "mcp_server"                 # phase-3/mcp_server/
+
+for _p in (_HERE, _SG_DIR, _PH3_DIR, _MCP_DIR):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+# ─────────────────────────────────────────────────────────────────────────────
 
 from langgraph.types import Command
 

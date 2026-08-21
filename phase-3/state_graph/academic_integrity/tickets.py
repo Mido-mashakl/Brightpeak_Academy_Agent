@@ -18,9 +18,14 @@ from datetime import datetime
 
 import sys as _sys
 from pathlib import Path as _Path
-MCP_SERVER_DIR = _Path(__file__).resolve().parent.parent.parent / "mcp_server"
-if str(MCP_SERVER_DIR) not in _sys.path:
-    _sys.path.insert(0, str(MCP_SERVER_DIR))
+# FIXED: this used to add mcp_server/ itself to sys.path, which broke
+# "from mcp_server import database as db" below (Python then looked for
+# mcp_server/mcp_server/database.py, which does not exist). What belongs
+# on sys.path is the parent of mcp_server/ (phase-3/) -- same as the
+# working faculty_hiring/ entry points and mcp_server/roles.py already do.
+PHASE3_DIR = _Path(__file__).resolve().parent.parent.parent
+if str(PHASE3_DIR) not in _sys.path:
+    _sys.path.insert(0, str(PHASE3_DIR))
 
 from mcp_server import database as db
 from .checkpointing import thread_id_for_case

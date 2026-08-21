@@ -28,7 +28,7 @@ if str(MCP_SERVER_DIR) not in _sys.path:
     _sys.path.insert(0, str(MCP_SERVER_DIR))
 
     
-from mcp_server import database as db
+import database as db
 from .state import AcademicIntegrityState, DecisionRecord
 from .checkpointing import thread_id_for_case
 

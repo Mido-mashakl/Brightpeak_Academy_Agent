@@ -20,7 +20,13 @@ from __future__ import annotations
 
 import functools
 import json
+import sys
 from datetime import datetime
+from pathlib import Path
+
+_PHASE3_DIR = Path(__file__).resolve().parent.parent.parent
+if str(_PHASE3_DIR) not in sys.path:
+    sys.path.insert(0, str(_PHASE3_DIR))
 
 from mcp_server import database as db
 from .checkpointing import thread_id_for_job

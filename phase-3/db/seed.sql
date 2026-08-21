@@ -19,6 +19,11 @@ INSERT INTO Instructors (instructor_id, name, email) VALUES
     (8,  'Hana Adly',       'hana.adly@brightpeak.edu'),
     (9,  'Sameh Nabil',     'sameh.nabil@brightpeak.edu'),
     (10, 'Dina Farouk',     'dina.farouk@brightpeak.edu');
+
+
+INSERT INTO Advisors (advisor_id, name, email) VALUES
+    (1, 'Mariam Hassan', 'mariam.hassan@brightpeak.edu'),
+    (2, 'Khaled Ahmed',  'khaled.ahmed@brightpeak.edu');
 -- ------------------------------------------------------------
 -- DeptHeads (Faculty Hiring HITL reviewers)
 -- ------------------------------------------------------------
