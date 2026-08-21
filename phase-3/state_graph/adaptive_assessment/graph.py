@@ -76,15 +76,13 @@ def start_assessment(state: AdaptiveAssessmentState) -> dict:
 def select_next_question(state: AdaptiveAssessmentState) -> dict:
     """Task decomposition addition: breaks the topic into subskills and
     picks the next untested one, at a difficulty adapted to running_score."""
-    subskill, difficulty, question_text, expected_answer = mcp_tools.decompose_and_pick_question(
-        topic=state.topic,
-        subskills_covered=state.subskills_covered,
-        current_difficulty=state.current_difficulty,
-        running_score=state.running_score,
+    subskill, difficulty, question_text, expected_answer, options = mcp_tools.decompose_and_pick_question(
+    topic=state.topic, subskills_covered=state.subskills_covered,
+    current_difficulty=state.current_difficulty, running_score=state.running_score,
     )
     pending = AnsweredQuestion(
-        question_text=question_text, difficulty=difficulty, student_answer="",
-        expected_answer=expected_answer,
+    question_text=question_text, difficulty=difficulty, student_answer="",
+    expected_answer=expected_answer, options=options,   
     )
     return {
         "pending_question": pending,
@@ -108,17 +106,20 @@ def evaluate_answer(state: AdaptiveAssessmentState) -> dict:
     q = state.pending_question
     is_correct, score, rationale = mcp_tools.evaluate_answer_constrained_react(
         question_text=q.question_text, difficulty=q.difficulty, student_answer=q.student_answer,
-        expected_answer=q.expected_answer or "",
+        expected_answer=q.expected_answer or "", options=q.options,
     )
+    import json
     db.execute(
         """INSERT INTO AssessmentAnswers
-           (session_id, question_text, difficulty, student_answer, is_correct, score_awarded)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (state.session_id, q.question_text, q.difficulty, q.student_answer, int(is_correct), score),
+           (session_id, question_text, difficulty, student_answer, expected_answer, is_correct, score_awarded, options)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (state.session_id, q.question_text, q.difficulty, q.student_answer, q.expected_answer, int(is_correct), score,
+         json.dumps(q.options) if q.options else None),
     )
     answered = AnsweredQuestion(
-        question_text=q.question_text, difficulty=q.difficulty, student_answer=q.student_answer,
-        is_correct=is_correct, score_awarded=score,
+    question_text=q.question_text, difficulty=q.difficulty, student_answer=q.student_answer,
+    expected_answer=q.expected_answer, options=q.options,   
+    is_correct=is_correct, score_awarded=score,
     )
     new_answers = state.answers + [answered]
     running_score = sum(a.score_awarded for a in new_answers) / len(new_answers)
