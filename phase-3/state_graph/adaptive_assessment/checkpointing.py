@@ -28,7 +28,7 @@ def get_checkpointer() -> SqliteSaver:
             ("state_graph.adaptive_assessment.state", "AnsweredQuestion"),
         ])
         _checkpointer = SqliteSaver(conn, serde=serde)
-        _checkpointer.setup()
+        _checkpointer.setup() 
     return _checkpointer
 
 
