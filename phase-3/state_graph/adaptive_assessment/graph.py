@@ -46,8 +46,12 @@ MCP_SERVER_DIR = _Path(__file__).resolve().parent.parent.parent / "mcp_server"
 if str(MCP_SERVER_DIR) not in _sys.path:
     _sys.path.insert(0, str(MCP_SERVER_DIR))
 
-from mcp_server import database as db
-from mcp_server import tools as mcp_tools
+PHASE3_DIR = _Path(__file__).resolve().parent.parent.parent
+if str(PHASE3_DIR) not in _sys.path:
+    _sys.path.insert(0, str(PHASE3_DIR))
+
+import database as db
+import tools as mcp_tools
 
 MIN_QUESTIONS_BEFORE_EARLY_MASTERY = 3
 FLAG_MARGIN = 0.05  # +/-5% of mastery_threshold triggers flag_for_review

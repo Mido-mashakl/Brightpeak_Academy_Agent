@@ -34,6 +34,15 @@ CREATE TABLE IF NOT EXISTS DeptHeads (
     department      TEXT
 );
 
+
+-- ------------------------------------------------------------
+-- Advisors — Student Advisors
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS Advisors (
+    advisor_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    email       TEXT NOT NULL UNIQUE
+);
 -- ------------------------------------------------------------
 -- Courses
 -- ------------------------------------------------------------
@@ -241,18 +250,25 @@ CREATE TABLE IF NOT EXISTS AssessmentAnswers (
 -- finalize_request_row(); request_id/application_id doubles as the
 -- LangGraph thread_id source, see advisory/checkpointing.py)
 -- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS CertificateRequests (
-    request_id      INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id      INTEGER NOT NULL REFERENCES Students(student_id),
-    course_id       INTEGER REFERENCES Courses(course_id),
-    purpose         TEXT,
-    status          TEXT NOT NULL DEFAULT 'pending'
-                        CHECK (status IN ('pending','eligible','ineligible',
-                                           'needs_review')),
-    recommendation  TEXT,
-    decided_by      TEXT,
-    created_at      TEXT NOT NULL DEFAULT (DATETIME('now')),
-    decided_at      TEXT
+CREATE TABLE IF NOT EXISTS CertificateRequests ( 
+    request_id      INTEGER PRIMARY KEY AUTOINCREMENT, 
+    student_id      INTEGER NOT NULL REFERENCES Students(student_id), 
+    course_id       INTEGER REFERENCES Courses(course_id), 
+    advisor_id      INTEGER REFERENCES Advisors(advisor_id),
+
+    purpose         TEXT, 
+    status          TEXT NOT NULL DEFAULT 'pending' 
+                        CHECK (
+                            status IN (
+                                'pending',
+                                'eligible',
+                                'ineligible',
+                                'needs_review'
+                            )
+                        ), 
+    recommendation  TEXT, 
+    created_at      TEXT NOT NULL DEFAULT (DATETIME('now')), 
+    decided_at      TEXT 
 );
 
 CREATE TABLE IF NOT EXISTS ScholarshipApplications (
@@ -368,22 +384,38 @@ CREATE TABLE IF NOT EXISTS Tracks (
 );
 
 -- TrackRecommendations table — one row per recommendation run for a student.
-CREATE TABLE IF NOT EXISTS TrackRecommendations (
-    recommendation_id  INTEGER PRIMARY KEY AUTOINCREMENT,
-    student_id         INTEGER NOT NULL REFERENCES Students(student_id),
-    recommended_track  TEXT,
-    runner_up_track    TEXT,
-    confidence         REAL,
-    advisor_decision   TEXT CHECK (advisor_decision IN ('approve','choose_other','request_assessment')
-                                    OR advisor_decision IS NULL),
-    decided_by         TEXT,
-    status             TEXT NOT NULL DEFAULT 'pending'
-                       CHECK (status IN ('pending','awaiting_diagnostic','awaiting_advisor',
-                                         'awaiting_assessment','completed','failed')),
-    created_at         TEXT NOT NULL DEFAULT (DATETIME('now')),
-    decided_at         TEXT
-);
+CREATE TABLE IF NOT EXISTS TrackRecommendations ( 
+    recommendation_id  INTEGER PRIMARY KEY AUTOINCREMENT, 
+    student_id         INTEGER NOT NULL REFERENCES Students(student_id), 
+    advisor_id         INTEGER REFERENCES Advisors(advisor_id),
 
+    recommended_track  TEXT, 
+    runner_up_track    TEXT, 
+    confidence         REAL, 
+
+    advisor_decision   TEXT CHECK (
+        advisor_decision IN (
+            'approve',
+            'choose_other',
+            'request_assessment'
+        ) OR advisor_decision IS NULL
+    ), 
+
+    status             TEXT NOT NULL DEFAULT 'pending' 
+                       CHECK (
+                           status IN (
+                               'pending',
+                               'awaiting_diagnostic',
+                               'awaiting_advisor',
+                               'awaiting_assessment',
+                               'completed',
+                               'failed'
+                           )
+                       ), 
+
+    created_at         TEXT NOT NULL DEFAULT (DATETIME('now')), 
+    decided_at         TEXT 
+);
 -- DiagnosticAssessments table — diagnostic/targeted exams tied to a
 -- recommendation run. `subject` is always a real Courses.title (never an
 -- invented subject like "Linear Algebra"), so a result can be matched

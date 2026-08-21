@@ -52,10 +52,14 @@ MCP_SERVER_DIR = _Path(__file__).resolve().parent.parent.parent / "mcp_server"
 if str(MCP_SERVER_DIR) not in _sys.path:
     _sys.path.insert(0, str(MCP_SERVER_DIR))
 
+PHASE3_DIR = _Path(__file__).resolve().parent.parent.parent
+if str(PHASE3_DIR) not in _sys.path:
+    _sys.path.insert(0, str(PHASE3_DIR))
+
 
 # Real, existing modules only.
-from mcp_server import database as db
-from mcp_server import tools as mcp_tools
+import database as db
+import tools as mcp_tools
 from rag.rag_tool import search_policies
 
 
