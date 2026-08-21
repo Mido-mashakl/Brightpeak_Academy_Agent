@@ -16,7 +16,7 @@ scrutiny — the strongest 3 get selected for final submission.
 |---|---|---|
 | Farida | Academic Integrity Investigation & Appeal (state graph candidate) | Adaptive Assessment & Mastery Evaluation (state graph candidate) |
 | Fatma Saber | Faculty Hiring — CV Intake, Scoring & Shortlisting (state graph candidate) | _TBD_ |
-| Ahmed | Student Advisor — Certificate & Scholarship Eligibility | _TBD_ |
+| Ahmed | Student Advisor — Certificate & Scholarship Eligibility | Teaching feature: RAG-based Q&A over course material |
 
 > Note: an earlier draft used "Teaching Flow" (plain course-scoped RAG, question in/answer out) as
 > Farida's second candidate. Dropped — per the assignment brief, a single-pass RAG pipeline
@@ -25,7 +25,7 @@ scrutiny — the strongest 3 get selected for final submission.
 > which genuinely cycles, pauses, and needs human review. The course-scoped RAG fix itself is kept
 > as part of the Memory & RAG Lab correction, not a state graph candidate.
 
-## Candidate State Graph Problems (final 3 selected from these)
+## Candidate State Graph Problems
 
 | # | Owner | Problem | Why it needs a state graph (not a linear script) | Two LLM-call additions |
 |---|---|---|---|---|
@@ -34,7 +34,12 @@ scrutiny — the strongest 3 get selected for final submission.
 | 3 | Ahmed | Student Advisor — Certificate & Scholarship Eligibility | The advisor workflow may wait for missing student information or human review, can return to eligibility evaluation after new evidence arrives, and must preserve the collected profile and analysis across interruptions. | RAG + Task Decomposition |
 | 4 | Fatma Saber | Faculty Hiring — CV Intake, Scoring & Shortlisting | Waits indefinitely at `awaiting_more_applications` for new CVs or the deadline event (not a linear script); new CVs arrive as external events on the same thread without reprocessing existing candidates; the shortlist pauses at `hitl_dept_head_review` for a real human sign-off (hire / interview / rescore), and the rescore → shortlist → HITL path is a genuine cycle; a parse/score failure opens a ticket and resumes from checkpoint instead of restarting | RAG (`parse_and_validate` grounds parsing rules in `documents/hiring/hiring_policies.md`, esp. "never invent missing fields") + Constrained ReAct (`score_cv_against_qualifications` force-calls a single `score_candidate` tool so scores/breakdowns can't be free-form prose or hallucinated) |
 | 5 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| 6 | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+
+**Teaching is not one of the five state-graph problems**. It
+doesn't hold state across days, wait on an outside reply, or need a
+human to sign off mid-run — so it stays a plain, single-pass RAG
+chatbot: student asks a question, we answer from *their course's*
+material only.
 
 ## Reusing Phase-2 From Phase-3 (local copies, not shared imports)
 
