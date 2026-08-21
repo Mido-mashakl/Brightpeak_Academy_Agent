@@ -157,6 +157,7 @@ def register_readonly_tools(mcp) -> None:
             "course_id": course_id,
             "materials": db.get_course_materials(course_id),
         }
+        
  
     @mcp.tool()
     def ask_course_material(

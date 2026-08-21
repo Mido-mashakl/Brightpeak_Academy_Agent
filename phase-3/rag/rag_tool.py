@@ -244,6 +244,21 @@ def search_course_material(
     )
 
     hits = result.get("hits", [])
+    if not hits:
+        return {
+            "course_id": course_id,
+            "hits": [],
+            "context": "",
+            "verification": {
+                "action": "reject",
+                "reason": "No relevant course material found.",
+            },
+            "prompt_for_llm": None,
+            "message": (
+                "I couldn't find enough information "
+                "in the course material."
+            ),
+        }
 
     passages = [
         h["document"]

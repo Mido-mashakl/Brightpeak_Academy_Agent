@@ -67,7 +67,7 @@ class GeminiConfig:
     """
 
     api_key: str
-    model: str = "gemini-2.0-flash"
+    model: str = "gemini-3.6-flash"
     temperature: float = 0.7
     max_output_tokens: int = 1024
 
@@ -98,7 +98,7 @@ def load_gemini_config(env_path: str | None = None) -> GeminiConfig:
             "  GEMINI_API_KEY=your-key-here"
         )
 
-    model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    model = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
     temperature = float(os.getenv("GEMINI_TEMPERATURE", "0.7"))
     max_output_tokens = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS", "1024"))
 

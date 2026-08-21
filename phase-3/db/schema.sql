@@ -353,11 +353,63 @@ BEGIN
 END;
 
 -- ------------------------------------------------------------
--- Tickets (shared failure/recovery path — both Phase-3 graphs)
+-- Track Recommendation (Phase-3 state graph)
+-- Tracks table — available tracks + requirements, sourced by RAG
+-- from documents/track_requirements.md (kept in sync manually).
+-- prerequisites_json / core_courses_json reference real Courses.title
+-- values only (see seed.sql Courses) — no invented subjects.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS Tracks (
+    track_id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    name                TEXT NOT NULL UNIQUE,   -- 'Data Science', 'AI Engineering', etc.
+    description         TEXT,
+    prerequisites_json  TEXT NOT NULL,          -- JSON list: [{"course": "...", "min_score": N}, ...]
+    core_courses_json   TEXT NOT NULL           -- JSON list of course titles
+);
+
+-- TrackRecommendations table — one row per recommendation run for a student.
+CREATE TABLE IF NOT EXISTS TrackRecommendations (
+    recommendation_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id         INTEGER NOT NULL REFERENCES Students(student_id),
+    recommended_track  TEXT,
+    runner_up_track    TEXT,
+    confidence         REAL,
+    advisor_decision   TEXT CHECK (advisor_decision IN ('approve','choose_other','request_assessment')
+                                    OR advisor_decision IS NULL),
+    decided_by         TEXT,
+    status             TEXT NOT NULL DEFAULT 'pending'
+                       CHECK (status IN ('pending','awaiting_diagnostic','awaiting_advisor',
+                                         'awaiting_assessment','completed','failed')),
+    created_at         TEXT NOT NULL DEFAULT (DATETIME('now')),
+    decided_at         TEXT
+);
+
+-- DiagnosticAssessments table — diagnostic/targeted exams tied to a
+-- recommendation run. `subject` is always a real Courses.title (never an
+-- invented subject like "Linear Algebra"), so a result can be matched
+-- back to a Track's prerequisites/core_courses directly.
+-- `trigger` distinguishes the missing-data diagnostic (session #1) from
+-- an advisor-requested targeted assessment (session #2+) on the same
+-- course, so a prior result is reused as evidence instead of re-asked.
+CREATE TABLE IF NOT EXISTS DiagnosticAssessments (
+    assessment_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+    recommendation_id  INTEGER NOT NULL REFERENCES TrackRecommendations(recommendation_id),
+    student_id         INTEGER NOT NULL REFERENCES Students(student_id),
+    subject             TEXT NOT NULL,     -- Courses.title, e.g. 'Introduction to Python'
+    trigger             TEXT NOT NULL CHECK (trigger IN ('missing_data', 'advisor_request')),
+    score                REAL,              -- NULL until completed
+    status               TEXT NOT NULL DEFAULT 'pending'
+                         CHECK (status IN ('pending','completed')),
+    created_at           TEXT NOT NULL DEFAULT (DATETIME('now')),
+    completed_at         TEXT
+);
+
+-- ------------------------------------------------------------
+-- Tickets (shared failure/recovery path — Phase-3 graphs)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS Tickets (
     ticket_id       INTEGER PRIMARY KEY AUTOINCREMENT,
-    source_graph    TEXT NOT NULL,     -- 'academic_integrity' | 'adaptive_assessment'
+    source_graph    TEXT NOT NULL,     -- 'academic_integrity' | 'adaptive_assessment' | 'track_recommendation'
     source_id       INTEGER NOT NULL,  -- case_id or session_id
     thread_id       TEXT NOT NULL,     -- LangGraph thread_id, to resume from checkpoint
     failure_type    TEXT NOT NULL,     -- e.g. 'tool_error', 'schema_validation_failed'
@@ -400,3 +452,6 @@ CREATE INDEX IF NOT EXISTS idx_shortlist_entries_candidate    ON ShortlistEntrie
 CREATE INDEX IF NOT EXISTS idx_interviews_job                 ON Interviews(job_id);
 CREATE INDEX IF NOT EXISTS idx_interviews_candidate            ON Interviews(candidate_id);
 CREATE INDEX IF NOT EXISTS idx_hiring_decisions_job            ON HiringDecisions(job_id);
+CREATE INDEX IF NOT EXISTS idx_track_recs_student               ON TrackRecommendations(student_id);
+CREATE INDEX IF NOT EXISTS idx_diagnostic_assess_rec             ON DiagnosticAssessments(recommendation_id);
+CREATE INDEX IF NOT EXISTS idx_diagnostic_assess_student         ON DiagnosticAssessments(student_id);

@@ -250,4 +250,34 @@ INSERT INTO CourseMaterials (material_id, course_id, title, description, materia
     (31, 11, 'Introduction to Flutter',        'Flutter architecture, widgets, and setting up a project.',       'lecture', 'flutter/introduction.md'),
     (32, 11, 'Widgets and Layouts',            'Stateless vs. stateful widgets and layout composition.',         'lecture', 'flutter/widgets_layouts.md'),
     (33, 11, 'State Management in Flutter',    'Managing app state with Provider or similar patterns.',          'chapter', 'flutter/state_management.md');
- 
+
+-- ------------------------------------------------------------
+-- Tracks (Track Recommendation graph)
+-- prerequisites_json / core_courses_json reference real Courses.title
+-- values only — kept in sync with documents/track_requirements.md.
+-- ------------------------------------------------------------
+INSERT INTO Tracks (track_id, name, description, prerequisites_json, core_courses_json) VALUES
+    (1, 'Data Science',
+        'Focuses on extracting insight from data using statistics, Python, and machine learning.',
+        '[{"course": "Introduction to Python", "min_score": 70}, {"course": "Database Design & SQL", "min_score": 65}]',
+        '["Machine Learning Fundamentals", "Data Visualization with Python"]'),
+
+    (2, 'AI Engineering',
+        'Focuses on building and deploying machine learning and deep learning systems in production.',
+        '[{"course": "Introduction to Python", "min_score": 80}, {"course": "Machine Learning Fundamentals", "min_score": 75}]',
+        '["Data Visualization with Python", "Advanced Python & OOP"]'),
+
+    (3, 'Software Engineering',
+        'Focuses on building, testing, and deploying robust software systems and backend services.',
+        '[{"course": "Introduction to Python", "min_score": 75}, {"course": "Data Structures & Algorithms", "min_score": 70}]',
+        '["Advanced Python & OOP", "Node.js & Backend Development", "Database Design & SQL"]'),
+
+    (4, 'Web Development',
+        'Focuses on building modern, full-stack web applications with front-end and back-end frameworks.',
+        '[{"course": "Introduction to Python", "min_score": 65}]',
+        '["Web Development with React", "Node.js & Backend Development", "Database Design & SQL"]'),
+
+    (5, 'Mobile Development',
+        'Focuses on building cross-platform mobile applications.',
+        '[{"course": "Introduction to Python", "min_score": 65}]',
+        '["Mobile App Development with Flutter"]');

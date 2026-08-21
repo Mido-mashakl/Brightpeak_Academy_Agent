@@ -20,30 +20,47 @@ from its last persisted checkpoint instead of starting over.
 
 from __future__ import annotations
 
+import sqlite3
 import sys
 from pathlib import Path
 
 _MCP_DIR = Path(__file__).resolve().parent.parent.parent / "mcp_server"
 if str(_MCP_DIR) not in sys.path:
     sys.path.insert(0, str(_MCP_DIR))
-
+    
 from langgraph.checkpoint.sqlite import SqliteSaver  # noqa: E402
 
-import database as db  # noqa: E402  (phase-3/mcp_server/database.py)
+import database as db  # noqa: E402
+
 
 _checkpointer: SqliteSaver | None = None
+_checkpoint_conn: sqlite3.Connection | None = None
 
 
 def get_checkpointer() -> SqliteSaver:
-    """Process-wide singleton SqliteSaver bound to database.py's own
-    sqlite3 connection (`db._DB`), rather than opening a second
-    connection to the same file -- avoids the two layers stepping on
-    each other's transactions/locks on brightpeak.db."""
-    global _checkpointer
+    """Return the process-wide LangGraph SQLite checkpointer.
+
+    The checkpointer uses a separate SQLite connection from database.py,
+    while writing to the same brightpeak.db file.
+    """
+    global _checkpointer, _checkpoint_conn
+
     if _checkpointer is None:
-        _checkpointer = SqliteSaver(db._DB)
+        _checkpoint_conn = sqlite3.connect(
+            str(db._DB_PATH),
+            check_same_thread=False,
+            timeout=30,
+        )
+
+        _checkpointer = SqliteSaver(_checkpoint_conn)
         _checkpointer.setup()
+
     return _checkpointer
+
+
+def thread_config(thread_id: str) -> dict:
+    """LangGraph config for a resumable thread."""
+    return {"configurable": {"thread_id": thread_id}}
 
 
 def thread_config(thread_id: str) -> dict:

@@ -65,7 +65,7 @@ class StudentAdvisorState(BaseModel):
     policy_source: Optional[str] = None
 
     # --- requirements (Task Decomposition) & their evaluation ---
-    requirement_checks: Annotated[list[RequirementCheck], add] = Field(default_factory=list)
+    requirement_checks: list[RequirementCheck] = Field(default_factory=list)
     missing_info: list[str] = Field(default_factory=list)
     confidence: Optional[float] = None  # 0..1, drives the human_review branch
 
