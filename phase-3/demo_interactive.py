@@ -82,6 +82,7 @@ def ask_admin_decision():
 
 
 def main():
+    g.get_checkpointer()
     cleanup()
     seed()
     try:
