@@ -51,6 +51,12 @@ def seed():
 
 
 def cleanup():
+    # Ensure the checkpointer's own tables exist before we DELETE from them.
+    # On a brand-new database these tables are created lazily by LangGraph
+    # the first time a graph actually runs -- not at import time -- so on a
+    # fresh clone this cleanup() would otherwise be the very first thing to
+    # crash, with "no such table: checkpoints".
+    g.get_checkpointer().setup()
     for sid in (SESSION_A, SESSION_B, SESSION_C):
         db.execute("DELETE FROM AssessmentAnswers WHERE session_id = ?", (sid,))
         db.execute("DELETE FROM Tickets WHERE source_id = ?", (sid,))
@@ -172,7 +178,10 @@ def hitl_path():
 
     def fixed_pick(*a, **kw):
         q_counter["n"] += 1
-        return f"subskill_{q_counter['n']}", "medium", f"Fixed test question #{q_counter['n']}", "expected answer"
+        return (
+            f"subskill_{q_counter['n']}", "medium", f"Fixed test question #{q_counter['n']}",
+            "A", ["expected answer", "wrong 1", "wrong 2", "wrong 3"],
+        )
     # 3 scores whose average is exactly 0.75 == mastery_threshold, so
     # finalize()'s abs(score - threshold) <= FLAG_MARGIN (0.05) is True.
     fixed_scores = [0.8, 0.7, 0.75]

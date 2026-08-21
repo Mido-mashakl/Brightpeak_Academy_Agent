@@ -39,6 +39,7 @@ class AnsweredQuestion(BaseModel):
         # of a Python dispatcher with nothing to check against
     is_correct: Optional[bool] = None
     score_awarded: Optional[float] = None  # 0.0-1.0 for this one question
+    options: Optional[list[str]] = None
 
 
 class AdaptiveAssessmentState(BaseModel):

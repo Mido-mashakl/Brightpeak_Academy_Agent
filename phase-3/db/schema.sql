@@ -228,9 +228,11 @@ CREATE TABLE IF NOT EXISTS AssessmentAnswers (
     question_text   TEXT NOT NULL,
     difficulty      TEXT NOT NULL,
     student_answer  TEXT NOT NULL,
+    expected_answer TEXT,
     is_correct      INTEGER,
     score_awarded   REAL,
-    answered_at     TEXT NOT NULL DEFAULT (DATETIME('now'))
+    answered_at     TEXT NOT NULL DEFAULT (DATETIME('now')),
+    options         TEXT
 );
 
 -- ------------------------------------------------------------

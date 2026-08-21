@@ -585,17 +585,8 @@ def score_ruling_against_policy(ruling: str, rationale: str) -> float:
 # =======================================================================
 
 def decompose_and_pick_question(
-    topic: str,
-    subskills_covered: list[str],
-    current_difficulty: str,
-    running_score: float,
-) -> tuple[str, str, str, str]:
-    """Task decomposition: breaks `topic` into subskills and picks the next
-    one to probe (skipping ones already covered), at a difficulty adapted
-    to running_score. Also asks for a short expected answer, so
-    evaluate_answer_constrained_react's GRADE_EXACT action has something
-    real to compare against instead of nothing.
-    Returns (subskill, difficulty, question_text, expected_answer)."""
+    topic: str, subskills_covered: list[str], current_difficulty: str, running_score: float,
+) -> tuple[str, str, str, str, list[str]]:
     prompt = (
         f"You are building an adaptive quiz on the topic: {topic}\n"
         f"Subskills already tested: {subskills_covered or 'none yet'}\n"
@@ -603,15 +594,13 @@ def decompose_and_pick_question(
         f"Current difficulty band: {current_difficulty}\n\n"
         f"Step 1 - Decompose '{topic}' into the key subskills a student must "
         f"master (pick one NOT already tested).\n"
-        f"Step 2 - Choose a difficulty (easy, medium, or hard): raise it if "
-        f"running_score is high, lower it if it's low.\n"
-        f"Step 3 - Write ONE short question testing that subskill at that "
-        f"difficulty.\n"
-        f"Step 4 - Write the single short expected answer to your own "
-        f"question (a word, number, or one short phrase).\n\n"
+        f"Step 2 - Choose a difficulty (easy, medium, or hard).\n"
+        f"Step 3 - Write ONE multiple-choice question testing that subskill, "
+        f"with exactly 4 options.\n\n"
         f"Reply in exactly this format:\n"
         f"SUBSKILL: <short name>\nDIFFICULTY: <easy|medium|hard>\n"
-        f"QUESTION: <question text>\nEXPECTED_ANSWER: <short answer>"
+        f"QUESTION: <question text>\nA: <option A>\nB: <option B>\n"
+        f"C: <option C>\nD: <option D>\nCORRECT: <A|B|C|D>"
     )
     text = _gemini.generate(prompt)
     lines = {l.split(":", 1)[0].strip().upper(): l.split(":", 1)[1].strip()
@@ -621,8 +610,9 @@ def decompose_and_pick_question(
     if difficulty not in ("easy", "medium", "hard"):
         difficulty = current_difficulty
     question = lines.get("QUESTION", f"Explain a key idea in {subskill}.")
-    expected_answer = lines.get("EXPECTED_ANSWER", "")
-    return subskill, difficulty, question, expected_answer
+    options = [lines.get(k, "") for k in ("A", "B", "C", "D")]
+    correct_letter = lines.get("CORRECT", "A").strip().upper()
+    return subskill, difficulty, question, correct_letter, options
 
 
 def _decide_grading_action(question_text: str, difficulty: str) -> str:
@@ -640,26 +630,53 @@ def _decide_grading_action(question_text: str, difficulty: str) -> str:
     return "GRADE_EXACT" if "EXACT" in text else "GRADE_JUDGE"
 
 
+def _normalize_mcq_answer(answer: str) -> str:
+    """'A', 'a', 'A)', ' A.' etc all collapse to a bare 'A'. Only strips a
+    single leading MCQ letter -- does NOT do substring matching, so a full
+    option string like 'Declares a variable' does not collapse to 'A'
+    just because it contains the letter."""
+    cleaned = (answer or "").strip().upper().rstrip(").:")
+    return cleaned
+
+
 def _grade_exact(student_answer: str, expected_answer: str) -> tuple[bool, float, str]:
-    """Action #1: pure Python, NO LLM call. Real comparison against the
-    expected_answer select_next_question generated alongside the question --
-    not a placeholder with nothing to check against."""
-    norm_student = student_answer.strip().lower()
-    norm_expected = (expected_answer or "").strip().lower()
-    correct = bool(norm_expected) and (
-        norm_expected in norm_student or norm_student in norm_expected
-    )
+    """Action #1: pure Python, NO LLM call. Real EXACT comparison against
+    the expected_answer select_next_question generated alongside the
+    question. Fixed after review: this used to check substring containment
+    (`norm_expected in norm_student`), which meant almost any free-text
+    answer counted as correct once expected_answer became a single MCQ
+    letter (e.g. 'Declares a variable' contains the letter 'a' and used to
+    score as correct against expected_answer='A'). MCQ answers must match
+    the letter exactly."""
+    norm_student = _normalize_mcq_answer(student_answer)
+    norm_expected = _normalize_mcq_answer(expected_answer)
+    correct = bool(norm_expected) and norm_student == norm_expected
     score = 1.0 if correct else 0.0
     rationale = f"Compared directly against expected answer '{expected_answer}'."
     return correct, score, rationale
 
 
-def _grade_judge(question_text: str, difficulty: str, student_answer: str) -> tuple[bool, float, str]:
-    """Action #2: the one LLM call allowed for actual grading judgement."""
+def _grade_judge(
+    question_text: str, difficulty: str, student_answer: str, options: list[str] | None = None
+) -> tuple[bool, float, str]:
+    """Action #2: the one LLM call allowed for actual grading judgement.
+    Fixed after review: every question is MCQ now (decompose_and_pick_question
+    always generates 4 options + a correct letter), but this function used to
+    receive only question_text -- never the options themselves. If
+    _decide_grading_action ever routed an MCQ question here (it has no way
+    to know it's MCQ), the LLM would be asked to judge a bare letter like
+    "A" with zero context on what A/B/C/D meant. Now the options are always
+    passed through and included in the prompt so this path can never judge
+    blind, even though GRADE_EXACT is the expected route for MCQ answers."""
+    options_block = ""
+    if options:
+        labeled = "\n".join(f"{letter}: {text}" for letter, text in zip("ABCD", options))
+        options_block = f"Options:\n{labeled}\n\n"
     prompt = (
         f"Question ({difficulty}): {question_text}\n"
+        f"{options_block}"
         f"Student's answer: {student_answer}\n\n"
-        f"Judge this free-text answer.\n"
+        f"Judge this answer.\n"
         f"CORRECT: <yes|no>\nSCORE: <0.0-1.0>\nRATIONALE: <one sentence>"
     )
     text = _gemini.generate(prompt)
@@ -675,14 +692,19 @@ def _grade_judge(question_text: str, difficulty: str, student_answer: str) -> tu
 
 
 def evaluate_answer_constrained_react(
-    question_text: str, difficulty: str, student_answer: str, expected_answer: str = ""
+    question_text: str, difficulty: str, student_answer: str,
+    expected_answer: str = "", options: list[str] | None = None,
 ) -> tuple[bool, float, str]:
     """Constrained ReAct: Thought (_decide_grading_action) picks ONE of
     exactly two whitelisted actions; a real PYTHON dispatcher -- not the
     LLM narrating a format -- then calls the matching function. Hard-capped
     at 2 LLM calls total: one to decide, at most one more to judge.
-    GRADE_EXACT makes zero further LLM calls."""
+    GRADE_EXACT makes zero further LLM calls.
+
+    `options` param added after review: threaded through so the
+    GRADE_JUDGE fallback is never blind on an MCQ question (see
+    _grade_judge's docstring)."""
     action = _decide_grading_action(question_text, difficulty)
     if action == "GRADE_EXACT" and expected_answer:
         return _grade_exact(student_answer, expected_answer)
-    return _grade_judge(question_text, difficulty, student_answer)
+    return _grade_judge(question_text, difficulty, student_answer, options=options)
