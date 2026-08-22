@@ -1,0 +1,33 @@
+/* =========================================================
+   Brightpeak Academy — shared design tokens
+   Load this before a role's own style.css so its variables
+   (--purple, --baby-blue, etc.) are available everywhere.
+   ========================================================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --background: #05050B;
+  --text: #F1F1F1;
+  --muted: #B0B3C1;
+
+  /* Premium Purple + Baby Blue */
+  --purple: #8B5CF6;
+  --light-purple: #BFA7FF;
+  --baby-blue: #60A5FA;
+  --soft-blue: #A7D8FF;
+  --lavender: #D0BCFF;
+}
+
+body {
+  font-family: "Inter", "Montserrat", sans-serif;
+  background: var(--background);
+  color: var(--text);
+}
+
+/* Component-level styles (toast, cards, etc.) now live in
+   shared/styles/components.css — load that after this file. */

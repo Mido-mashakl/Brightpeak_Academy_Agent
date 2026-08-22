@@ -1,0 +1,64 @@
+/* =========================================================
+   Brightpeak Academy — shared component styles
+   Load AFTER shared/styles/base.css so design tokens
+   (--text, --muted, etc.) are already defined.
+   Backs: shared/components/components.js, shared/hitl/hitl-ui.js,
+   shared/tickets/ticket-ui.js
+   ========================================================= */
+
+/* Shared toast (used by shared/components/components.js showToast) */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #16162A;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* HITL / Ticket cards (used by shared/hitl/hitl-ui.js and
+   shared/tickets/ticket-ui.js) */
+.hitl-card,
+.ticket-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #101020;
+}
+
+.hitl-card-header,
+.ticket-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.hitl-card-summary,
+.ticket-card-summary {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+}
+
+.hitl-card-actions,
+.ticket-card-actions {
+  display: flex;
+  gap: 8px;
+}
