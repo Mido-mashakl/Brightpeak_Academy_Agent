@@ -156,6 +156,18 @@ body {
 }
 
 
+/* Links with no real page behind them yet (marketing content not built) —
+   visually distinct from working links instead of silently doing nothing. */
+.nav-disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+.nav-disabled:hover {
+    color: var(--muted) !important;
+}
+
+
 /* =========================
    NAV ACTIONS
 ========================= */

@@ -62,6 +62,18 @@ def _init_db() -> None:
         if con.execute("SELECT COUNT(*) FROM Students").fetchone()[0] == 0:
             con.executescript(_SEED.read_text(encoding="utf-8"))
 
+        _run_migrations(con)
+
+
+def _run_migrations(con: sqlite3.Connection) -> None:
+    """CREATE TABLE IF NOT EXISTS never adds a column to a table that
+    already exists on disk. Anyone with an older brightpeak.db needs these
+    ALTERs applied once; this runs on every startup and is a no-op once the
+    column is already there."""
+    existing_cols = {row["name"] for row in con.execute("PRAGMA table_info(JobPostings)").fetchall()}
+    if "department" not in existing_cols:
+        con.execute("ALTER TABLE JobPostings ADD COLUMN department TEXT")
+
 
 # -----------------------------------------------------------------------
 # READ — Students & Instructors

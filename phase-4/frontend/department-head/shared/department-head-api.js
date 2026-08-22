@@ -3,31 +3,38 @@
  * ---------------------------------------------------------------
  * Data access layer for the Department Head section.
  *
- * STATUS: DEMO / MOCK PERSISTENCE (localStorage).
- * No backend was available to inspect while building this preview,
- * so every function below is a stand-in. Each one is written so the
- * *only* thing that needs to change to go live is the body of the
- * function — callers (jobs.js, candidates.js, hitl.js, tickets.js,
- * agents.js) do not need to change.
+ * STATUS as of this update:
+ *   LIVE  — Jobs + Candidates/CV Intake (this file talks to the real
+ *           phase-3 faculty_hiring graph via phase-4/backend/routers/
+ *           hiring_router.py, port 8000)
+ *   MOCK  — Academic Integrity HITL, Tickets, Agents, Dashboard stats
+ *           (still localStorage — no auth/endpoints exist for these yet)
  *
- * Known REAL endpoints (from project brief — confirm base URL/auth
- * headers with the existing frontend service layer before wiring up):
- *   POST /hiring/jobs
- *   POST /hiring/jobs/{job_id}/cv
- *   POST /hiring/jobs/{job_id}/close
- *
- * NOT CONFIRMED / LIKELY MISSING (used here as mock only — see
- * README report at bottom of chat for the full list):
+ * LIVE endpoints in use:
  *   GET  /hiring/jobs
  *   GET  /hiring/jobs/{job_id}/candidates
+ *   GET  /hiring/candidates                      (no job filter)
+ *   POST /hiring/jobs
+ *   POST /hiring/jobs/{job_id}/cv                (multipart file upload)
+ *   POST /hiring/jobs/{job_id}/close
+ *
+ * NOT WIRED YET (still mock — need dept_head auth session first, see
+ * mcp_server/roles.py + hiring_router.py's bottom note):
  *   POST /hiring/candidates/{candidate_id}/decision   (hire/reject/interview/rescore)
  *   GET  /hitl/academic-integrity/cases
  *   POST /hitl/academic-integrity/cases/{case_id}/decision
  *   GET  /tickets
  *   PATCH /tickets/{ticket_id}/status
  *   GET  /agents
+ *
+ * BASE_URL points straight at the FastAPI backend (port 8000). The rest
+ * of the platform's shared/api.js points at port 3000 (Express, login +
+ * static serving) — the two backends aren't bridged yet, so hiring calls
+ * go directly to 8000 for now instead of through a shared client.
  * ---------------------------------------------------------------
  */
+const BASE_URL = "http://localhost:8000";
+
 const DHApi = (function () {
   const STORE_KEY = "bp_dh_demo_store_v1";
 
@@ -265,103 +272,87 @@ const DHApi = (function () {
   }
 
   return {
-    /** ------------- JOBS ------------- */
-    // Real endpoint: GET /hiring/jobs (NOT CONFIRMED to exist yet — mocked)
+    /** ------------- JOBS (LIVE — wired to phase-4/backend/routers/hiring_router.py) ------------- */
     async listJobs() {
-      await delay();
-      return load().jobs;
+      const res = await fetch(`${BASE_URL}/hiring/jobs`);
+      if (!res.ok) throw new Error("Failed to load job postings.");
+      const jobs = await res.json();
+      // Normalize server's ISO deadline/postedDate strings to epoch ms —
+      // jobs.js's countdown timer and lock logic both do Date.now() math.
+      return jobs.map((j) => ({
+        ...j,
+        deadline: j.deadline ? new Date(j.deadline.replace(" ", "T") + "Z").getTime() : null,
+        postedDate: j.postedDate ? new Date(j.postedDate.replace(" ", "T") + "Z").getTime() : null,
+      }));
     },
 
-    // Real endpoint: POST /hiring/jobs
     async createJob({ title, department, qualifications, deadline }) {
-      await delay();
-      const store = load();
-      const job = {
-        id: uid("job"),
+      const res = await fetch(`${BASE_URL}/hiring/jobs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          job_title: title,
+          department,
+          qualifications: qualifications || [],
+          application_deadline: deadline ? new Date(deadline).toISOString() : null,
+          initial_cvs: [],
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to create job posting.");
+      const data = await res.json();
+      return {
+        id: data.job_id,
         title,
         department,
         qualifications: qualifications || [],
         status: "open",
         deadline,
         postedDate: Date.now(),
-        closedManually: false
+        closedManually: false,
       };
-      store.jobs.unshift(job);
-      save(store);
-      return job;
     },
 
-    // Real endpoint: POST /hiring/jobs/{job_id}/close
     // Department Head manually ends the application window (deadline button).
     async closeJob(jobId) {
-      await delay();
-      const store = load();
-      const job = store.jobs.find((j) => j.id === jobId);
-      if (!job) throw new Error("Job not found");
-      job.status = "closed";
-      job.closedManually = true;
-      save(store);
-      return job;
+      const res = await fetch(`${BASE_URL}/hiring/jobs/${jobId}/close`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to close job posting.");
+      return { id: jobId, status: "closed", closedManually: true };
     },
 
-    /** ------------- CANDIDATES / CV INTAKE ------------- */
-    // Real endpoint: GET /hiring/jobs/{job_id}/candidates (NOT CONFIRMED — mocked)
+    /** ------------- CANDIDATES / CV INTAKE (LIVE) ------------- */
     async listCandidates(jobId) {
-      await delay();
-      const store = load();
-      return jobId ? store.candidates.filter((c) => c.jobId === jobId) : store.candidates;
+      const url = jobId ? `${BASE_URL}/hiring/jobs/${jobId}/candidates` : `${BASE_URL}/hiring/candidates`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to load candidates.");
+      return res.json();
     },
 
     /**
      * Real endpoint: POST /hiring/jobs/{job_id}/cv  (multipart file upload)
      * This is the CV Intake step of the hiring graph (ingest_cv_batch ->
-     * parse_and_validate -> score_cv_against_qualifications). Since there
-     * is no live parsing/scoring backend in this preview, we simulate the
-     * pipeline locally so the deadline-lock UX can be demonstrated end to end.
+     * parse_and_validate -> score_cv_against_qualifications) — LIVE now,
+     * hitting the real graph via POST /hiring/jobs/{job_id}/cv.
      */
     async uploadCV(jobId, file, candidateName) {
-      const store = load();
-      const job = store.jobs.find((j) => j.id === jobId);
-      if (!job) throw new Error("Job not found");
+      const fd = new FormData();
+      fd.append("cv_file", file);
+      if (candidateName) fd.append("candidate_name", candidateName);
 
-      const deadlinePassed = job.deadline && Date.now() > job.deadline;
-      if (job.status === "closed" || job.closedManually || deadlinePassed) {
+      const res = await fetch(`${BASE_URL}/hiring/jobs/${jobId}/cv`, {
+        method: "POST",
+        body: fd, // no Content-Type header — the browser sets the multipart boundary itself
+      });
+
+      if (res.status === 409) {
         const err = new Error("APPLICATIONS_CLOSED");
         err.code = "APPLICATIONS_CLOSED";
         throw err;
       }
-
-      await delay(400);
-      const candidate = {
-        id: uid("cand"),
-        jobId,
-        name: candidateName || (file && file.name ? file.name.replace(/\.[^/.]+$/, "") : "New Candidate"),
-        university: "Pending parse",
-        experienceYears: null,
-        skills: [],
-        teachingExperienceYears: null,
-        aiScore: null,
-        status: "parsing",
-        aiRecommendation: null,
-        keyStrengths: [],
-        decision: null,
-        fileName: file ? file.name : null,
-        source: "upload"
-      };
-      store.candidates.unshift(candidate);
-      save(store);
-
-      // Simulate parse_and_validate -> score_cv_against_qualifications
-      await delay(900);
-      const store2 = load();
-      const c = store2.candidates.find((x) => x.id === candidate.id);
-      if (c) {
-        c.status = "ai_scored";
-        c.aiScore = Math.floor(60 + Math.random() * 35);
-        c.aiRecommendation = c.aiScore >= 85 ? "Recommended for Interview" : "Below shortlist threshold — review recommended";
-        save(store2);
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || "Failed to submit CV.");
       }
-      return candidate;
+      return res.json();
     },
 
     /**

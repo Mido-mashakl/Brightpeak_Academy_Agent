@@ -237,9 +237,11 @@ CREATE TABLE IF NOT EXISTS AssessmentAnswers (
     question_text   TEXT NOT NULL,
     difficulty      TEXT NOT NULL,
     student_answer  TEXT NOT NULL,
+    expected_answer TEXT,
     is_correct      INTEGER,
     score_awarded   REAL,
-    answered_at     TEXT NOT NULL DEFAULT (DATETIME('now'))
+    answered_at     TEXT NOT NULL DEFAULT (DATETIME('now')),
+    options         TEXT
 );
 
 -- ------------------------------------------------------------
@@ -290,6 +292,7 @@ CREATE TABLE IF NOT EXISTS ScholarshipApplications (
 CREATE TABLE IF NOT EXISTS JobPostings (
     job_id          INTEGER PRIMARY KEY AUTOINCREMENT,
     title           TEXT NOT NULL,
+    department      TEXT,                -- shown on the Dept Head hiring UI; not used by the graph itself
     qualifications  TEXT NOT NULL,      -- JSON list of qualification strings
     application_deadline TEXT,          -- display/validation only; MVP uses admin "close" button, no scheduler
     status          TEXT NOT NULL DEFAULT 'open'
@@ -388,6 +391,7 @@ CREATE TABLE IF NOT EXISTS TrackRecommendations (
     advisor_id         INTEGER REFERENCES Advisors(advisor_id),
 
     recommended_track  TEXT, 
+    decided_by TEXT,
     runner_up_track    TEXT, 
     confidence         REAL, 
 
