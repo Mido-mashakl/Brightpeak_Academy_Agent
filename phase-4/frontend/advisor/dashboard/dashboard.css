@@ -1,0 +1,103 @@
+.bp-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  overflow: visible;
+  position: relative;
+}
+
+.bp-hero-text h1 {
+  font-size: 26px;
+  margin: 0 0 4px;
+}
+.bp-hero-text h1 .accent {
+  background: var(--bp-gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.bp-hero-text p { margin: 0 0 22px; font-size: 13px; }
+
+.bp-hero-mascot {
+  width: 220px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+}
+.bp-hero-mascot img {
+  width: 100%;
+  max-width: 220px;
+  filter: drop-shadow(0 0 40px rgba(139, 92, 246, 0.45));
+}
+
+.bp-stats {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.bp-stat {
+  background: var(--bp-panel-2);
+  border: 1px solid var(--bp-panel-border);
+  border-radius: var(--bp-radius-md);
+  padding: 14px 18px;
+  min-width: 120px;
+}
+.bp-stat .label { font-size: 11px; color: var(--bp-text-dim); margin-bottom: 6px; }
+.bp-stat .value { font-size: 24px; font-weight: 700; }
+.bp-stat .delta { font-size: 11px; color: var(--bp-green); margin-top: 4px; }
+.bp-stat.total .value { color: var(--bp-violet); }
+.bp-stat.progress .value { color: var(--bp-blue); }
+.bp-stat.review .value { color: var(--bp-yellow); }
+.bp-stat.completed .value { color: var(--bp-green); }
+
+.bp-grid-lower {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.bp-link { font-size: 12px; color: var(--bp-lavender); }
+
+.bp-attention-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+
+.bp-attention-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--bp-panel-2);
+  border: 1px solid var(--bp-panel-border);
+  border-radius: var(--bp-radius-md);
+  padding: 12px 14px;
+}
+
+.bp-attention-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--bp-gradient-btn);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px; color: #fff; flex-shrink: 0;
+}
+
+.bp-attention-info { flex: 1; }
+.bp-attention-info .name { font-size: 13px; font-weight: 600; }
+.bp-attention-info .type { font-size: 12px; color: var(--bp-text-dim); }
+
+.bp-attention-right { text-align: right; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+.bp-attention-right a { font-size: 11px; color: var(--bp-lavender); }
+
+/* AI Insights ring */
+.bp-insights-card { text-align: center; }
+.bp-ring-wrap { display: flex; justify-content: center; margin: 10px 0 18px; }
+.bp-ring-value { font-size: 26px; font-weight: 700; }
+.bp-ring-label { font-size: 11px; color: var(--bp-text-dim); }
+.bp-insight-metrics { display: flex; justify-content: space-around; border-top: 1px solid var(--bp-panel-border); padding-top: 14px; }
+.bp-insight-metrics .num { font-size: 18px; font-weight: 700; }
+.bp-insight-metrics .lbl { font-size: 11px; color: var(--bp-text-dim); margin-top: 2px; }
+
+@media (max-width: 1024px) {
+  .bp-grid-lower { grid-template-columns: 1fr; }
+  .bp-hero { flex-direction: column; text-align: center; }
+}
