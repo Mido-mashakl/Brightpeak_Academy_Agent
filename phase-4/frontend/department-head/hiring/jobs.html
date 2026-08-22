@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Faculty Hiring - Job Postings - Brightpeak Academy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="../shared/department-head-theme.js"></script>
+<link rel="stylesheet" href="jobs.css"/>
+</head>
+<body class="font-body-md text-body-md antialiased overflow-x-hidden">
+
+<div id="dh-sidebar"></div>
+<div id="dh-topbar"></div>
+
+<main class="ml-72 p-lg min-h-screen">
+  <div class="flex justify-between items-start mb-lg">
+    <div>
+      <h1 class="font-headline-lg text-headline-lg font-semibold text-on-surface mb-xs">Faculty Hiring</h1>
+      <p class="font-body-md text-on-surface-variant">Job postings, application windows, and CV intake.</p>
+    </div>
+    <div class="flex items-center gap-sm">
+      <a href="candidates.html" class="secondary-btn"><span class="material-symbols-outlined text-sm">groups</span>Candidate Pool</a>
+      <button id="new-job-btn" class="primary-btn"><span class="material-symbols-outlined text-sm">add</span>Post New Job</button>
+    </div>
+  </div>
+
+  <div id="jobs-grid" class="grid grid-cols-2 gap-gutter"></div>
+</main>
+
+<!-- New Job Modal -->
+<div id="new-job-modal" class="modal-backdrop hidden">
+  <div class="modal-panel">
+    <div class="flex justify-between items-center mb-md">
+      <h2 class="font-headline-md text-headline-md text-on-surface">Post New Job</h2>
+      <button class="modal-close" data-close-modal="new-job-modal"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <form id="new-job-form" class="flex flex-col gap-md">
+      <div>
+        <label class="form-label">Position Title</label>
+        <input required name="title" type="text" class="form-input" placeholder="e.g. Data Science Instructor"/>
+      </div>
+      <div>
+        <label class="form-label">Department</label>
+        <input required name="department" type="text" class="form-input" placeholder="e.g. Computer Science"/>
+      </div>
+      <div>
+        <label class="form-label">Required Qualifications (comma separated)</label>
+        <input name="qualifications" type="text" class="form-input" placeholder="Bachelor's degree, Python, Machine Learning, 2+ years experience"/>
+      </div>
+      <div>
+        <label class="form-label">Application Deadline</label>
+        <input required name="deadline" type="datetime-local" class="form-input"/>
+      </div>
+      <div class="flex justify-end gap-sm mt-sm">
+        <button type="button" class="secondary-btn" data-close-modal="new-job-modal">Cancel</button>
+        <button type="submit" class="primary-btn"><span class="material-symbols-outlined text-sm">check</span>Create Job Posting</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Upload CV Modal -->
+<div id="upload-cv-modal" class="modal-backdrop hidden">
+  <div class="modal-panel">
+    <div class="flex justify-between items-center mb-md">
+      <h2 class="font-headline-md text-headline-md text-on-surface">Upload CV</h2>
+      <button class="modal-close" data-close-modal="upload-cv-modal"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <p class="text-on-surface-variant text-body-sm mb-md">For <span id="upload-job-title" class="text-on-surface font-medium"></span>. This CV enters the intake pipeline (parsing → AI scoring) and reaches the Department Head once processed.</p>
+    <form id="upload-cv-form" class="flex flex-col gap-md">
+      <input type="hidden" name="jobId" id="upload-job-id"/>
+      <div>
+        <label class="form-label">Candidate Name (optional — used for this demo since live parsing isn't connected)</label>
+        <input name="candidateName" type="text" class="form-input" placeholder="e.g. Youssef Mostafa"/>
+      </div>
+      <div>
+        <label class="form-label">CV File</label>
+        <label class="dropzone" id="dropzone">
+          <span class="material-symbols-outlined text-3xl text-primary mb-xs">upload_file</span>
+          <span id="dropzone-text" class="text-body-sm text-on-surface-variant">Click to choose a file from your device, or drag it here (PDF, DOC, DOCX)</span>
+          <input required id="cv-file-input" name="cvFile" type="file" accept=".pdf,.doc,.docx" class="hidden"/>
+        </label>
+      </div>
+      <div id="upload-error" class="hidden upload-error"></div>
+      <div class="flex justify-end gap-sm mt-sm">
+        <button type="button" class="secondary-btn" data-close-modal="upload-cv-modal">Cancel</button>
+        <button type="submit" id="upload-submit-btn" class="primary-btn"><span class="material-symbols-outlined text-sm">send</span>Submit CV</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast-root"></div>
+
+<script src="../shared/department-head-nav.js"></script>
+<script src="../shared/department-head-api.js"></script>
+<script src="jobs.js"></script>
+</body>
+</html>

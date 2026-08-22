@@ -1,0 +1,66 @@
+.tab-bar { display: inline-flex; gap: 4px; background: rgba(39, 42, 49, 0.4); border: 1px solid rgba(73, 68, 84, 0.2); border-radius: 0.6rem; padding: 4px; }
+.tab-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: 0.4rem; border: none; background: transparent;
+  color: #cbc3d7; font-family: "Inter", sans-serif; font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: all 0.15s ease;
+}
+.tab-btn.active { background: rgba(208, 188, 255, 0.12); color: #d0bcff; }
+.tab-panel.hidden { display: none; }
+
+.review-table { width: 100%; border-collapse: collapse; }
+.review-table thead th {
+  text-align: left; font-family: "Geist", monospace; font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #cbc3d7; padding: 10px 12px; border-bottom: 1px solid rgba(73, 68, 84, 0.2);
+}
+.review-table tbody tr { cursor: pointer; border-bottom: 1px solid rgba(73, 68, 84, 0.1); transition: background 0.15s ease; }
+.review-table tbody tr:hover { background: rgba(208, 188, 255, 0.05); }
+.review-table tbody tr.selected { background: rgba(208, 188, 255, 0.1); }
+.review-table td { padding: 12px; font-size: 14px; color: #e1e2eb; }
+
+.severity-pill { padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.severity-pill.Severe, .severity-pill.Major { background: rgba(245, 194, 107, 0.15); color: #f5c26b; }
+.severity-pill.Minor { background: rgba(173, 198, 255, 0.15); color: #adc6ff; }
+.severity-pill.Severe { background: rgba(255, 180, 171, 0.15); color: #ffb4ab; }
+
+.status-pill { padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+.status-pill.reported { background: rgba(255,180,171,.12); color:#ffb4ab; }
+.status-pill.under_review { background: rgba(208,188,255,.12); color:#d0bcff; }
+.status-pill.awaiting_appeal { background: rgba(245,194,107,.12); color:#f5c26b; }
+.status-pill.closed { background: rgba(143,214,163,.12); color:#8fd6a3; }
+
+.section-title { font-family: "Geist", monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #cbc3d7; margin-bottom: 8px; }
+.policy-chip { display: inline-block; padding: 3px 10px; border-radius: 0.3rem; background: rgba(39,42,49,0.7); border: 1px solid rgba(73,68,84,0.3); color: #cbc3d7; font-size: 12px; margin: 0 6px 6px 0; font-family: "Geist", monospace; }
+.evidence-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(39,42,49,0.5); border-radius: 0.4rem; margin-bottom: 6px; font-size: 13px; color: #e1e2eb; }
+
+.ai-assessment-box {
+  border-left: 3px solid #d0bcff;
+  background: rgba(208, 188, 255, 0.06);
+  border-radius: 0 0.5rem 0.5rem 0;
+  padding: 14px 16px;
+}
+.confidence-badge { font-size: 22px; font-weight: 700; color: #d0bcff; }
+
+.committee-decision-box { border-left: 3px solid #adc6ff; padding-left: 16px; }
+
+.timeline-item { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+.timeline-dot { width: 12px; height: 12px; border-radius: 9999px; margin-top: 4px; flex-shrink: 0; }
+.timeline-dot.done { background: #8fd6a3; }
+.timeline-dot.current { background: #d0bcff; box-shadow: 0 0 8px rgba(208,188,255,.6); }
+.timeline-dot.pending { background: #494454; }
+.timeline-label { font-size: 14px; color: #e1e2eb; font-weight: 500; }
+.timeline-detail { font-size: 12px; color: #cbc3d7; }
+
+.action-btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.action-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; border-radius: 0.5rem; font-size: 13px; font-weight: 600;
+  border: 1px solid rgba(73,68,84,0.4); background: #1d2026; color: #e1e2eb; cursor: pointer;
+  transition: all 0.15s ease;
+}
+.action-btn:hover { border-color: rgba(208,188,255,.5); }
+.action-btn.primary { background: linear-gradient(to right, #a078ff, #ddb8ff); color: #23005c; border: none; grid-column: 1 / -1; }
+.action-btn.primary:hover { filter: brightness(1.08); }
+.action-btn.danger { color: #ffb4ab; border-color: rgba(255,180,171,.3); grid-column: 1 / -1; }
+.action-btn.danger:hover { border-color: rgba(255,180,171,.6); background: rgba(255,180,171,.06); }
+.action-btn:disabled { opacity: .4; cursor: not-allowed; }

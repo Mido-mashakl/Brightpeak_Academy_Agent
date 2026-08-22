@@ -1,0 +1,106 @@
+.stat-tile {
+  background: rgba(30, 27, 75, 0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 20px;
+}
+
+.form-select {
+  background: rgba(39, 42, 49, 0.6);
+  border: 1px solid rgba(73, 68, 84, 0.4);
+  color: #e1e2eb;
+  border-radius: 0.5rem;
+  padding: 10px 14px;
+  font-size: 14px;
+  min-width: 260px;
+}
+
+.candidate-table { width: 100%; border-collapse: collapse; }
+.candidate-table thead th {
+  text-align: left;
+  font-family: "Geist", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #cbc3d7;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(73, 68, 84, 0.2);
+}
+.candidate-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid rgba(73, 68, 84, 0.1);
+}
+.candidate-table tbody tr:hover { background: rgba(208, 188, 255, 0.05); }
+.candidate-table tbody tr.selected { background: rgba(208, 188, 255, 0.1); }
+.candidate-table td { padding: 14px 12px; font-size: 14px; }
+
+.avatar-chip {
+  width: 32px; height: 32px; border-radius: 9999px;
+  background: rgba(208, 188, 255, 0.15);
+  color: #d0bcff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; margin-right: 10px;
+}
+
+.match-score { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; color: #ddb8ff; }
+
+.status-tag {
+  padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em; font-family: "Geist", monospace;
+}
+.status-tag.ai_scored, .status-tag.parsing { background: rgba(208,188,255,0.12); color: #d0bcff; }
+.status-tag.shortlisted { background: rgba(173,198,255,0.12); color: #adc6ff; }
+.status-tag.interview { background: rgba(245,194,107,0.15); color: #f5c26b; }
+.status-tag.hired { background: rgba(143,214,163,0.15); color: #8fd6a3; }
+.status-tag.rejected { background: rgba(255,180,171,0.15); color: #ffb4ab; }
+.status-tag.rescore_requested { background: rgba(221,184,255,0.12); color: #ddb8ff; }
+
+/* AI Insight Panel */
+.insight-score-ring {
+  width: 56px; height: 56px; border-radius: 9999px;
+  border: 3px solid #d0bcff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 16px; color: #d0bcff;
+}
+.insight-skill-chip {
+  display: inline-block; padding: 3px 10px; border-radius: 9999px;
+  background: rgba(39,42,49,0.7); border: 1px solid rgba(73,68,84,0.3);
+  color: #e1e2eb; font-size: 12px; margin: 0 6px 6px 0;
+}
+.ai-recommendation-box {
+  background: rgba(208, 188, 255, 0.06);
+  border: 1px solid rgba(208, 188, 255, 0.25);
+  border-radius: 0.5rem;
+  padding: 14px 16px;
+}
+.decision-section {
+  border-top: 1px solid rgba(73, 68, 84, 0.2);
+  padding-top: 16px;
+  margin-top: 4px;
+}
+.decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.decision-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; border-radius: 0.5rem; font-size: 14px; font-weight: 600;
+  border: 1px solid transparent; cursor: pointer; transition: all 0.15s ease;
+}
+.decision-btn.hire { background: rgba(143,214,163,0.12); color: #8fd6a3; border-color: rgba(143,214,163,0.35); }
+.decision-btn.hire:hover { background: rgba(143,214,163,0.22); }
+.decision-btn.reject { background: rgba(255,180,171,0.12); color: #ffb4ab; border-color: rgba(255,180,171,0.35); }
+.decision-btn.reject:hover { background: rgba(255,180,171,0.22); }
+.decision-btn.interview { background: linear-gradient(to right, #a078ff, #ddb8ff); color: #23005c; }
+.decision-btn.interview:hover { filter: brightness(1.08); }
+.decision-btn.rescore { background: #1d2026; color: #e1e2eb; border-color: rgba(73,68,84,0.4); }
+.decision-btn.rescore:hover { border-color: rgba(208,188,255,0.5); }
+.decision-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.decision-made-box {
+  background: rgba(143, 214, 163, 0.08);
+  border: 1px solid rgba(143, 214, 163, 0.3);
+  border-radius: 0.5rem;
+  padding: 14px 16px;
+  color: #8fd6a3;
+  font-size: 14px;
+}

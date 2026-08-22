@@ -1,0 +1,46 @@
+.filter-pill {
+  padding: 6px 16px; border-radius: 9999px; font-size: 13px; font-weight: 500;
+  background: rgba(39, 42, 49, 0.5); border: 1px solid rgba(73, 68, 84, 0.3);
+  color: #cbc3d7; cursor: pointer; transition: all 0.15s ease;
+}
+.filter-pill.active { background: rgba(208, 188, 255, 0.12); border-color: rgba(208, 188, 255, 0.4); color: #d0bcff; }
+.filter-pill:hover { border-color: rgba(208, 188, 255, 0.5); }
+
+.ticket-table { width: 100%; border-collapse: collapse; }
+.ticket-table thead th {
+  text-align: left; font-family: "Geist", monospace; font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #cbc3d7; padding: 14px 16px; border-bottom: 1px solid rgba(73, 68, 84, 0.2);
+  background: rgba(39, 42, 49, 0.3);
+}
+.ticket-table tbody tr { cursor: pointer; border-bottom: 1px solid rgba(73, 68, 84, 0.1); transition: background 0.15s ease; }
+.ticket-table tbody tr:hover { background: rgba(208, 188, 255, 0.05); }
+.ticket-table td { padding: 14px 16px; font-size: 14px; color: #e1e2eb; }
+.ticket-id { font-family: "Geist", monospace; color: #d0bcff; font-weight: 600; }
+
+.status-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 600; }
+.status-chip.Open { background: rgba(255,180,171,.12); color:#ffb4ab; }
+.status-chip.Investigating { background: rgba(245,194,107,.12); color:#f5c26b; }
+.status-chip.Resolved { background: rgba(143,214,163,.12); color:#8fd6a3; }
+
+.priority-chip { padding: 3px 10px; border-radius: 0.3rem; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.priority-chip.High { background: rgba(255,180,171,.15); color:#ffb4ab; }
+.priority-chip.Medium { background: rgba(245,194,107,.15); color:#f5c26b; }
+.priority-chip.Low { background: rgba(73,68,84,.3); color:#cbc3d7; }
+
+/* Drawer */
+.drawer-backdrop { position: fixed; inset: 0; background: rgba(11,14,20,.6); backdrop-filter: blur(3px); z-index: 100; display: flex; justify-content: flex-end; }
+.drawer-backdrop.hidden { display: none; }
+.drawer-panel { width: 460px; max-width: 92vw; height: 100%; background: #191c22; border-left: 1px solid rgba(73,68,84,.3); padding: 28px; overflow-y: auto; }
+.drawer-field { margin-bottom: 18px; }
+.drawer-label { font-family: "Geist", monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #cbc3d7; margin-bottom: 4px; }
+.drawer-value { color: #e1e2eb; font-size: 14px; }
+.drawer-value.mono { font-family: "Geist", monospace; color: #adc6ff; }
+.modal-close { background: none; border: none; color: #cbc3d7; cursor: pointer; padding: 4px; border-radius: 0.25rem; }
+.modal-close:hover { color: #e1e2eb; background: rgba(255,255,255,.06); }
+
+.drawer-status-btn {
+  padding: 8px 14px; border-radius: 0.4rem; font-size: 13px; font-weight: 600; cursor: pointer;
+  border: 1px solid rgba(73,68,84,.4); background: #1d2026; color: #e1e2eb; transition: all .15s ease;
+}
+.drawer-status-btn.active { border-color: rgba(208,188,255,.6); background: rgba(208,188,255,.12); color: #d0bcff; }
+.drawer-status-btn:hover { border-color: rgba(208,188,255,.5); }

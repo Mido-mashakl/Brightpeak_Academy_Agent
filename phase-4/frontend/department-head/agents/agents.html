@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Agents - Brightpeak Academy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="../shared/department-head-theme.js"></script>
+<link rel="stylesheet" href="agents.css"/>
+</head>
+<body class="font-body-md text-body-md antialiased overflow-x-hidden">
+
+<div id="dh-sidebar"></div>
+<div id="dh-topbar"></div>
+
+<main class="ml-72 p-lg min-h-screen">
+  <div class="mb-lg">
+    <h1 class="font-headline-lg text-headline-lg font-semibold text-on-surface">AI Agents</h1>
+    <p class="text-on-surface-variant">The workflows powering your department's AI-assisted decisions.</p>
+  </div>
+
+  <!-- Concept flow: Input -> AI Analysis -> Evidence/Policy -> Human Review -> Decision -->
+  <div class="glass-panel rounded-xl p-lg mb-lg flow-panel">
+    <div class="flow-track">
+      <div class="flow-node"><span class="material-symbols-outlined">input</span><span>Input</span></div>
+      <div class="flow-connector"></div>
+      <div class="flow-node highlight"><span class="material-symbols-outlined">hub</span><span>AI Analysis</span></div>
+      <div class="flow-connector"></div>
+      <div class="flow-node"><span class="material-symbols-outlined">policy</span><span>Evidence / Policy</span></div>
+      <div class="flow-connector"></div>
+      <div class="flow-node human"><span class="material-symbols-outlined">groups</span><span>Human Review</span></div>
+      <div class="flow-connector"></div>
+      <div class="flow-node"><span class="material-symbols-outlined">task_alt</span><span>Decision</span></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-3 gap-gutter" id="agents-grid"></div>
+</main>
+
+<script src="../shared/department-head-nav.js"></script>
+<script src="../shared/department-head-api.js"></script>
+<script src="agents.js"></script>
+</body>
+</html>
