@@ -86,19 +86,19 @@ loginForm.addEventListener("submit", async function (event) {
         else if (data.user.role === "instructor") {
 
             window.location.href =
-                "/instructor-dashboard.html";
+                "http://localhost:3000/frontend/instructor/dashboard/dashboard.html";
 
         }
 
         else if (data.user.role === "dept_head") {
 
             window.location.href =
-                "/dept-head-dashboard.html";
+                "http://localhost:3000/frontend/department-head/dashboard/dashboard.html";
 
         }
 else if (data.user.role === "advisor") {
     window.location.href =
-        "http://localhost:3000/frontend/advisor/index.html";
+        "http://localhost:3000/frontend/advisor/dashboard/dashboard.html";
 }
 
         else {

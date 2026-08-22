@@ -14,12 +14,31 @@ const els = {
   deadlines: document.getElementById("deadlines-list"),
 };
 
+// The auth-guard script (loaded before this file) already redirected
+// anyone without a valid session and set window.currentUser. Use that
+// as the source of truth for who's logged in — the static "Julian
+// Vos" / "Alex" markup is only ever a placeholder until this runs.
+function applyLoggedInUser() {
+  const user = window.currentUser;
+  if (!user) return;
+
+  const name = user.name || user.email || "Student";
+  els.name.textContent = name;
+  els.firstName.textContent = name.split(" ")[0];
+  if (user.track) els.track.textContent = user.track;
+  if (user.avatarUrl) els.avatar.src = user.avatarUrl;
+}
+applyLoggedInUser();
+
 async function loadDashboard() {
   try {
     const res = await fetch(`${BASE_URL}/api/dashboard`, { credentials: "include" });
     if (!res.ok) throw new Error(`dashboard request failed (${res.status})`);
     const data = await res.json();
 
+    // Dashboard stats/deadlines come from the backend; the name/track/
+    // avatar above already came from the logged-in session, but let
+    // the backend override them too if it returns richer profile data.
     if (data.student) {
       if (data.student.name) {
         els.name.textContent = data.student.name;
@@ -63,7 +82,7 @@ function renderDeadlines(deadlines) {
 }
 
 function goToNova(prompt) {
-  const url = new URL("../ai-assistant/ai-assistant.html", window.location.href);
+  const url = new URL("../ai-assistant/assistant.html", window.location.href);
   if (prompt) url.searchParams.set("prompt", prompt);
   window.location.href = url.toString();
 }
@@ -90,7 +109,9 @@ document.getElementById("logout-link").addEventListener("click", async (e) => {
   } catch (err) {
     console.info("Logout: backend not reachable —", err.message);
   } finally {
-    window.location.href = "../login.html";
+    // Clears localStorage("user") too and redirects to the real
+    // login path (../login.html here was pointing at a non-existent file).
+    window.BrightPeakAuth.logout();
   }
 });
 

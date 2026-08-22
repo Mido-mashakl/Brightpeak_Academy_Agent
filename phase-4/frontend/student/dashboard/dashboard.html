@@ -7,6 +7,11 @@
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="../shared/theme.config.js"></script>
+<!-- Real auth: reads the "user" localStorage.js login.js already
+     stores, redirects to login if missing/wrong role, and exposes
+     the logged-in user on window.currentUser. -->
+<script src="../../shared/auth.js"></script>
+<script src="../shared/auth-guard.js"></script>
 
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
@@ -17,14 +22,14 @@
 <body class="bg-background font-body-md text-on-background">
 
 <!-- Sidebar -->
-<aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low/40 backdrop-blur-xl border-r border-white/10 z-50 flex flex-col pt-8 pb-8">
+<aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low/40 backdrop-blur-xl border-r border-white/10 z-50 flex flex-col pt-8 pb-8 overflow-y-auto">
   <div class="px-8 mb-12 flex items-center gap-3">
     <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-[0_0_20px_rgba(128,131,255,0.35)]">
       <span class="material-symbols-outlined text-[20px] text-on-primary" style="font-variation-settings:'FILL' 1;">bolt</span>
     </div>
     <span class="font-headline-md text-headline-md text-on-surface tracking-tight">Brightpeak</span>
   </div>
-  <nav class="flex-1 px-4 space-y-2">
+<nav class="flex-1 overflow-y-auto px-4 space-y-2">
     <a href="../dashboard/dashboard.html" aria-current="page" class="flex items-center px-4 py-3 rounded-xl transition-all group bg-primary-container text-on-primary-container shadow-[0_0_20px_rgba(128,131,255,0.3)]">
       <span class="material-symbols-outlined mr-4" style="font-variation-settings:'FILL' 1;">dashboard</span>Dashboard
     </a>
@@ -34,8 +39,11 @@
     <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
       <span class="material-symbols-outlined mr-4 group-hover:text-primary">folder_open</span>Materials
     </a>
-    <a href="../ai-assistant/ai-assistant.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+    <a href="../ai-assistant/assistant.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
       <span class="material-symbols-outlined mr-4 group-hover:text-primary">smart_toy</span>AI Assistant
+    </a>
+    <a href="../agents/agents.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">smart_toy</span>AI Agents
     </a>
     <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
       <span class="material-symbols-outlined mr-4 group-hover:text-primary">analytics</span>Grades
@@ -49,7 +57,13 @@
     <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
       <span class="material-symbols-outlined mr-4 group-hover:text-primary">calendar_today</span>Calendar
     </a>
-    <div class="pt-8 pb-4 px-4 text-label-caps font-label-caps text-on-surface-variant/50">Account</div>
+  </nav>
+
+  <!-- Account section: pinned to the bottom of the sidebar (not part of
+       the scrollable nav above) so Settings/Log out are always reachable
+       regardless of how many links are added above. -->
+  <div class="shrink-0 px-4 pt-4 border-t border-white/10 space-y-2">
+    <div class="pt-2 pb-1 px-4 text-label-caps font-label-caps text-on-surface-variant/50">Account</div>
     <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
       <span class="material-symbols-outlined mr-4 group-hover:text-primary">person</span>Profile
     </a>
@@ -59,7 +73,7 @@
     <a href="#" id="logout-link" class="flex items-center px-4 py-3 rounded-xl text-error/70 hover:bg-error-container/20 hover:text-error transition-all group">
       <span class="material-symbols-outlined mr-4">logout</span>Log out
     </a>
-  </nav>
+  </div>
 </aside>
 
 <div class="pl-72">
@@ -174,7 +188,7 @@
 
     <!-- Nova mascot -->
     <img
-  src="../assets/robots.png"
+  src="../../assets/images/student/robots.png"
   alt="Nova, your AI study assistant"
   class="float-bot hidden md:block absolute top-1/2 -translate-y-1/2 right-4 lg:right-8 w-72 lg:w-80 z-20 pointer-events-none select-none"
 />

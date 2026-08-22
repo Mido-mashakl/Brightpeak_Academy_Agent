@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard · Brightpeak Academy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,400,0,0" />
+<link rel="stylesheet" href="../shared/style.css" />
+<script src="../../shared/auth.js"></script>
+<script src="../shared/auth-guard.js"></script>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-avatar"><img src="../../assets/images/advisor/robot-wave.png" alt="Brightpeak robot mascot"></div>
+      <div class="brand-text">
+        <div class="name">Brightpeak Academy</div>
+        <div class="sub">Advisor Portal</div>
+      </div>
+    </div>
+
+    <div class="nav-label">Dashboard</div>
+    <nav class="nav">
+      <a href="dashboard.html" class="nav-item active">
+        <span class="material-symbols-outlined">grid_view</span> Dashboard
+      </a>
+      <a href="../requests/requests.html" class="nav-item">
+        <span class="material-symbols-outlined">description</span> Requests
+      </a>
+      <a href="#" class="nav-item">
+        <span class="material-symbols-outlined">settings</span> Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+    <a href="#" class="logout">
+      <span class="material-symbols-outlined">logout</span> Logout
+    </a>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn" aria-label="Notifications">
+        <span class="material-symbols-outlined">notifications</span>
+      </button>
+      <div class="user-chip">
+        <span>Sarah</span>
+        <div class="avatar"><img src="../../assets/images/advisor/robot-thinking.png" alt="Sarah's avatar"></div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- Hero greeting -->
+      <section class="card hero">
+        <div class="hero-text">
+          <h1 class="greeting">Good morning, <span class="name">Sarah</span></h1>
+          <p>Review AI-assisted eligibility decisions that need your attention.</p>
+        </div>
+        <div class="hero-bot">
+          <img src="../../assets/images/advisor/robot-wave.png" alt="Robot mascot waving">
+        </div>
+      </section>
+
+      <!-- Stat cards -->
+      <section class="stat-row">
+        <div class="card stat-card">
+          <div class="stat-icon red"><span class="material-symbols-outlined">assignment_late</span></div>
+          <div>
+            <div class="stat-num">12</div>
+            <div class="stat-label">Needs Your Review</div>
+          </div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-icon violet"><span class="material-symbols-outlined">hourglass_top</span></div>
+          <div>
+            <div class="stat-num">5</div>
+            <div class="stat-label">Waiting for Student</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Requests needing attention -->
+      <section>
+        <div class="section-head">
+          <h2>Requests Needing Attention</h2>
+          <a href="../requests/requests.html" class="view-all">View All</a>
+        </div>
+
+        <div class="req-list">
+          <div class="card req-row">
+            <div class="avatar-badge">AM</div>
+            <div class="info">
+              <div class="rname">Ahmed Mostafa</div>
+              <div class="rtype">Certificate</div>
+            </div>
+            <div class="meta">
+              <span class="pill danger">Needs Your Review</span>
+              <a href="../requests/request-detail.html" class="btn btn-ghost btn-sm">View Request <span class="material-symbols-outlined" style="font-size:15px">arrow_forward</span></a>
+            </div>
+          </div>
+
+          <div class="card req-row">
+            <div class="avatar-badge">SA</div>
+            <div class="info">
+              <div class="rname">Sara Ali</div>
+              <div class="rtype">Scholarship</div>
+            </div>
+            <div class="meta">
+              <span class="pill warning">Waiting for Student</span>
+              <a href="../requests/requests.html" class="btn btn-ghost btn-sm">View Request <span class="material-symbols-outlined" style="font-size:15px">arrow_forward</span></a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<script src="../shared/script.js"></script>
+</body>
+</html>
