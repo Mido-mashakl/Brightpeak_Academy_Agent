@@ -1,38 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Department Head Portal · Brightpeak Academy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<script src="../../shared/auth.js"></script>
-<script src="../shared/auth-guard.js"></script>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Inter", sans-serif;
-    background: #05050B;
-    color: #F1F1F1;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-  .placeholder h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
-  .placeholder p { color: #B0B3C1; margin-bottom: 1.5rem; }
-  .placeholder a {
-    color: #60A5FA;
-    text-decoration: none;
-  }
-</style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dashboard - Brightpeak Academy Department Head</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="../shared/department-head-theme.js"></script>
+<link rel="stylesheet" href="dashboard.css"/>
 </head>
-<body>
-  <div class="placeholder">
-    <h1>Department Head Dashboard — Coming Soon</h1>
-    <p>Faculty Hiring · Candidates · Tickets · HITL</p>
-    <a href="../../login/login.html">&larr; Back to Login</a>
+<body class="font-body-md text-body-md antialiased overflow-x-hidden">
+
+<div id="dh-sidebar"></div>
+<div id="dh-topbar"></div>
+
+<main class="ml-72 p-lg min-h-screen">
+  <!-- Hero -->
+  <section class="glass-panel rounded-xl p-lg mb-lg relative overflow-hidden">
+    <div class="absolute right-0 top-0 w-1/2 h-full opacity-30 bg-gradient-to-l from-primary/20 to-transparent pointer-events-none"></div>
+    <div class="relative z-10 max-w-2xl">
+      <h1 id="greeting" class="font-headline-lg text-headline-lg font-semibold text-on-surface mb-sm">Good morning.</h1>
+      <p id="greeting-sub" class="font-body-lg text-body-lg text-on-surface-variant mb-md">Your AI-powered department command center is fully operational.</p>
+      <div class="flex flex-wrap gap-sm">
+        <a href="../hiring/jobs.html" class="quick-action"><span class="material-symbols-outlined text-sm">add_circle</span>Post New Job</a>
+        <a href="../hitl/hitl.html" class="quick-action"><span class="material-symbols-outlined text-sm">fact_check</span>Review Shortlist</a>
+        <a href="../tickets/tickets.html" class="quick-action"><span class="material-symbols-outlined text-sm">confirmation_number</span>Open Tickets</a>
+        <a href="../agents/agents.html" class="quick-action"><span class="material-symbols-outlined text-sm">hub</span>View AI Agents</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-12 gap-gutter">
+    <!-- Stats Row -->
+    <div class="col-span-12 grid grid-cols-4 gap-gutter mb-lg" id="stats-row">
+      <div class="glass-panel rounded-xl p-md flex flex-col justify-between ai-glow animate-pulse h-32"></div>
+      <div class="glass-panel rounded-xl p-md flex flex-col justify-between ai-glow animate-pulse h-32"></div>
+      <div class="glass-panel rounded-xl p-md flex flex-col justify-between ai-glow animate-pulse h-32"></div>
+      <div class="glass-panel rounded-xl p-md flex flex-col justify-between ai-glow animate-pulse h-32"></div>
+    </div>
+
+    <!-- Overview panels -->
+    <div class="col-span-12 grid grid-cols-2 gap-gutter">
+      <div class="glass-panel rounded-xl p-lg flex flex-col gap-md">
+        <div class="flex justify-between items-center border-b border-outline-variant/20 pb-sm mb-sm">
+          <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+            <span class="material-symbols-outlined text-primary">person_add</span>Faculty Hiring Overview
+          </h2>
+          <a href="../hiring/jobs.html" class="text-primary hover:text-primary-fixed transition-colors font-body-sm font-medium flex items-center gap-xs">
+            View All <span class="material-symbols-outlined text-sm">arrow_forward</span>
+          </a>
+        </div>
+        <div class="grid grid-cols-2 gap-md mb-md" id="hiring-mini-stats"></div>
+        <div class="font-body-sm text-body-sm font-medium text-on-surface-variant mb-xs">Recent Hiring Activity</div>
+        <div class="flex flex-col gap-sm" id="hiring-activity"></div>
+      </div>
+
+      <div class="glass-panel rounded-xl p-lg flex flex-col gap-md">
+        <div class="flex justify-between items-center border-b border-outline-variant/20 pb-sm mb-sm">
+          <h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+            <span class="material-symbols-outlined text-error">groups</span>Academic Integrity Committee Overview
+          </h2>
+          <a href="../hitl/hitl.html?tab=integrity" class="text-primary hover:text-primary-fixed transition-colors font-body-sm font-medium flex items-center gap-xs">
+            View All <span class="material-symbols-outlined text-sm">arrow_forward</span>
+          </a>
+        </div>
+        <div class="grid grid-cols-2 gap-md mb-md" id="integrity-mini-stats"></div>
+        <div class="font-body-sm text-body-sm font-medium text-on-surface-variant mb-xs">Urgent Case Pipeline</div>
+        <div class="flex flex-col gap-sm" id="integrity-pipeline"></div>
+      </div>
+    </div>
   </div>
+</main>
+
+<script src="../shared/department-head-nav.js"></script>
+<script src="../shared/department-head-api.js"></script>
+<script src="dashboard.js"></script>
 </body>
 </html>

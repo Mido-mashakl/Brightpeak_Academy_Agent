@@ -1,35 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Department Head · Tickets · Brightpeak Academy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<script src="../../shared/auth.js"></script>
-<script src="../shared/auth-guard.js"></script>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Inter", sans-serif;
-    background: #05050B;
-    color: #F1F1F1;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-  .placeholder h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
-  .placeholder p { color: #B0B3C1; margin-bottom: 1.5rem; }
-  .placeholder a { color: #60A5FA; text-decoration: none; }
-</style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tickets - Brightpeak Academy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="../shared/department-head-theme.js"></script>
+<link rel="stylesheet" href="tickets.css"/>
 </head>
-<body>
-  <div class="placeholder">
-    <h1>Department Head · Tickets — Coming Soon</h1>
-    <p>This screen isn't built yet.</p>
-    <a href="../../login/login.html">&larr; Back to Login</a>
+<body class="font-body-md text-body-md antialiased overflow-x-hidden">
+
+<div id="dh-sidebar"></div>
+<div id="dh-topbar"></div>
+
+<main class="ml-72 p-lg min-h-screen">
+  <div class="mb-lg">
+    <h1 class="font-headline-lg text-headline-lg font-semibold text-on-surface">Operational Logs</h1>
+    <p class="text-on-surface-variant">Monitor workflow failures across every graph.</p>
   </div>
+
+  <div class="flex items-center gap-md mb-md">
+    <div class="filter-pill active" data-filter="all">All</div>
+    <div class="filter-pill" data-filter="Open">Open</div>
+    <div class="filter-pill" data-filter="Investigating">Investigating</div>
+    <div class="filter-pill" data-filter="Resolved">Resolved</div>
+  </div>
+
+  <div class="glass-panel rounded-xl overflow-hidden">
+    <table class="ticket-table">
+      <thead>
+        <tr>
+          <th>Ticket ID</th><th>Source Graph</th><th>Source ID</th><th>Thread ID</th>
+          <th>Failure Type</th><th>Status</th><th>Priority</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="ticket-rows"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- Ticket Detail Drawer -->
+<div id="ticket-drawer-backdrop" class="drawer-backdrop hidden">
+  <div class="drawer-panel">
+    <div class="flex justify-between items-start mb-md">
+      <div>
+        <div class="font-headline-md text-headline-md text-on-surface" id="drawer-ticket-id"></div>
+        <div class="text-on-surface-variant text-body-sm" id="drawer-workflow"></div>
+      </div>
+      <button class="modal-close" id="drawer-close"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="drawer-field"><div class="drawer-label">Source Graph</div><div id="drawer-source-graph" class="drawer-value"></div></div>
+    <div class="drawer-field"><div class="drawer-label">Source ID</div><div id="drawer-source-id" class="drawer-value mono"></div></div>
+    <div class="drawer-field"><div class="drawer-label">Thread ID</div><div id="drawer-thread-id" class="drawer-value mono"></div></div>
+    <div class="drawer-field"><div class="drawer-label">Failure Type</div><div id="drawer-failure-type" class="drawer-value"></div></div>
+    <div class="drawer-field"><div class="drawer-label">Related Workflow / Checkpoint</div><div id="drawer-related" class="drawer-value mono"></div></div>
+    <div class="drawer-field"><div class="drawer-label">Details</div><p id="drawer-details" class="drawer-value"></p></div>
+    <div class="drawer-field">
+      <div class="drawer-label">Status</div>
+      <div class="flex gap-sm mt-xs" id="drawer-status-actions"></div>
+    </div>
+  </div>
+</div>
+
+<script src="../shared/department-head-nav.js"></script>
+<script src="../shared/department-head-api.js"></script>
+<script src="tickets.js"></script>
 </body>
 </html>

@@ -1,35 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Department Head · HITL · Brightpeak Academy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<script src="../../shared/auth.js"></script>
-<script src="../shared/auth-guard.js"></script>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Inter", sans-serif;
-    background: #05050B;
-    color: #F1F1F1;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-  .placeholder h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
-  .placeholder p { color: #B0B3C1; margin-bottom: 1.5rem; }
-  .placeholder a { color: #60A5FA; text-decoration: none; }
-</style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Committee Review - Brightpeak Academy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="../shared/department-head-theme.js"></script>
+<link rel="stylesheet" href="hitl.css"/>
 </head>
-<body>
-  <div class="placeholder">
-    <h1>Department Head · HITL — Coming Soon</h1>
-    <p>This screen isn't built yet.</p>
-    <a href="../../login/login.html">&larr; Back to Login</a>
+<body class="font-body-md text-body-md antialiased overflow-x-hidden">
+
+<div id="dh-sidebar"></div>
+<div id="dh-topbar"></div>
+
+<main class="ml-72 p-lg min-h-screen">
+  <div class="mb-md">
+    <h1 class="font-headline-lg text-headline-lg font-semibold text-on-surface">Committee Review</h1>
+    <p class="text-on-surface-variant">Human-in-the-loop decisions for Faculty Hiring and Academic Integrity.</p>
   </div>
+
+  <div class="tab-bar mb-lg">
+    <button class="tab-btn" data-tab="hiring"><span class="material-symbols-outlined text-sm">person_add</span>Faculty Hiring</button>
+    <button class="tab-btn" data-tab="integrity"><span class="material-symbols-outlined text-sm">gavel</span>Academic Integrity</button>
+  </div>
+
+  <!-- Faculty Hiring HITL -->
+  <section id="tab-hiring" class="tab-panel">
+    <div class="grid grid-cols-[1fr_420px] gap-gutter items-start">
+      <div class="glass-panel rounded-xl p-lg">
+        <div class="flex justify-between items-center mb-md">
+          <h2 class="font-headline-md text-headline-md text-on-surface">Hiring Review Queue</h2>
+          <span class="text-on-surface-variant text-body-sm">Shortlisted candidates awaiting a human decision</span>
+        </div>
+        <table class="review-table">
+          <thead><tr><th>Candidate</th><th>Position</th><th>AI Score</th><th>Status</th><th></th></tr></thead>
+          <tbody id="hiring-queue-rows"></tbody>
+        </table>
+        <div id="hiring-empty" class="hidden text-on-surface-variant text-body-sm p-md text-center">No candidates currently awaiting review.</div>
+      </div>
+      <div class="glass-panel rounded-xl p-lg" id="hiring-detail-panel">
+        <div class="text-center text-on-surface-variant p-lg">
+          <span class="material-symbols-outlined text-4xl mb-sm block">touch_app</span>
+          Select a candidate to review AI evidence and record the Department Head decision.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Academic Integrity HITL -->
+  <section id="tab-integrity" class="tab-panel hidden">
+    <div class="grid grid-cols-[1fr_420px] gap-gutter items-start">
+      <div class="glass-panel rounded-xl p-lg">
+        <div class="flex justify-between items-center mb-md">
+          <h2 class="font-headline-md text-headline-md text-on-surface">Committee Review Queue</h2>
+        </div>
+        <table class="review-table">
+          <thead><tr><th>Case ID</th><th>Student</th><th>Course</th><th>Case Type</th><th>Severity</th><th>Status</th></tr></thead>
+          <tbody id="integrity-queue-rows"></tbody>
+        </table>
+      </div>
+      <div id="integrity-detail-panel" class="flex flex-col gap-md">
+        <div class="glass-panel rounded-xl p-lg text-center text-on-surface-variant">
+          <span class="material-symbols-outlined text-4xl mb-sm block">touch_app</span>
+          Select a case to view evidence, AI assessment, and record the committee decision.
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast-root"></div>
+
+<script src="../shared/department-head-nav.js"></script>
+<script src="../shared/department-head-api.js"></script>
+<script src="hitl.js"></script>
 </body>
 </html>

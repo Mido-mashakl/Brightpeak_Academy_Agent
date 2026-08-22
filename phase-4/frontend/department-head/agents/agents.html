@@ -1,35 +1,47 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Department Head · AI Agents · Brightpeak Academy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<script src="../../shared/auth.js"></script>
-<script src="../shared/auth-guard.js"></script>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Inter", sans-serif;
-    background: #05050B;
-    color: #F1F1F1;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-  .placeholder h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
-  .placeholder p { color: #B0B3C1; margin-bottom: 1.5rem; }
-  .placeholder a { color: #60A5FA; text-decoration: none; }
-</style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Agents - Brightpeak Academy</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="../shared/department-head-theme.js"></script>
+<link rel="stylesheet" href="agents.css"/>
 </head>
-<body>
-  <div class="placeholder">
-    <h1>Department Head · AI Agents — Coming Soon</h1>
-    <p>This screen isn't built yet.</p>
-    <a href="../../login/login.html">&larr; Back to Login</a>
+<body class="font-body-md text-body-md antialiased overflow-x-hidden">
+
+<div id="dh-sidebar"></div>
+<div id="dh-topbar"></div>
+
+<main class="ml-72 p-lg min-h-screen">
+  <div class="mb-lg">
+    <h1 class="font-headline-lg text-headline-lg font-semibold text-on-surface">AI Agents</h1>
+    <p class="text-on-surface-variant">The workflows powering your department's AI-assisted decisions.</p>
   </div>
+
+  <!-- Concept flow: Input -> AI Analysis -> Evidence/Policy -> Human Review -> Decision -->
+  <div class="glass-panel rounded-xl p-lg mb-lg flow-panel">
+    <div class="flow-track">
+      <div class="flow-node"><span class="material-symbols-outlined">input</span><span>Input</span></div>
+      <div class="flow-connector"></div>
+      <div class="flow-node highlight"><span class="material-symbols-outlined">hub</span><span>AI Analysis</span></div>
+      <div class="flow-connector"></div>
+      <div class="flow-node"><span class="material-symbols-outlined">policy</span><span>Evidence / Policy</span></div>
+      <div class="flow-connector"></div>
+      <div class="flow-node human"><span class="material-symbols-outlined">groups</span><span>Human Review</span></div>
+      <div class="flow-connector"></div>
+      <div class="flow-node"><span class="material-symbols-outlined">task_alt</span><span>Decision</span></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-3 gap-gutter" id="agents-grid"></div>
+</main>
+
+<script src="../shared/department-head-nav.js"></script>
+<script src="../shared/department-head-api.js"></script>
+<script src="agents.js"></script>
 </body>
 </html>

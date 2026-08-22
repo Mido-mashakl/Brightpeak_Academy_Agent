@@ -1,0 +1,87 @@
+.quick-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  background: rgba(208, 188, 255, 0.08);
+  border: 1px solid rgba(208, 188, 255, 0.25);
+  color: #e1e2eb;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.quick-action:hover {
+  background: rgba(208, 188, 255, 0.18);
+  border-color: rgba(208, 188, 255, 0.5);
+  color: #d0bcff;
+  transform: translateY(-1px);
+}
+
+.stat-tile {
+  background: rgba(30, 27, 75, 0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 10px rgba(192, 132, 252, 0.05);
+  border-radius: 0.75rem;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mini-stat {
+  background: rgba(39, 42, 49, 0.5);
+  border: 1px solid rgba(73, 68, 84, 0.1);
+  border-radius: 0.5rem;
+  padding: 24px;
+}
+
+.activity-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px;
+  background: rgba(39, 42, 49, 0.3);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(73, 68, 84, 0.1);
+  transition: border-color 0.2s ease;
+}
+.activity-row:hover {
+  border-color: rgba(208, 188, 255, 0.3);
+}
+
+.pipeline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: rgba(39, 42, 49, 0.3);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(73, 68, 84, 0.1);
+  transition: border-color 0.2s ease;
+}
+.pipeline-row.urgent {
+  border-color: rgba(255, 180, 171, 0.3);
+}
+.pipeline-row.urgent:hover {
+  border-color: rgba(255, 180, 171, 0.6);
+}
+.pipeline-row:not(.urgent):hover {
+  border-color: rgba(208, 188, 255, 0.3);
+}
+
+.pipeline-btn {
+  background: #1d2026;
+  border: 1px solid rgba(73, 68, 84, 0.3);
+  color: #e1e2eb;
+  padding: 4px 12px;
+  border-radius: 0.25rem;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+.pipeline-btn:hover {
+  border-color: rgba(208, 188, 255, 0.5);
+}
