@@ -3,33 +3,85 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Advisor · HITL · Brightpeak Academy</title>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-<script src="../../shared/auth.js"></script>
-<script src="../shared/auth-guard.js"></script>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Inter", sans-serif;
-    background: #05050B;
-    color: #F1F1F1;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-  .placeholder h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
-  .placeholder p { color: #B0B3C1; margin-bottom: 1.5rem; }
-  .placeholder a { color: #60A5FA; text-decoration: none; }
-</style>
+<title>HITL Review — Brightpeak Advisor Portal</title>
+<link rel="stylesheet" href="../shared/advisor-shared.css" />
+<link rel="stylesheet" href="hitl.css" />
 </head>
 <body>
-  <div class="placeholder">
-    <h1>Advisor · HITL — Coming Soon</h1>
-    <p>Human-in-the-loop review queue. Distinct from Requests — see the "Requests" tab.</p>
-    <a href="../../login/login.html">&larr; Back to Login</a>
+  <div class="bp-shell">
+    <aside class="bp-sidebar" id="bp-sidebar"></aside>
+
+    <div class="bp-main">
+      <header class="bp-topbar" id="bp-topbar"></header>
+
+      <main class="bp-content">
+        <div class="bp-hitl-head">
+          <div>
+            <h1>Human-in-the-Loop Review</h1>
+            <p class="bp-muted">Review AI analysis and make your expert decision.</p>
+          </div>
+          <a class="bp-btn ghost" href="../requests/requests.html">← Back to Queue</a>
+        </div>
+
+        <div id="bp-mock-warning" class="bp-warning-banner" hidden>
+          ⚠️ No backend decision endpoint is connected yet. Submitting below will <strong>not</strong> update any real request or resume the Advisory Graph.
+        </div>
+
+        <div class="bp-hitl-grid">
+          <div class="bp-card">
+            <span class="bp-ai-tag">AI Recommendation</span>
+            <div id="bp-ai-verdict"></div>
+            <img class="bp-neon-wave" src="../assets/neon-wave.png" alt="" onerror="this.style.display='none'" />
+            <div class="bp-confidence-bar-wrap">
+              <div class="bp-confidence-label">
+                <span>Confidence</span><span id="bp-confidence-pct"></span>
+              </div>
+              <div class="bp-confidence-bar"><div id="bp-confidence-fill" class="bp-confidence-fill"></div></div>
+            </div>
+
+            <h3 class="bp-section-h">AI Reasoning</h3>
+            <p id="bp-ai-reasoning" class="bp-reasoning-text"></p>
+
+            <h3 class="bp-section-h">Requirements Check</h3>
+            <div id="bp-req-check" class="bp-req-list"></div>
+          </div>
+
+          <div class="bp-card bp-decision-card">
+            <h2 class="bp-card-title">Advisor Decision</h2>
+            <p class="bp-card-sub">Your Decision</p>
+
+            <div class="bp-decision-options" id="bp-decision-options">
+              <label class="bp-decision-opt">
+                <input type="radio" name="decision" value="approve" />
+                <span>Approve Request<br/><small>Student is eligible</small></span>
+              </label>
+              <label class="bp-decision-opt">
+                <input type="radio" name="decision" value="more_info" />
+                <span>Request More Info<br/><small>Ask student for more information</small></span>
+              </label>
+              <label class="bp-decision-opt">
+                <input type="radio" name="decision" value="deny" />
+                <span>Deny Request<br/><small>Does not meet requirements</small></span>
+              </label>
+              <label class="bp-decision-opt">
+                <input type="radio" name="decision" value="escalate" />
+                <span>Escalate<br/><small>Send to department head</small></span>
+              </label>
+            </div>
+
+            <p class="bp-card-sub" style="margin-top:18px;">Decision Notes</p>
+            <textarea id="bp-decision-notes" class="bp-textarea" placeholder="Add your notes or reasoning..."></textarea>
+
+            <button id="bp-submit-decision" class="bp-btn bp-submit-btn" disabled>Submit Decision</button>
+            <p id="bp-decision-result" class="bp-decision-result"></p>
+          </div>
+        </div>
+      </main>
+    </div>
   </div>
+
+  <script src="../shared/advisor-nav.js"></script>
+  <script src="../shared/advisor-api.js"></script>
+  <script src="hitl.js"></script>
 </body>
 </html>

@@ -1,0 +1,79 @@
+.bp-page-head h1 { font-size: 24px; margin: 0 0 2px; }
+.bp-page-head p { margin: 0 0 20px; font-size: 13px; }
+
+.bp-filters-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.bp-tabs {
+  display: inline-flex;
+  gap: 4px;
+  background: var(--bp-panel-2);
+  border: 1px solid var(--bp-panel-border);
+  border-radius: 999px;
+  padding: 4px;
+}
+.bp-tab {
+  border: none;
+  background: transparent;
+  color: var(--bp-text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 999px;
+}
+.bp-tab.active {
+  background: var(--bp-gradient-btn);
+  color: #fff;
+}
+
+.bp-table-card { padding: 0; overflow: hidden; }
+
+.bp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.bp-table thead th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--bp-text-faint);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--bp-panel-border);
+}
+.bp-table tbody td {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--bp-panel-border);
+}
+.bp-table tbody tr:last-child td { border-bottom: none; }
+.bp-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+.bp-row-id { color: var(--bp-lavender); font-weight: 600; }
+
+.bp-action-btn {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid var(--bp-panel-border);
+  background: var(--bp-panel-2);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.bp-action-btn svg { width: 15px; height: 15px; color: var(--bp-text-dim); }
+
+.bp-table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  font-size: 12px;
+}
+
+.bp-pagination { display: flex; gap: 6px; }
+.bp-page-btn {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--bp-panel-border);
+  background: var(--bp-panel-2);
+  color: var(--bp-text-dim);
+  font-size: 12px;
+}
+.bp-page-btn.active { background: var(--bp-gradient-btn); color: #fff; border: none; }
