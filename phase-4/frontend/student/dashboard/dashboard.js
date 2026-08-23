@@ -104,16 +104,29 @@ function goToNova(prompt) {
 
 document.getElementById("start-chat-btn").addEventListener("click", () => goToNova());
 
+// Three of the five quick actions now have real standalone pages backed
+// by the actual graphs (tracks_router.py, assessment_router.py,
+// academic_integrity_router.py) — send those straight there instead of
+// through Nova chat. "Ask about material" and "Certificate & Scholarship"
+// have no dedicated graph/page of their own, so they still go to Nova.
+const QUICK_ACTION_PAGES = {
+  "recommend-track": "../tracks/tracks.html",
+  "assessment": "../assessment/assessment.html",
+  "appeals": "../integrity/integrity.html",
+};
+const QUICK_ACTION_PROMPTS = {
+  "ask-material": "I have a question about a course material.",
+  "certificate": "Tell me about certificates and scholarships.",
+};
+
 document.querySelectorAll(".quick-action").forEach((btn) => {
   btn.addEventListener("click", () => {
-    const prompts = {
-      "recommend-track": "Can you recommend a track for me?",
-      "ask-material": "I have a question about a course material.",
-      "assessment": "I'd like to start an assessment.",
-      "certificate": "Tell me about certificates and scholarships.",
-      "appeals": "I need to open a case or appeal.",
-    };
-    goToNova(prompts[btn.dataset.quickAction]);
+    const action = btn.dataset.quickAction;
+    if (QUICK_ACTION_PAGES[action]) {
+      window.location.href = QUICK_ACTION_PAGES[action];
+      return;
+    }
+    goToNova(QUICK_ACTION_PROMPTS[action]);
   });
 });
 

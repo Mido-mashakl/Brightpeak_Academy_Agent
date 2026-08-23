@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Brightpeak · Case Details</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="../shared/theme.config.js"></script>
+<script src="../../shared/auth.js"></script>
+<script src="../shared/auth-guard.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+
+<link rel="stylesheet" href="../shared/base.css"/>
+</head>
+<body class="bg-background font-body-md text-on-background">
+
+<!-- Sidebar -->
+<aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-low/40 backdrop-blur-xl border-r border-white/10 z-50 flex flex-col pt-8 pb-8 overflow-y-auto">
+  <div class="px-8 mb-12 flex items-center gap-3">
+    <div class="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-[0_0_20px_rgba(128,131,255,0.35)]">
+      <span class="material-symbols-outlined text-[20px] text-on-primary" style="font-variation-settings:'FILL' 1;">bolt</span>
+    </div>
+    <span class="font-headline-md text-headline-md text-on-surface tracking-tight">Brightpeak</span>
+  </div>
+  <nav class="flex-1 overflow-y-auto px-4 space-y-2">
+    <a href="../dashboard/dashboard.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">dashboard</span>Dashboard
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">school</span>My Courses
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">folder_open</span>Materials
+    </a>
+    <a href="../ai-assistant/assistant.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">smart_toy</span>AI Assistant
+    </a>
+    <a href="../agents/agents.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">smart_toy</span>AI Agents
+    </a>
+    <a href="../assessment/assessment.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">quiz</span>Adaptive Assessment
+    </a>
+    <a href="../tracks/tracks.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">explore</span>Track Recommendation
+    </a>
+    <a href="integrity.html" aria-current="page" class="flex items-center px-4 py-3 rounded-xl transition-all group bg-primary-container text-on-primary-container shadow-[0_0_20px_rgba(128,131,255,0.3)]">
+      <span class="material-symbols-outlined mr-4" style="font-variation-settings:'FILL' 1;">gavel</span>My Cases &amp; Appeals
+    </a>
+    <a href="#" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">calendar_today</span>Calendar
+    </a>
+  </nav>
+  <div class="shrink-0 px-4 pt-4 border-t border-white/10 space-y-2">
+    <div class="pt-2 pb-1 px-4 text-label-caps font-label-caps text-on-surface-variant/50">Account</div>
+    <a href="#" id="logout-link" class="flex items-center px-4 py-3 rounded-xl text-error/70 hover:bg-error-container/20 hover:text-error transition-all group">
+      <span class="material-symbols-outlined mr-4">logout</span>Log out
+    </a>
+  </div>
+</aside>
+
+<div class="pl-72">
+  <header class="fixed top-0 left-72 right-0 h-20 bg-background/60 backdrop-blur-md z-40 flex items-center justify-between px-margin-desktop border-b border-white/5">
+    <a href="integrity.html" class="flex items-center gap-2 text-on-surface-variant hover:text-on-surface transition-colors text-body-sm">
+      <span class="material-symbols-outlined text-[18px]">arrow_back</span> Back to My Cases
+    </a>
+    <div class="flex items-center gap-3">
+      <p class="text-body-sm font-medium text-on-surface" id="student-name">—</p>
+      <img alt="Profile" class="w-9 h-9 rounded-full border border-primary/30 object-cover" id="student-avatar" src=""/>
+    </div>
+  </header>
+
+  <main class="relative pt-32 pb-16 px-margin-desktop bg-transparent min-h-screen">
+    <div class="max-w-[880px] mx-auto flex flex-col gap-8">
+
+      <div id="case-root" class="flex flex-col gap-6">
+        <p class="text-body-sm text-on-surface-variant">Loading…</p>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="../shared/student-api.js"></script>
+<script src="case-details.js"></script>
+</body>
+</html>

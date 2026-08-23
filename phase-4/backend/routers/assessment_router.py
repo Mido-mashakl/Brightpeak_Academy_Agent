@@ -101,6 +101,40 @@ def get_session(session_id: int, user: CurrentUser = Depends(require_role("stude
     return {"session": row, "answers": answers}
 
 
+@router.get("/{session_id}/state")
+def get_session_state(session_id: int, user: CurrentUser = Depends(require_role("student", "instructor"))):
+    """Returns whatever question the graph is currently paused on, without
+    advancing it. Needed for sessions that were started by something OTHER
+    than this router's own /start (e.g. track_recommendation's
+    assessment_bridge.start_adaptive_session(), which calls
+    adaptive_assessment.graph.start_session() directly for a diagnostic or
+    targeted-assessment hand-off) — the frontend still needs to render the
+    first/current pending question for those sessions, and /start can't be
+    called a second time for them (it would INSERT a brand-new session row
+    instead of resuming the existing one). Same _safe_state shape as
+    /start and /answer's `result`, so the frontend can reuse one renderer."""
+    row = _session_row(session_id)
+    if user.role == "student" and row["student_id"] != user.user_id:
+        raise HTTPException(status_code=403, detail="Not your session.")
+
+    from core.graph_loader import get_assessment_session_state
+    try:
+        state = get_assessment_session_state(session_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not load session state: {e}")
+
+    if not state or not state.get("values"):
+        return {"session": row, "result": {}}
+
+    values = dict(state["values"])
+    pending = values.get("pending_question")
+    if pending is not None:
+        pending = pending.model_dump() if hasattr(pending, "model_dump") else dict(pending)
+        values["pending_question"] = pending
+
+    return {"session": row, "result": values}
+
+
 @router.get("")
 def list_sessions(
     student_id: int | None = None,
