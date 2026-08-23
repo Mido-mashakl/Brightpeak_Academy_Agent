@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>AI Agents · Instructor · Brightpeak Academy</title>
+<title>Case Details · Academic Integrity · Instructor · Brightpeak Academy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="../shared/styles.css" />
@@ -12,21 +12,18 @@
 </head>
 <body>
   <div class="bp-shell" id="bp-shell">
-    <main class="bp-content">
-      <div class="bp-page-header">
-        <div>
-          <h1>AI Agents</h1>
-          <p>Agents available to assist with your workflows.</p>
-        </div>
-      </div>
+    <main class="bp-content" style="max-width:1040px;">
+      <a class="bp-back-link" href="integrity.html"><span id="bp-back-icon"></span><span>Back to Cases</span></a>
 
-      <div id="bp-agents-root"></div>
+      <div id="bp-case-root">
+        <div class="bp-page-header"><h1>Loading case…</h1></div>
+      </div>
     </main>
   </div>
 
   <script src="../shared/icons.js"></script>
   <script src="../shared/api.js"></script>
   <script src="../shared/layout.js"></script>
-  <script src="agents.js"></script>
+  <script src="case-details.js"></script>
 </body>
 </html>

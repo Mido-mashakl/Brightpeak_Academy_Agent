@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>BrightPeak Academy</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <div class="nav-container">
+
+        <div class="brand">
+            <div class="brand-icon">⌁</div>
+            <span>BRIGHTPEAK ACADEMY</span>
+        </div>
+
+        <nav class="nav-links">
+            <a href="index.html" class="active">Home</a>
+            <a href="#" class="nav-disabled" title="Coming soon">Courses</a>
+            <a href="#" class="nav-disabled" title="Coming soon">About Us</a>
+            <a href="frontend/student/ai-assistant/assistant.html">AI Assistant</a>
+            <a href="#" class="nav-disabled" title="Coming soon">Resources</a>
+        </nav>
+
+        <div class="nav-actions">
+            <a href="../login/login.html"class="login">Log In</a>
+            <button class="get-started" onclick="goToLogin()">Get Started</button>
+        </div>
+
+    </div>
+
+</header>
+
+
+<main class="hero">
+
+    <div class="ambient-glow"></div>
+
+    <div class="hero-content">
+
+        <div class="logo-wrapper">
+
+            <div class="logo-glow"></div>
+
+            <img
+                src="../assets/images/shared/logo.png"
+                alt="BrightPeak Academy Logo"
+                class="academy-logo"
+            >
+        </div>
+
+        <h1>BRIGHTPEAK ACADEMY</h1>
+
+        <p class="tagline">
+            LEARN HIGHER. ACHIEVE MORE.
+        </p>
+
+        <p class="subtitle">
+            Where technology meets smarter learning.
+        </p>
+
+
+        <button class="cta-button" onclick="goToLogin()">
+    <span>START YOUR ASCENT</span>
+    <span class="arrow">→</span>
+</button>
+
+    </div>
+
+</main>
+
+
+<footer>
+
+    <div>
+        © 2024 BrightPeak Academy
+    </div>
+
+    <div class="footer-links">
+
+        <a href="#" class="nav-disabled" title="Coming soon">Privacy Policy</a>
+        <a href="#" class="nav-disabled" title="Coming soon">Terms of Service</a>
+
+        <a href="../login/login.html" class="user-button" title="Log in / Account">
+            ♙
+        </a>
+
+    </div>
+
+</footer>
+
+
+<script>
+function goToLogin() {
+    window.location.href = "../login/login.html";
+}
+</script>
+
+</body>
+</html>
