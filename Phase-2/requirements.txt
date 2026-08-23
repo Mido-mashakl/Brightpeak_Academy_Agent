@@ -10,7 +10,7 @@ mcp-types
 opentelemetry-api
 pyjwt
 python-multipart
-pywin32
+pywin32; sys_platform == "win32"
 sse-starlette
 starlette
 typing-extensions
