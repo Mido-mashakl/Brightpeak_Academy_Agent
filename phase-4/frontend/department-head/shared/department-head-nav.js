@@ -22,20 +22,13 @@ const DHAuth = {
   /**
    * window.currentUser is set by frontend/shared/auth.js (BrightPeakAuth)
    * via this page's auth-guard.js, which runs before this file and
-   * already validated the session against the logged-in email.
+   * already validated the session against the logged-in email. There is
+   * no fallback demo user anymore — if this page loaded, auth-guard.js
+   * already redirected to login when window.currentUser wasn't a real,
+   * authenticated dept_head.
    */
   getCurrentUser() {
-    if (window.currentUser) return window.currentUser;
-    // Read real session from localStorage (set by login page via shared/auth.js).
-    try {
-      const stored = localStorage.getItem("user");
-      if (stored) {
-        const u = JSON.parse(stored);
-        window.currentUser = u;
-        return u;
-      }
-    } catch (e) { /* ignore parse errors */ }
-    return null;
+    return window.currentUser || null;
   },
 
   /**
@@ -44,7 +37,7 @@ const DHAuth = {
    */
   requireDepartmentHead() {
     const user = this.getCurrentUser();
-    if (user.role !== this.ROLE_REQUIRED) {
+    if (!user || user.role !== this.ROLE_REQUIRED) {
       console.error("[DHAuth] Access denied: department_head role required, got:", user.role);
       document.body.innerHTML =
         '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0B0E14;color:#e1e2eb;font-family:Inter,sans-serif;">' +
@@ -148,9 +141,7 @@ const DHNav = (function () {
     document.querySelectorAll('[data-action="logout"]').forEach((el) =>
       el.addEventListener("click", (e) => {
         e.preventDefault();
-        // INTEGRATION POINT: call real logout endpoint / clear session
-        localStorage.removeItem("bp_current_user");
-        alert("Logout is wired to the shared auth module in production. (design preview)");
+        window.BrightPeakAuth.logout();
       })
     );
 

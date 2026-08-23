@@ -3,292 +3,73 @@
  * ---------------------------------------------------------------
  * Data access layer for the Department Head section.
  *
- * STATUS as of this update:
- *   LIVE  — Jobs + Candidates/CV Intake (this file talks to the real
- *           phase-3 faculty_hiring graph via phase-4/backend/routers/
- *           hiring_router.py, port 8000)
- *   MOCK  — Academic Integrity HITL, Tickets, Agents, Dashboard stats
- *           (still localStorage — no auth/endpoints exist for these yet)
+ * STATUS as of this update: everything below is LIVE — talks to the
+ * real FastAPI backend (port 8000). The localStorage demo store this
+ * file used to fall back to (`bp_dh_demo_store_v1`) has been removed;
+ * Academic Integrity, Tickets, Agents, and Dashboard stats all now
+ * read from the database through real endpoints added in this pass:
  *
- * LIVE endpoints in use:
- *   GET  /hiring/jobs
- *   GET  /hiring/jobs/{job_id}/candidates
- *   GET  /hiring/candidates                      (no job filter)
- *   POST /hiring/jobs
- *   POST /hiring/jobs/{job_id}/cv                (multipart file upload)
- *   POST /hiring/jobs/{job_id}/close
+ *   GET  /academic-integrity/cases                       (dept_head-readable; existing endpoint)
+ *   GET  /academic-integrity/cases/{case_id}              (existing endpoint)
+ *   GET  /tickets, GET /tickets/{id}                      (new — tickets_router.py)
+ *   POST /tickets/{id}/investigate, /resolve              (new — tickets_router.py)
+ *   GET  /agents                                          (new — agents_router.py)
+ *   GET  /dashboard/dept-head                             (new — dashboard_router.py)
  *
- * NOT WIRED YET (still mock — need dept_head auth session first, see
- * mcp_server/roles.py + hiring_router.py's bottom note):
- *   POST /hiring/candidates/{candidate_id}/decision   (hire/reject/interview/rescore)
- *   GET  /hitl/academic-integrity/cases
- *   POST /hitl/academic-integrity/cases/{case_id}/decision
- *   GET  /tickets
- *   PATCH /tickets/{ticket_id}/status
- *   GET  /agents
+ * KNOWN, DOCUMENTED LIMITATION (not faked — see audit report):
+ * IntegrityCases has no dept_head decision path in the Phase-3 graph —
+ * only "instructor" and "advisor" roles are allowed to call
+ * POST /academic-integrity/cases/{id}/committee-decision and
+ * .../final-decision (see academic_integrity_router.py). Calling those
+ * as a dept_head returns a real 403 from the server; this file surfaces
+ * that error rather than pretending the decision was recorded.
+ *
+ * NOT WIRED YET (dept_head passcode-gated hiring decision already real,
+ * see submitHiringDecision below):
+ *   — none left for the sections this file owns.
  *
  * BASE_URL points straight at the FastAPI backend (port 8000). The rest
  * of the platform's shared/api.js points at port 3000 (Express, login +
- * static serving) — the two backends aren't bridged yet, so hiring calls
- * go directly to 8000 for now instead of through a shared client.
+ * static serving) — the two backends aren't bridged yet, so every call
+ * here goes directly to 8000.
  * ---------------------------------------------------------------
  */
 const BASE_URL = "http://localhost:8000";
 
-function _dhAuthHeaders(extra = {}) {
-  try {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    return {
-      "Content-Type": "application/json",
-      "X-User-Id":   String(user.id   || ""),
-      "X-User-Role": String(user.role || "dept_head"),
-      ...extra,
-    };
-  } catch (e) {
-    return { "Content-Type": "application/json", ...extra };
-  }
-}
-
 const DHApi = (function () {
-  const STORE_KEY = "bp_dh_demo_store_v1";
-
-  function seed() {
-    const now = Date.now();
-    const day = 24 * 60 * 60 * 1000;
-    return {
-      jobs: [
-        {
-          id: "job-ds-instructor",
-          title: "Data Science Instructor",
-          department: "Computer Science",
-          qualifications: ["Bachelor's degree", "Python", "Machine Learning", "2+ years experience", "Teaching experience"],
-          status: "open", // open | closed
-          deadline: now + 2 * day,
-          postedDate: now - 5 * day,
-          closedManually: false
-        },
-        {
-          id: "job-cs-professor",
-          title: "Professor of Computer Science",
-          department: "Computer Science",
-          qualifications: ["PhD Computer Science", "Machine Learning", "AI Ethics", "Publication record"],
-          status: "open",
-          deadline: now + 10 * day,
-          postedDate: now - 20 * day,
-          closedManually: false
-        },
-        {
-          id: "job-math-lecturer",
-          title: "Mathematics Lecturer",
-          department: "Mathematics",
-          qualifications: ["Master's degree", "Statistics", "3+ years teaching"],
-          status: "closed",
-          deadline: now - 3 * day,
-          postedDate: now - 30 * day,
-          closedManually: false
-        }
-      ],
-      candidates: [
-        {
-          id: "cand-elena-jenkins",
-          jobId: "job-cs-professor",
-          name: "Dr. Elena Jenkins",
-          university: "Ph.D. Computer Science, MIT",
-          experienceYears: 8,
-          skills: ["Machine Learning", "AI Ethics", "Grant Writing"],
-          teachingExperienceYears: 5,
-          aiScore: 94,
-          status: "ai_scored", // parsing | ai_scored | shortlisted | interview | hired | rejected | rescore_requested
-          aiRecommendation: "Strongly Recommended for Interview",
-          keyStrengths: ["Extensive publication record in top-tier AI ethics journals"],
-          decision: null,
-          source: "seed"
-        },
-        {
-          id: "cand-sara-ahmed",
-          jobId: "job-ds-instructor",
-          name: "Sara Ahmed",
-          university: "B.Sc. Computer Science",
-          experienceYears: 3,
-          skills: ["Python", "Machine Learning"],
-          teachingExperienceYears: 2,
-          aiScore: 95,
-          status: "shortlisted",
-          aiRecommendation: "Strongly Recommended for Hire",
-          keyStrengths: ["Meets all required qualifications", "Strong teaching background"],
-          decision: null,
-          source: "seed"
-        },
-        {
-          id: "cand-omar-ali",
-          jobId: "job-ds-instructor",
-          name: "Omar Ali",
-          university: "B.Sc. Computer Science",
-          experienceYears: 4,
-          skills: ["Python", "Machine Learning"],
-          teachingExperienceYears: 0,
-          aiScore: 82,
-          status: "shortlisted",
-          aiRecommendation: "Recommended for Interview",
-          keyStrengths: ["Strong technical experience"],
-          decision: null,
-          source: "seed"
-        },
-        {
-          id: "cand-mariam-hassan",
-          jobId: "job-ds-instructor",
-          name: "Mariam Hassan",
-          university: "B.Sc. Computer Science",
-          experienceYears: null,
-          skills: ["Python", "Machine Learning"],
-          teachingExperienceYears: null,
-          aiScore: 58,
-          status: "ai_scored",
-          aiRecommendation: "Incomplete profile — missing experience data. Not auto-ranked.",
-          keyStrengths: [],
-          decision: null,
-          source: "seed"
-        }
-      ],
-      integrityCases: [
-        {
-          id: "AI-2024-089",
-          student: "J. Smith",
-          course: "CS301 (Data Structures)",
-          instructor: "Dr. R. Patel",
-          severity: "Major",
-          status: "under_review", // reported | under_review | awaiting_appeal | closed
-          report: "Submission for Assignment 4 contains structurally identical code blocks to a known GitHub repository, despite obfuscation attempts.",
-          policy: ["ACAD-POL-104", "CS-DEPT-22"],
-          evidence: ["Student_Submission.py", "Source_Reference_Repo"],
-          aiSeverity: "Major",
-          aiConfidence: 92,
-          aiRationale: "AST (Abstract Syntax Tree) comparison confirms 87% structural similarity. Variable renaming patterns align with common obfuscation tools. Low probability of independent creation.",
-          timeline: [
-            { label: "Reported", detail: "Oct 24, 09:12 AM", state: "done" },
-            { label: "Under Review", detail: "Current Stage", state: "current" },
-            { label: "Final Decision", detail: "Pending", state: "pending" }
-          ],
-          decision: null
-        },
-        {
-          id: "AI-2024-087",
-          student: "M. Johnson",
-          course: "ENG102",
-          instructor: "Prof. L. Owens",
-          severity: "Minor",
-          status: "reported",
-          report: "Suspected undisclosed use of generative AI tools for a reflective writing assignment.",
-          policy: ["ACAD-POL-110"],
-          evidence: ["Submission_Draft.docx", "Turnitin_AI_Report.pdf"],
-          aiSeverity: "Minor",
-          aiConfidence: 61,
-          aiRationale: "Stylometric analysis flags moderate deviation from student's writing baseline. Confidence is moderate; recommend committee review before formal charge.",
-          timeline: [
-            { label: "Reported", detail: "Oct 26, 02:40 PM", state: "current" },
-            { label: "Under Review", detail: "Not started", state: "pending" },
-            { label: "Final Decision", detail: "Pending", state: "pending" }
-          ],
-          decision: null
-        },
-        {
-          id: "AI-2024-082",
-          student: "A. Williams",
-          course: "MATH410",
-          instructor: "Dr. K. Nasser",
-          severity: "Severe",
-          status: "awaiting_appeal",
-          report: "Unauthorized notes and a second device were found during a proctored final exam.",
-          policy: ["ACAD-POL-104", "EXAM-COND-03"],
-          evidence: ["Proctor_Incident_Report.pdf", "Exam_Camera_Still.jpg"],
-          aiSeverity: "Severe",
-          aiConfidence: 97,
-          aiRationale: "Proctoring log flags a device-detection event matching the reported timestamp with 97% confidence. Physical evidence corroborates proctor statement.",
-          timeline: [
-            { label: "Reported", detail: "Oct 18, 11:05 AM", state: "done" },
-            { label: "Under Review", detail: "Completed Oct 20", state: "done" },
-            { label: "Student Appeal", detail: "Current Stage", state: "current" },
-            { label: "Final Decision", detail: "Pending", state: "pending" }
-          ],
-          decision: null
-        }
-      ],
-      tickets: [
-        {
-          id: "TKT-8942",
-          sourceGraph: "Faculty Hiring",
-          sourceId: "cand-mariam-hassan",
-          threadId: "thr-7781",
-          workflow: "Dossier Processing",
-          failureType: "CV Parsing Anomaly",
-          details: "parse_and_validate returned a malformed schema for experience field ('three maybe four years???'). Checkpoint held at parse_and_validate.",
-          status: "Open",
-          priority: "High",
-          relatedWorkflow: "parse_and_validate"
-        },
-        {
-          id: "TKT-8938",
-          sourceGraph: "Academic Integrity",
-          sourceId: "AI-2024-087",
-          threadId: "thr-7765",
-          workflow: "Committee Review",
-          failureType: "Committee Bias Flag",
-          details: "Reviewer assignment heuristic flagged a potential conflict of interest requiring manual reassignment.",
-          status: "Investigating",
-          priority: "Medium",
-          relatedWorkflow: "committee_review"
-        },
-        {
-          id: "TKT-8935",
-          sourceGraph: "Advisory",
-          sourceId: "adv-4471",
-          threadId: "thr-7740",
-          workflow: "Student Outreach",
-          failureType: "Data Sync Delay",
-          details: "Advisory agent outreach queue delayed due to upstream data sync lag. Resolved after retry.",
-          status: "Resolved",
-          priority: "Low",
-          relatedWorkflow: "student_outreach"
-        }
-      ],
-      agents: [
-        { id: "agent-hiring", name: "Faculty Hiring Agent", icon: "person_search", description: "Automates initial dossier screening, extracts metadata, and flags anomalies.", status: "Active", lastActivity: "1m ago", activeWorkflows: 14 },
-        { id: "agent-integrity", name: "Academic Integrity Agent", icon: "policy", description: "Monitors committee reviews for scoring deviations and potential bias.", status: "Active", lastActivity: "5m ago", activeWorkflows: 3 },
-        { id: "agent-advisory", name: "Advisory Agent", icon: "support_agent", description: "Assists students with scheduling and general inquiries.", status: "Degraded Sync", lastActivity: "12m ago", activeWorkflows: 42 },
-        { id: "agent-assessment", name: "Assessment Agent", icon: "fact_check", description: "Automated grading and feedback generation for standardized testing.", status: "Active", lastActivity: "1h ago", activeWorkflows: 120 },
-        { id: "agent-trackrec", name: "Track Rec Agent", icon: "route", description: "Analyzes student performance to recommend optimal degree tracks.", status: "Active", lastActivity: "2h ago", activeWorkflows: 8 }
-      ]
-    };
+  function authHeaders() {
+    const user = window.BrightPeakAuth ? window.BrightPeakAuth.getUser() : null;
+    if (!user) return {};
+    return { "X-User-Id": String(user.id), "X-User-Role": user.role };
   }
 
-  function load() {
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {
-      console.warn("[DHApi] Failed to read demo store, reseeding.", e);
+  async function apiGet(path) {
+    const res = await fetch(`${BASE_URL}${path}`, { headers: authHeaders() });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail || `Request failed (${res.status})`);
     }
-    const fresh = seed();
-    save(fresh);
-    return fresh;
+    return res.json();
   }
 
-  function save(store) {
-    localStorage.setItem(STORE_KEY, JSON.stringify(store));
+  async function apiPost(path, body) {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders() },
+      body: JSON.stringify(body || {}),
+    });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      const err = new Error(errBody.detail || `Request failed (${res.status})`);
+      err.status = res.status;
+      throw err;
+    }
+    return res.json();
   }
 
-  function delay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms || 250));
-  }
-
-  function uid(prefix) {
-    return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  }
-
-  return {
-    /** ------------- JOBS (LIVE — wired to phase-4/backend/routers/hiring_router.py) ------------- */
+  const api = {
     async listJobs() {
-      const res = await fetch(`${BASE_URL}/hiring/jobs`, { headers: _dhAuthHeaders() });
+      const res = await fetch(`${BASE_URL}/hiring/jobs`);
       if (!res.ok) throw new Error("Failed to load job postings.");
       const jobs = await res.json();
       // Normalize server's ISO deadline/postedDate strings to epoch ms —
@@ -303,7 +84,7 @@ const DHApi = (function () {
     async createJob({ title, department, qualifications, deadline }) {
       const res = await fetch(`${BASE_URL}/hiring/jobs`, {
         method: "POST",
-        headers: _dhAuthHeaders(),
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           job_title: title,
           department,
@@ -328,7 +109,7 @@ const DHApi = (function () {
 
     // Department Head manually ends the application window (deadline button).
     async closeJob(jobId) {
-      const res = await fetch(`${BASE_URL}/hiring/jobs/${jobId}/close`, { method: "POST", headers: _dhAuthHeaders() });
+      const res = await fetch(`${BASE_URL}/hiring/jobs/${jobId}/close`, { method: "POST" });
       if (!res.ok) throw new Error("Failed to close job posting.");
       return { id: jobId, status: "closed", closedManually: true };
     },
@@ -336,7 +117,7 @@ const DHApi = (function () {
     /** ------------- CANDIDATES / CV INTAKE (LIVE) ------------- */
     async listCandidates(jobId) {
       const url = jobId ? `${BASE_URL}/hiring/jobs/${jobId}/candidates` : `${BASE_URL}/hiring/candidates`;
-      const res = await fetch(url, { headers: _dhAuthHeaders() });
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Failed to load candidates.");
       return res.json();
     },
@@ -352,17 +133,9 @@ const DHApi = (function () {
       fd.append("cv_file", file);
       if (candidateName) fd.append("candidate_name", candidateName);
 
-      // Build auth headers manually — _dhAuthHeaders includes Content-Type
-      // which must be omitted for multipart so the browser can set the boundary.
-      let _cvUser = {};
-      try { _cvUser = JSON.parse(localStorage.getItem("user") || "{}"); } catch(e) {}
       const res = await fetch(`${BASE_URL}/hiring/jobs/${jobId}/cv`, {
         method: "POST",
-        headers: {
-          "X-User-Id":   String(_cvUser.id   || ""),
-          "X-User-Role": String(_cvUser.role || "dept_head"),
-        },
-        body: fd,
+        body: fd, // no Content-Type header — the browser sets the multipart boundary itself
       });
 
       if (res.status === 409) {
@@ -412,84 +185,143 @@ const DHApi = (function () {
       };
     },
 
-    /** ------------- ACADEMIC INTEGRITY / HITL ------------- */
-    // Real endpoint: GET /hitl/academic-integrity/cases (NOT CONFIRMED — mocked)
+    /** ------------- ACADEMIC INTEGRITY / HITL (LIVE) ------------- */
+    /**
+     * GET /academic-integrity/cases, enriched per-case with GET
+     * /academic-integrity/cases/{id} for evidence/decisions/severity_rationale
+     * (the list endpoint alone doesn't include those — see
+     * academic_integrity_router.py). Mapped into the shape hitl.js already
+     * renders; fields the schema has no column for (policy citations, a
+     * numeric AI confidence score) come back null/empty rather than
+     * invented — hitl.js hides those UI sections when absent.
+     */
     async listIntegrityCases() {
-      await delay();
-      return load().integrityCases;
+      const cases = await apiGet("/academic-integrity/cases");
+      const detailed = await Promise.all(
+        cases.map((c) => apiGet(`/academic-integrity/cases/${c.case_id}`).catch(() => null))
+      );
+      return cases.map((c, i) => mapIntegrityCase(c, detailed[i]));
     },
 
-    // Real endpoint: POST /hitl/academic-integrity/cases/{case_id}/decision (NOT CONFIRMED — mocked)
+    /**
+     * Real endpoint: POST /academic-integrity/cases/{id}/committee-decision
+     * or .../final-decision, depending which HITL gate the case is
+     * currently waiting on (case.status). Only "instructor"/"advisor"
+     * roles are authorized for either endpoint in the existing graph
+     * (see academic_integrity_router.py) — a dept_head calling this gets
+     * a real 403 back, which is surfaced to the caller as-is rather than
+     * silently treated as success.
+     */
     async submitIntegrityDecision(caseId, action, note) {
-      await delay();
-      const store = load();
-      const c = store.integrityCases.find((x) => x.id === caseId);
-      if (!c) throw new Error("Case not found");
-      c.decision = { action, by: "department_head", note: note || null, at: Date.now() };
-      if (action === "confirm_finding" || action === "dismiss_case") {
-        c.status = "closed";
-      } else if (action === "request_appeal") {
-        c.status = "awaiting_appeal";
-      }
-      save(store);
-      return c;
-    },
-
-    /** ------------- TICKETS ------------- */
-    // Real endpoint: GET /tickets (NOT CONFIRMED — mocked; reuse existing Tickets DB structure)
-    async listTickets() {
-      await delay();
-      return load().tickets;
-    },
-
-    // Real endpoint: PATCH /tickets/{ticket_id}/status (NOT CONFIRMED — mocked)
-    async updateTicketStatus(ticketId, status) {
-      await delay();
-      const store = load();
-      const t = store.tickets.find((x) => x.id === ticketId);
-      if (!t) throw new Error("Ticket not found");
-      t.status = status;
-      save(store);
-      return t;
-    },
-
-    /** ------------- AI AGENTS ------------- */
-    // Real endpoint: GET /agents (NOT CONFIRMED — mocked, visual-only per brief)
-    async listAgents() {
-      await delay();
-      return load().agents;
-    },
-
-    /** ------------- DASHBOARD ------------- */
-    async getDashboardStats() {
-      await delay();
-      const store = load();
-      const openJobs = store.jobs.filter((j) => j.status === "open").length;
-      const awaitingDecision = store.candidates.filter((c) => ["shortlisted", "ai_scored"].includes(c.status) && !c.decision).length;
-      const integrityAwaiting = store.integrityCases.filter((c) => c.status !== "closed").length;
-      const openTickets = store.tickets.filter((t) => t.status !== "Resolved").length;
-      return {
-        activeFacultyPositions: openJobs,
-        candidatesAwaitingDecision: awaitingDecision,
-        integrityCasesAwaitingReview: integrityAwaiting,
-        openTickets,
-        hiring: {
-          jobPostings: store.jobs.length,
-          applications: store.candidates.length,
-          shortlisted: store.candidates.filter((c) => c.status === "shortlisted").length,
-          pendingDecisions: awaitingDecision
-        },
-        integrity: {
-          openCases: store.integrityCases.filter((c) => c.status !== "closed").length,
-          awaitingReview: store.integrityCases.filter((c) => c.status === "reported").length,
-          appeals: store.integrityCases.filter((c) => c.status === "awaiting_appeal").length,
-          finalDecisionsPending: store.integrityCases.filter((c) => c.status !== "closed").length
-        }
+      const decisionMap = {
+        confirm_finding: "uphold",
+        request_evidence: "request_more_evidence",
+        dismiss_case: "dismiss",
+        uphold_final: "uphold",
+        reduce_penalty: "reduce_penalty",
+        dismiss_final: "dismiss",
       };
+      const decision = decisionMap[action] || action;
+      const stage = ["uphold_final", "reduce_penalty", "dismiss_final"].includes(action)
+        ? "final-decision"
+        : "committee-decision";
+      return apiPost(`/academic-integrity/cases/${caseId}/${stage}`, { decision, notes: note || null });
     },
 
-    _debugReset() {
-      localStorage.removeItem(STORE_KEY);
-    }
+    /** ------------- TICKETS (LIVE — tickets_router.py) ------------- */
+    async listTickets() {
+      const tickets = await apiGet("/tickets");
+      return tickets.map(mapTicket);
+    },
+
+    async updateTicketStatus(ticketId, status) {
+      // tickets_router.py models two real transitions (open -> investigating
+      // -> resolved), not an arbitrary PATCH — map the UI's 3-way status
+      // toggle onto the matching endpoint.
+      if (status === "Investigating") {
+        return mapTicket(await apiPost(`/tickets/${ticketId}/investigate`));
+      }
+      if (status === "Resolved") {
+        return mapTicket(await apiPost(`/tickets/${ticketId}/resolve`, {}));
+      }
+      throw new Error(`Ticket status can only move forward (Investigating/Resolved), not to "${status}".`);
+    },
+
+    /** ------------- AI AGENTS (LIVE — agents_router.py) ------------- */
+    async listAgents() {
+      return apiGet("/agents");
+    },
+
+    /** ------------- DASHBOARD (LIVE — dashboard_router.py) ------------- */
+    async getDashboardStats() {
+      return apiGet("/dashboard/dept-head");
+    },
   };
+
+  /** Maps a real IntegrityCases row (+ its detail response) into the shape
+   * hitl.js renders. Anything with no backing column stays null/empty —
+   * never filled in with a plausible-looking placeholder. */
+  function mapIntegrityCase(row, detail) {
+    const evidence = detail ? detail.evidence.map((e) => e.content) : [];
+    const decisions = detail ? detail.decisions : [];
+    const lastDecision = decisions.length ? decisions[decisions.length - 1] : null;
+    return {
+      id: String(row.case_id),
+      student: row.student_name || `Student #${row.student_id}`,
+      course: row.course_title || `Course #${row.course_id}`,
+      instructor: row.reported_by_name || `Instructor #${row.reported_by}`,
+      severity: row.severity || "major",
+      status: row.status,
+      report: row.description,
+      policy: [], // no policy-citation column in IntegrityCases/IntegrityEvidence
+      evidence,
+      aiSeverity: row.severity,
+      aiConfidence: null, // no numeric confidence column — hitl.js hides the badge when null
+      aiRationale: (detail && detail.severity_rationale) || null,
+      timeline: buildTimeline(row.status),
+      decision: lastDecision ? { action: lastDecision.decision, note: lastDecision.notes } : null,
+    };
+  }
+
+  function buildTimeline(status) {
+    const stageOf = {
+      reported: 0,
+      under_review: 1,
+      awaiting_appeal: 2,
+      appeal_under_review: 2,
+      closed: 3,
+    };
+    const stage = stageOf[status] ?? 0;
+    const steps = [
+      { label: "Reported", key: 0 },
+      { label: "Under Review", key: 1 },
+      { label: "Appeal / Final Decision", key: 2 },
+    ];
+    return steps.map((s) => ({
+      label: s.label,
+      detail: s.key < stage ? "Done" : s.key === stage ? "Current Stage" : "Pending",
+      state: s.key < stage ? "done" : s.key === stage ? "current" : "pending",
+    }));
+  }
+
+  /** Maps a real Tickets row into the shape tickets.js renders. `priority`,
+   * `workflow`, and `relatedWorkflow` have no column in the Tickets table
+   * (see schema.sql's comment: "shared failure/recovery path") — left
+   * null so tickets.js can show a real "—" instead of a fabricated value. */
+  function mapTicket(row) {
+    return {
+      id: String(row.ticket_id),
+      sourceGraph: row.source_graph,
+      sourceId: String(row.source_id),
+      threadId: row.thread_id,
+      workflow: null,
+      failureType: row.failure_type,
+      details: row.details,
+      status: row.status.charAt(0).toUpperCase() + row.status.slice(1),
+      priority: null,
+      relatedWorkflow: null,
+    };
+  }
+
+  return api;
 })();

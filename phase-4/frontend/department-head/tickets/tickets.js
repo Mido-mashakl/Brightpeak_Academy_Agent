@@ -40,7 +40,7 @@
         <td class="text-on-surface-variant">${escapeHtml(t.threadId)}</td>
         <td>${escapeHtml(t.failureType)}</td>
         <td><span class="status-chip ${t.status}"><span class="material-symbols-outlined text-sm">${statusIcon(t.status)}</span>${t.status}</span></td>
-        <td><span class="priority-chip ${t.priority}">${t.priority}</span></td>
+        <td><span class="priority-chip">${t.priority ? escapeHtml(t.priority) : "—"}</span></td>
         <td><span class="material-symbols-outlined text-on-surface-variant">chevron_right</span></td>
       </tr>`
           )
@@ -60,12 +60,12 @@
   function openDrawer(ticket) {
     currentTicket = ticket;
     document.getElementById("drawer-ticket-id").textContent = `Ticket ${ticket.id}`;
-    document.getElementById("drawer-workflow").textContent = ticket.workflow;
+    document.getElementById("drawer-workflow").textContent = ticket.workflow || "—";
     document.getElementById("drawer-source-graph").textContent = ticket.sourceGraph;
     document.getElementById("drawer-source-id").textContent = ticket.sourceId;
     document.getElementById("drawer-thread-id").textContent = ticket.threadId;
     document.getElementById("drawer-failure-type").textContent = ticket.failureType;
-    document.getElementById("drawer-related").textContent = ticket.relatedWorkflow;
+    document.getElementById("drawer-related").textContent = ticket.relatedWorkflow || "—";
     document.getElementById("drawer-details").textContent = ticket.details;
     renderStatusActions(ticket);
     document.getElementById("ticket-drawer-backdrop").classList.remove("hidden");
@@ -75,15 +75,22 @@
   }
 
   function renderStatusActions(ticket) {
+    // tickets_router.py only supports forward transitions (open ->
+    // investigating -> resolved, see POST /investigate, /resolve) — there's
+    // no "reopen" endpoint, so "Open" is shown as a read-only past state,
+    // never a clickable target once a ticket has moved past it.
     const statuses = ["Open", "Investigating", "Resolved"];
     const el = document.getElementById("drawer-status-actions");
     el.innerHTML = statuses
-      .map((s) => `<button class="drawer-status-btn ${s === ticket.status ? "active" : ""}" data-status="${s}">${s}</button>`)
+      .map((s) => {
+        const isCurrent = s === ticket.status;
+        const disabled = isCurrent || s === "Open";
+        return `<button class="drawer-status-btn ${isCurrent ? "active" : ""}" data-status="${s}" ${disabled ? "disabled" : ""}>${s}</button>`;
+      })
       .join("");
-    el.querySelectorAll("[data-status]").forEach((btn) =>
+    el.querySelectorAll("[data-status]:not([disabled])").forEach((btn) =>
       btn.addEventListener("click", async () => {
         try {
-          // Real endpoint: PATCH /tickets/{ticket_id}/status
           await DHApi.updateTicketStatus(ticket.id, btn.dataset.status);
           allTickets = await DHApi.listTickets();
           renderTable();

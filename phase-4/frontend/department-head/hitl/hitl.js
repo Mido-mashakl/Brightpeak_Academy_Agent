@@ -177,7 +177,7 @@
     return "Academic Integrity";
   }
   function integrityStatusLabel(status) {
-    const map = { reported: "Reported", under_review: "Under Review", awaiting_appeal: "Awaiting Appeal", closed: "Closed" };
+    const map = { reported: "Reported", under_review: "Under Review", awaiting_appeal: "Awaiting Appeal", appeal_under_review: "Appeal Under Review", closed: "Closed" };
     return map[status] || status;
   }
 
@@ -189,6 +189,9 @@
     }
 
     const policyChips = (c.policy || []).map((p) => `<span class="policy-chip">${p}</span>`).join("");
+    const policySection = policyChips
+      ? `<div class="section-title">Relevant Policy Cited</div><div class="mb-md">${policyChips}</div>`
+      : "";
     const evidenceRows = (c.evidence || [])
       .map((e) => `<div class="evidence-row"><span><span class="material-symbols-outlined text-sm align-middle mr-1">description</span>${escapeHtml(e)}</span><span class="material-symbols-outlined text-sm text-on-surface-variant">visibility</span></div>`)
       .join("");
@@ -201,12 +204,19 @@
            <div class="flex items-center gap-xs font-medium"><span class="material-symbols-outlined text-sm">check_circle</span>Committee Decision Recorded</div>
            <div class="mt-xs text-on-surface">${integrityActionLabel(c.decision.action)}${c.decision.note ? " — " + escapeHtml(c.decision.note) : ""}</div>
          </div>`
-      : `<div class="action-btn-row">
+      : c.status === "appeal_under_review"
+      ? `<div class="action-btn-row">
+           <button class="action-btn primary" data-action="uphold_final"><span class="material-symbols-outlined text-sm">gavel</span>Uphold Ruling</button>
+           <button class="action-btn" data-action="reduce_penalty"><span class="material-symbols-outlined text-sm">balance</span>Reduce Penalty</button>
+           <button class="action-btn danger" data-action="dismiss_final"><span class="material-symbols-outlined text-sm">close</span>Dismiss on Appeal</button>
+         </div>`
+      : c.status === "under_review"
+      ? `<div class="action-btn-row">
            <button class="action-btn primary" data-action="confirm_finding"><span class="material-symbols-outlined text-sm">gavel</span>Confirm Finding</button>
            <button class="action-btn" data-action="request_evidence"><span class="material-symbols-outlined text-sm">find_in_page</span>Req. Evidence</button>
-           <button class="action-btn" data-action="request_appeal"><span class="material-symbols-outlined text-sm">forum</span>Req. Appeal</button>
            <button class="action-btn danger" data-action="dismiss_case"><span class="material-symbols-outlined text-sm">close</span>Dismiss Case</button>
-         </div>`;
+         </div>`
+      : `<div class="text-on-surface-variant text-body-sm p-sm">No committee decision is pending — this case is "${integrityStatusLabel(c.status)}".</div>`;
 
     container.innerHTML = `
       <div class="glass-panel rounded-xl p-lg">
@@ -220,8 +230,7 @@
         <div class="border-t border-outline-variant/10 pt-sm mt-sm">
           <div class="section-title">Instructor Report</div>
           <p class="text-on-surface text-body-sm mb-md">${escapeHtml(c.report)} <span class="text-on-surface-variant">— reported by ${escapeHtml(c.instructor)}</span></p>
-          <div class="section-title">Relevant Policy Cited</div>
-          <div class="mb-md">${policyChips}</div>
+          ${policySection}
           <div class="section-title">Evidence Summary</div>
           <div>${evidenceRows}</div>
         </div>
@@ -230,13 +239,13 @@
       <div class="glass-panel rounded-xl p-lg">
         <div class="flex justify-between items-center mb-sm">
           <div class="section-title mb-0 flex items-center gap-xs"><span class="material-symbols-outlined text-sm">neurology</span>AI Assessment (Advisory)</div>
-          <div class="confidence-badge">${c.aiConfidence}%</div>
+          ${c.aiConfidence != null ? `<div class="confidence-badge">${c.aiConfidence}%</div>` : ""}
         </div>
         <div class="ai-assessment-box">
           <div class="text-on-surface-variant text-xs mb-1">Rationale</div>
-          <div class="text-on-surface text-body-sm">${escapeHtml(c.aiRationale)}</div>
+          <div class="text-on-surface text-body-sm">${c.aiRationale ? escapeHtml(c.aiRationale) : "Not available for this case yet."}</div>
         </div>
-        <div class="text-on-surface-variant text-xs mt-sm">The AI severity assessment (${c.aiSeverity}) is advisory input only — it is clearly separated from the committee's final decision below.</div>
+        <div class="text-on-surface-variant text-xs mt-sm">The AI severity assessment (${c.aiSeverity || "unclassified"}) is advisory input only — it is clearly separated from the committee's final decision below.</div>
       </div>
 
       <div class="glass-panel rounded-xl p-lg">
@@ -258,7 +267,14 @@
           await loadIntegrityQueue();
         } catch (err) {
           console.error(err);
-          showToast("Could not record the committee decision.", "error");
+          // Real, honest error: the Phase-3 graph currently only allows
+          // "instructor"/"advisor" roles to record this decision (see
+          // academic_integrity_router.py) — a dept_head gets a real 403,
+          // shown as-is rather than papered over as a generic failure.
+          const message = err.status === 403
+            ? "Committee decisions for Academic Integrity currently require an Instructor or Advisor account — Department Head isn't authorized for this step yet."
+            : "Could not record the committee decision.";
+          showToast(message, "error");
           btn.disabled = false;
         }
       })
@@ -266,7 +282,20 @@
   }
 
   function integrityActionLabel(action) {
-    const map = { confirm_finding: "Finding Confirmed", request_evidence: "Additional Evidence Requested", request_appeal: "Appeal Process Started", dismiss_case: "Case Dismissed" };
+    const map = {
+      confirm_finding: "Finding Confirmed",
+      request_evidence: "Additional Evidence Requested",
+      dismiss_case: "Case Dismissed",
+      uphold_final: "Ruling Upheld",
+      reduce_penalty: "Penalty Reduced",
+      dismiss_final: "Dismissed on Appeal",
+      // Raw backend decision values (uphold/dismiss/request_more_evidence/
+      // reduce_penalty), in case a decision recorded elsewhere is displayed
+      // here before this page's own action-label mapping applies.
+      uphold: "Finding Upheld",
+      dismiss: "Dismissed",
+      request_more_evidence: "Additional Evidence Requested",
+    };
     return map[action] || action;
   }
 
