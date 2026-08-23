@@ -7,7 +7,7 @@
 // =========================================================
 
 document.addEventListener("DOMContentLoaded", async () => {
-  BPLayout.mount({ active: "hitl", userName: "Fatma", userRole: "Instructor" });
+  BPLayout.mount({ active: "hitl", userName: (window.currentUser && window.currentUser.name) || "Instructor", userRole: "Instructor" });
   document.getElementById("bp-back-icon").innerHTML = BPIcons.arrowLeft;
 
   const root = document.getElementById("bp-review-root");
@@ -29,18 +29,20 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
+// Real decision values accepted by POST /academic-integrity/cases/{id}/
+// committee-decision (see academic_integrity_router.py) — not the old
+// mock's generic approve/reject/confirm.
 const BP_ACTION_LABELS = {
-  approve: "Approve",
-  reject: "Reject",
-  confirm: "Confirm",
+  uphold: "Uphold Finding",
+  dismiss: "Dismiss Case",
+  reduce_penalty: "Reduce Penalty",
 };
 
 function renderReview(c) {
-  const d = c.details;
   return `
     <div class="bp-page-header">
       <div><h1>Academic Integrity Case #${c.id}</h1></div>
-      <span>${BPFormat.severityBadge(c.severity)}</span>
+      <span>${c.severity ? BPFormat.severityBadge(c.severity) : ""}</span>
     </div>
 
     <div class="bp-detail-grid">
@@ -52,44 +54,42 @@ function renderReview(c) {
           <div class="bp-kv"><div class="k">Workflow Step</div><div class="v">${c.workflowStep}</div></div>
         </section>
 
-        ${
-          d
-            ? `
         <section class="bp-card bp-card-pad">
           <div class="bp-card-header"><h2>Incident</h2></div>
-          <div class="bp-kv"><div class="k">Incident Type</div><div class="v">${d.incidentType}</div></div>
-          <div class="bp-kv"><div class="k">Description</div><div class="bp-desc-box">${d.description}</div></div>
+          <div class="bp-kv"><div class="k">Description</div><div class="bp-desc-box">${c.description || "—"}</div></div>
         </section>
 
         <section class="bp-card bp-card-pad">
           <div class="bp-card-header"><h2>Evidence</h2></div>
-          <div class="bp-evidence-grid">
-            ${d.evidence
-              .map(
-                (e) => `
-              <div class="bp-evidence-tile">
-                <div class="bp-file-icon" style="margin:0 auto 8px">${e.type === "image" ? BPIcons.image : BPIcons.file}</div>
-                <div class="name">${e.name}</div>
-                <div class="size">${e.size}</div>
-              </div>
-            `
-              )
-              .join("")}
-          </div>
+          ${
+            c.evidence && c.evidence.length
+              ? `<div class="bp-evidence-grid">
+                  ${c.evidence
+                    .map(
+                      (e) => `
+                    <div class="bp-evidence-tile">
+                      <div class="bp-file-icon" style="margin:0 auto 8px">${BPIcons.file}</div>
+                      <div class="name">${e.type}</div>
+                      <div class="size">${e.content}</div>
+                    </div>
+                  `
+                    )
+                    .join("")}
+                </div>`
+              : BPState.empty("No evidence recorded for this case.")
+          }
         </section>
-        `
-            : ""
-        }
       </div>
 
       <div class="bp-detail-stack">
         <section class="bp-card bp-card-pad">
           <div class="bp-card-header"><h2>AI Assessment</h2></div>
-          <div class="bp-kv"><div class="k">Policy Match</div>
-            <div class="v" style="color:var(--bp-green)">${c.policyMatchPct}%</div>
-            <div class="bp-match-bar"><div class="bp-match-bar-fill" style="width:${c.policyMatchPct}%"></div></div>
-          </div>
-          ${d && d.aiAssessment ? `<div class="bp-ai-reasoning">${d.aiAssessment.reasoning}</div>` : ""}
+          ${
+            c.severity
+              ? `<div class="bp-kv"><div class="k">Severity</div><div class="bp-ai-severity">${BPFormat.severityBadge(c.severity)}</div></div>
+                 ${c.severityRationale ? `<div class="bp-ai-reasoning">${c.severityRationale}</div>` : ""}`
+              : BPState.empty("AI severity assessment not yet available for this case.")
+          }
         </section>
 
         <section class="bp-card bp-card-pad">

@@ -106,9 +106,9 @@
       ? urgent
           .map(
             (c) => `
-        <div class="pipeline-row ${c.severity === "Severe" || c.severity === "Major" ? "urgent" : ""}">
+        <div class="pipeline-row ${c.severity === "severe" || c.severity === "major" ? "urgent" : ""}">
           <div class="flex items-center gap-md">
-            <span class="material-symbols-outlined ${c.severity === "Severe" || c.severity === "Major" ? "text-error" : "text-on-surface-variant"} text-sm">${c.severity === "Severe" || c.severity === "Major" ? "priority_high" : "pending_actions"}</span>
+            <span class="material-symbols-outlined ${c.severity === "severe" || c.severity === "major" ? "text-error" : "text-on-surface-variant"} text-sm">${c.severity === "severe" || c.severity === "major" ? "priority_high" : "pending_actions"}</span>
             <div>
               <div class="font-body-md text-body-md text-on-surface">Case #${c.id}</div>
               <div class="font-body-sm text-body-sm text-on-surface-variant">${c.severity} case — ${statusText(c.status)}</div>

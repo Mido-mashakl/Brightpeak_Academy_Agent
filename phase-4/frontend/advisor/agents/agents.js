@@ -31,14 +31,16 @@ const BP_WF_ICONS = {
 document.addEventListener("DOMContentLoaded", async () => {
   bpRenderNav({ active: "agents", showSearch: false });
 
-  // NOTE: only agents that actually exist in the backend should render
-  // here as "Active". See implementation report for which of these are
-  // verified vs. carried over from the design mock.
+  // Real GET /agents response: key, name, description, open_items.
+  // There is no accuracy / last-activity / active-flag column anywhere
+  // in the schema, so those are not rendered — showing them would mean
+  // inventing numbers the backend never provided.
   const agents = await bpFetchAgents();
 
-  document.getElementById("bp-agents-grid").innerHTML = agents
-    .map(
-      (a) => `
+  document.getElementById("bp-agents-grid").innerHTML = agents.length
+    ? agents
+        .map(
+          (a) => `
       <div class="bp-agent-card">
         <div class="bp-agent-icon">
           ${
@@ -48,16 +50,14 @@ document.addEventListener("DOMContentLoaded", async () => {
           }
         </div>
         <div class="bp-agent-name">${a.name}</div>
-        <div class="bp-agent-desc">${a.desc}</div>
-        <div class="bp-agent-status">${a.active ? "Active" : "Inactive"}</div>
+        <div class="bp-agent-desc">${a.description}</div>
         <div class="bp-agent-meta">
-          <div><span class="num">${a.accuracy}%</span>Accuracy</div>
-          <div><span class="num">${a.lastActivity}</span>Last Activity</div>
+          <div><span class="num">${a.open_items}</span>Open Items</div>
         </div>
-        <button class="bp-btn ghost">View Details</button>
       </div>`
-    )
-    .join("");
+        )
+        .join("")
+    : `<p class="bp-muted">No agents found.</p>`;
 
   document.getElementById("bp-workflow-row").innerHTML = BP_WORKFLOW_STEPS.map(
     (s, i) => `

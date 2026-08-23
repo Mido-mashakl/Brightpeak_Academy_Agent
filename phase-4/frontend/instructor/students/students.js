@@ -9,7 +9,7 @@
 const BP_PAGE_SIZE = 10;
 
 document.addEventListener("DOMContentLoaded", async () => {
-  BPLayout.mount({ active: "students", userName: "Fatma", userRole: "Instructor" });
+  BPLayout.mount({ active: "students", userName: (window.currentUser && window.currentUser.name) || "Instructor", userRole: "Instructor" });
 
   document.getElementById("bp-search-icon").innerHTML = BPIcons.search;
 
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <table class="bp-table">
           <thead>
             <tr>
-              <th>Student</th><th>Course</th><th>Attendance</th><th>Avg. Grade</th><th>Standing</th><th></th>
+              <th>Student</th><th>Course</th><th>Attendance</th><th>Avg. Grade</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -70,9 +70,8 @@ document.addEventListener("DOMContentLoaded", async () => {
               <tr class="bp-row" data-id="${s.id}">
                 <td class="bp-cell-primary"><span class="bp-row-icon" style="background:rgba(236,72,153,0.14);color:#ec4899">${BPIcons.students}</span>${s.name}</td>
                 <td class="bp-cell-muted">${s.course}</td>
-                <td class="bp-cell-muted">${s.attendancePct}%</td>
-                <td class="bp-cell-muted">${s.avgGrade}%</td>
-                <td>${BPFormat.statusBadge(s.status)}</td>
+                <td class="bp-cell-muted">${s.attendancePct != null ? s.attendancePct + "%" : "—"}</td>
+                <td class="bp-cell-muted">${s.avgGrade != null ? s.avgGrade + "%" : "—"}</td>
                 <td class="bp-row-chevron">${BPIcons.chevronRight}</td>
               </tr>
             `

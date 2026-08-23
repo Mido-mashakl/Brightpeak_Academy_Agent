@@ -7,7 +7,7 @@
 // =========================================================
 
 document.addEventListener("DOMContentLoaded", async () => {
-  BPLayout.mount({ active: "students", userName: "Fatma", userRole: "Instructor" });
+  BPLayout.mount({ active: "students", userName: (window.currentUser && window.currentUser.name) || "Instructor", userRole: "Instructor" });
   document.getElementById("bp-back-icon").innerHTML = BPIcons.arrowLeft;
 
   const root = document.getElementById("bp-student-root");
@@ -33,16 +33,27 @@ function initials(name) {
 }
 
 function renderStudent(s) {
+  // The backend's Grades/Attendance tables don't store present/absent/
+  // excused counts or a course-agnostic average — Grades is one row per
+  // assignment (no course label) and Attendance is one percentage per
+  // course (see instructor_router.py). A single "avg grade %" stat card
+  // isn't invented here; it's a real mean of the real per-assignment
+  // scores actually returned, shown only when there's at least one grade.
+  const grades = s.grades || [];
+  const attendance = s.attendance || [];
+  const avgGrade = grades.length
+    ? Math.round(grades.reduce((sum, g) => sum + (g.score / g.maxScore) * 100, 0) / grades.length)
+    : null;
+
   return `
     <div class="bp-page-header">
       <div style="display:flex;align-items:center;gap:14px">
         <div class="bp-avatar" style="width:46px;height:46px;font-size:16px">${initials(s.name)}</div>
         <div>
           <h1>${s.name}</h1>
-          <p>${s.course}${s.email ? ` · ${s.email}` : ""}</p>
+          <p>${s.email || ""}</p>
         </div>
       </div>
-      <span>${BPFormat.statusBadge(s.status)}</span>
     </div>
 
     <div class="bp-stat-grid" style="margin-bottom:22px">
@@ -50,16 +61,8 @@ function renderStudent(s) {
         <div class="bp-stat-icon amber">${BPIcons.reports}</div>
         <div class="bp-stat-body">
           <div class="label-top">Avg. Grade</div>
-          <div class="value">${s.avgGrade}%</div>
-          <div class="label-bottom">Across graded work</div>
-        </div>
-      </div>
-      <div class="bp-card bp-stat-card">
-        <div class="bp-stat-icon blue">${BPIcons.checkCircle}</div>
-        <div class="bp-stat-body">
-          <div class="label-top">Attendance</div>
-          <div class="value">${s.attendancePct}%</div>
-          <div class="label-bottom">${s.attendance ? `${s.attendance.present}/${s.attendance.totalSessions} sessions` : "This term"}</div>
+          <div class="value">${avgGrade != null ? avgGrade + "%" : "—"}</div>
+          <div class="label-bottom">Across recorded assignments</div>
         </div>
       </div>
     </div>
@@ -69,12 +72,12 @@ function renderStudent(s) {
         <section class="bp-card bp-card-pad">
           <div class="bp-card-header"><h2>Grades</h2></div>
           ${
-            s.grades && s.grades.length
+            grades.length
               ? `<div class="bp-table-wrap">
                   <table class="bp-table">
                     <thead><tr><th>Assignment</th><th>Score</th></tr></thead>
                     <tbody>
-                      ${s.grades
+                      ${grades
                         .map(
                           (g) => `
                         <tr>
@@ -96,13 +99,12 @@ function renderStudent(s) {
         <section class="bp-card bp-card-pad">
           <div class="bp-card-header"><h2>Attendance</h2></div>
           ${
-            s.attendance
-              ? `
-            <div class="bp-kv"><div class="k">Present</div><div class="v">${s.attendance.present}</div></div>
-            <div class="bp-kv"><div class="k">Absent</div><div class="v">${s.attendance.absent}</div></div>
-            <div class="bp-kv"><div class="k">Excused</div><div class="v">${s.attendance.excused}</div></div>
-            <div class="bp-kv"><div class="k">Total Sessions</div><div class="v">${s.attendance.totalSessions}</div></div>
-          `
+            attendance.length
+              ? attendance
+                  .map(
+                    (a) => `<div class="bp-kv"><div class="k">${a.course}</div><div class="v">${a.percentage}%</div></div>`
+                  )
+                  .join("")
               : BPState.empty("No attendance data recorded yet.")
           }
         </section>

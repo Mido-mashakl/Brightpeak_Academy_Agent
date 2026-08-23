@@ -32,7 +32,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     <div class="bp-summary-right">
       <div>
         <div class="bp-summary-field"><div class="k">Status</div><div class="v"><span class="bp-badge ${meta.badgeClass}">${meta.label}</span></div></div>
-        <div class="bp-summary-field"><div class="k">Priority</div><div class="v"><span class="bp-priority ${req.priority}">${req.priority[0].toUpperCase() + req.priority.slice(1)}</span></div></div>
       </div>
       <img class="bp-type-icon" src="../assets/graduation-certificate.png" alt="${req.type} request icon" onerror="this.style.display='none'" />
     </div>

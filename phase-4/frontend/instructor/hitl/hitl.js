@@ -12,7 +12,7 @@ const BP_HITL_CATEGORIES = [
 ];
 
 document.addEventListener("DOMContentLoaded", async () => {
-  BPLayout.mount({ active: "hitl", userName: "Fatma", userRole: "Instructor" });
+  BPLayout.mount({ active: "hitl", userName: (window.currentUser && window.currentUser.name) || "Instructor", userRole: "Instructor" });
 
   const root = document.getElementById("bp-hitl-root");
   root.innerHTML = BPState.loading("Loading HITL cases...");
@@ -81,7 +81,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               <div class="item"><div class="k">Severity</div><div class="v">${BPFormat.severityBadge(c.severity)}</div></div>
               <div class="item"><div class="k">Workflow Step</div><div class="v">${c.workflowStep}</div></div>
               <div class="item"><div class="k">Evidence</div><div class="v">${c.evidenceCount} items</div></div>
-              <div class="item"><div class="k">Policy Match</div><div class="v">${c.policyMatchPct}%</div></div>
               ${
                 c.pendingWith
                   ? `<div class="item"><div class="k">Pending With</div><div class="v">${c.pendingWith}</div></div>`

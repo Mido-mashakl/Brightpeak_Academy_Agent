@@ -4,7 +4,7 @@
 //
 // Usage: each page includes a <div id="bp-shell"> wrapping its
 // <main class="bp-content">...</main>, then calls:
-//   BPLayout.mount({ active: "integrity", userName: "Fatma" });
+//   BPLayout.mount({ active: "integrity", userName: window.currentUser.name });
 // =========================================================
 
 const BPLayout = (() => {
@@ -55,7 +55,7 @@ const BPLayout = (() => {
       .toUpperCase();
   }
 
-  function mount({ active, userName = "Fatma", userRole = "Instructor" } = {}) {
+  function mount({ active, userName = "Instructor", userRole = "Instructor" } = {}) {
     const shell = document.getElementById("bp-shell");
     if (!shell) return;
 

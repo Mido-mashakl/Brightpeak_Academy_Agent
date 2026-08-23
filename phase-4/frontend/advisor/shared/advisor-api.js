@@ -56,7 +56,6 @@ function _normalizeRequest(row) {
     studentId: row.student_id,
     type:      typeLabel,
     status:    statusRaw,
-    priority:  "medium",
     updated:   row.updated_at  || row.created_at || "",
     submitted: row.created_at  || "",
     purpose:   row.purpose     || "",
@@ -68,23 +67,15 @@ function _normalizeRequest(row) {
   };
 }
 
-/** GET /advisor/requests — advisor's full queue */
+/** GET /dashboard/advisor — real aggregated counters, straight from the DB. */
 async function bpFetchDashboardStats() {
-  const rows = await _apiFetch("/advisor/requests");
-  const items = rows.map(_normalizeRequest);
-
-  const inProgress   = items.filter(r => ["in_progress",  "progress"].includes(r.status)).length;
-  const pendingReview= items.filter(r => ["pending_review","review"].includes(r.status)).length;
-  const completed    = items.filter(r => ["approved","rejected","completed"].includes(r.status)).length;
-
+  const stats = await _apiFetch("/dashboard/advisor");
   return {
-    total:        items.length,
-    inProgress,
-    pendingReview,
-    completed,
-    deltas:       { total: "", inProgress: "", pendingReview: "", completed: "" },
-    aiInsights:   { avgEligibilityAccuracy: null, requestsAnalyzed: items.length, recommendationsGenerated: 0 },
-    needingAttention: items.filter(r => !["approved","rejected","completed"].includes(r.status)).slice(0, 3),
+    total:            stats.total,
+    inProgress:       stats.inProgress,
+    pendingReview:    stats.pendingReview,
+    completed:        stats.completed,
+    needingAttention: stats.needingAttention.map(_normalizeRequest).slice(0, 3),
   };
 }
 
@@ -138,9 +129,12 @@ async function bpFetchRequestById(id) {
   return null;
 }
 
-/** Agents — no backend endpoint yet, return empty list */
+/** GET /agents — real Phase-3 graph list with live open-item counts.
+ * No accuracy/last-activity/active-flag columns exist anywhere in the
+ * schema for these, so those fields are not part of the response and
+ * must not be fabricated on the frontend either. */
 async function bpFetchAgents() {
-  return [];
+  return _apiFetch("/agents");
 }
 
 /**

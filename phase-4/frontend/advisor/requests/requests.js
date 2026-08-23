@@ -27,7 +27,6 @@ async function loadRequests() {
           <td>${r.student}</td>
           <td>${r.type}</td>
           <td><span class="bp-badge ${meta.badgeClass}">${meta.label}</span></td>
-          <td><span class="bp-priority ${r.priority}">${r.priority[0].toUpperCase() + r.priority.slice(1)}</span></td>
           <td class="bp-muted">${r.updated}</td>
           <td>
             <a class="bp-action-btn" href="request-detail.html?id=${r.id}" title="View request">
@@ -42,8 +41,9 @@ async function loadRequests() {
 
   document.getElementById("bp-showing").textContent = `Showing 1 to ${items.length} of ${total} requests`;
 
-  const pages = 4;
+  // The backend returns the full queue in one response (no server-side
+  // pagination exists yet), so there is only ever one real page here —
+  // showing a fake multi-page control would misrepresent that.
   document.getElementById("bp-pagination").innerHTML =
-    Array.from({ length: pages }, (_, i) => `<button class="bp-page-btn ${i === 0 ? "active" : ""}">${i + 1}</button>`).join("") +
-    `<button class="bp-page-btn">›</button>`;
+    `<button class="bp-page-btn active">1</button>`;
 }
