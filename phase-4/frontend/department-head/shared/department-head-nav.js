@@ -26,8 +26,16 @@ const DHAuth = {
    */
   getCurrentUser() {
     if (window.currentUser) return window.currentUser;
-    // Fallback so the design previews without a backend attached.
-    return { id: "demo-dept-head", name: "Ahmed", role: "dept_head", avatarUrl: null };
+    // Read real session from localStorage (set by login page via shared/auth.js).
+    try {
+      const stored = localStorage.getItem("user");
+      if (stored) {
+        const u = JSON.parse(stored);
+        window.currentUser = u;
+        return u;
+      }
+    } catch (e) { /* ignore parse errors */ }
+    return null;
   },
 
   /**

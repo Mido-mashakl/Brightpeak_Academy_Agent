@@ -35,6 +35,20 @@
  */
 const BASE_URL = "http://localhost:8000";
 
+function _dhAuthHeaders(extra = {}) {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return {
+      "Content-Type": "application/json",
+      "X-User-Id":   String(user.id   || ""),
+      "X-User-Role": String(user.role || "dept_head"),
+      ...extra,
+    };
+  } catch (e) {
+    return { "Content-Type": "application/json", ...extra };
+  }
+}
+
 const DHApi = (function () {
   const STORE_KEY = "bp_dh_demo_store_v1";
 
@@ -274,7 +288,7 @@ const DHApi = (function () {
   return {
     /** ------------- JOBS (LIVE — wired to phase-4/backend/routers/hiring_router.py) ------------- */
     async listJobs() {
-      const res = await fetch(`${BASE_URL}/hiring/jobs`);
+      const res = await fetch(`${BASE_URL}/hiring/jobs`, { headers: _dhAuthHeaders() });
       if (!res.ok) throw new Error("Failed to load job postings.");
       const jobs = await res.json();
       // Normalize server's ISO deadline/postedDate strings to epoch ms —
@@ -289,7 +303,7 @@ const DHApi = (function () {
     async createJob({ title, department, qualifications, deadline }) {
       const res = await fetch(`${BASE_URL}/hiring/jobs`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: _dhAuthHeaders(),
         body: JSON.stringify({
           job_title: title,
           department,
@@ -314,7 +328,7 @@ const DHApi = (function () {
 
     // Department Head manually ends the application window (deadline button).
     async closeJob(jobId) {
-      const res = await fetch(`${BASE_URL}/hiring/jobs/${jobId}/close`, { method: "POST" });
+      const res = await fetch(`${BASE_URL}/hiring/jobs/${jobId}/close`, { method: "POST", headers: _dhAuthHeaders() });
       if (!res.ok) throw new Error("Failed to close job posting.");
       return { id: jobId, status: "closed", closedManually: true };
     },
@@ -322,7 +336,7 @@ const DHApi = (function () {
     /** ------------- CANDIDATES / CV INTAKE (LIVE) ------------- */
     async listCandidates(jobId) {
       const url = jobId ? `${BASE_URL}/hiring/jobs/${jobId}/candidates` : `${BASE_URL}/hiring/candidates`;
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: _dhAuthHeaders() });
       if (!res.ok) throw new Error("Failed to load candidates.");
       return res.json();
     },
@@ -338,9 +352,17 @@ const DHApi = (function () {
       fd.append("cv_file", file);
       if (candidateName) fd.append("candidate_name", candidateName);
 
+      // Build auth headers manually — _dhAuthHeaders includes Content-Type
+      // which must be omitted for multipart so the browser can set the boundary.
+      let _cvUser = {};
+      try { _cvUser = JSON.parse(localStorage.getItem("user") || "{}"); } catch(e) {}
       const res = await fetch(`${BASE_URL}/hiring/jobs/${jobId}/cv`, {
         method: "POST",
-        body: fd, // no Content-Type header — the browser sets the multipart boundary itself
+        headers: {
+          "X-User-Id":   String(_cvUser.id   || ""),
+          "X-User-Role": String(_cvUser.role || "dept_head"),
+        },
+        body: fd,
       });
 
       if (res.status === 409) {
