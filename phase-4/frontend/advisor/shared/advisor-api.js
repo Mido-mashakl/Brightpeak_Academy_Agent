@@ -1,106 +1,162 @@
 /* ============================================================
    Brightpeak Academy — Advisor Portal
-   Mock data / API layer.
+   Real API layer — wired to FastAPI backend (port 8000).
 
-   ⚠️ THIS FILE IS A STAND-IN. No real backend was available to
-   inspect when this was built (see report). Every function below
-   is written so it can be swapped for a real fetch() call without
-   changing any page code — just replace the body.
-
-   Real integration checklist (per implementation brief, section 9):
-   - [ ] Find existing Advisor endpoints (list/detail/decision)
-   - [ ] Find Advisory Graph entry point + state shape
-   - [ ] Find HITL interrupt/resume mechanism
-   - [ ] Find accepted decision values (approve/more_info/deny/escalate?)
-   - [ ] Find DB fields for advisory requests
+   Auth: reads the logged-in user from localStorage("user")
+   and forwards X-User-Id / X-User-Role on every request,
+   matching the pattern in core/auth.py.
    ============================================================ */
 
-const BP_MOCK_REQUESTS = [
-  { id: "REQ-1032", student: "Ahmed Mostafa", studentId: "STU-10245", program: "Computer Science", level: "Level 3", type: "Certificate", status: "review", priority: "high", updated: "2h ago", submitted: "May 10, 2025",
-    message: "I would like to apply for the Data Science Certificate.",
-    notes: "I have completed the core courses and would like to know if I'm eligible.",
-    attachments: ["Transcript.pdf"],
-    programInfo: { certificate: "Data Science Certificate", plan: "2024 CS Plan", advisor: "Dr. Sarah Johnson" },
-    timeline: [
-      { label: "Request Submitted", date: "May 10", state: "done" },
-      { label: "Data & Eligibility Check", date: "May 10", state: "done" },
-      { label: "AI Analysis", date: "May 11", state: "done" },
-      { label: "Advisor Review", date: "Current", state: "current" },
-      { label: "Final Decision", date: "Pending", state: "pending" },
-    ],
-    requirements: [
-      { label: "Core Courses", value: "12 / 12 Completed", ok: true },
-      { label: "GPA Requirement (≥ 3.00)", value: "3.48 / 3.00", ok: true },
-      { label: "Credit Hours (≥ 24)", value: "27 / 24", ok: true },
-      { label: "Financial Clearance", value: "Clear", ok: true },
-    ],
-    aiRecommendation: { verdict: "Eligible", confidence: 94,
-      reasoning: "Student has completed all required core courses with grade ≥ B. GPA is 3.48 which meets the minimum requirement. No academic holds found." },
-  },
-  { id: "REQ-1031", student: "Sara Ali", studentId: "STU-10221", program: "Business Administration", level: "Level 4", type: "Scholarship", status: "progress", priority: "medium", updated: "5h ago", submitted: "May 9, 2025" },
-  { id: "REQ-1030", student: "Omar Hassan", studentId: "STU-10198", program: "Mechanical Engineering", level: "Level 2", type: "Certificate", status: "waiting", priority: "medium", updated: "1d ago", submitted: "May 8, 2025" },
-  { id: "REQ-1029", student: "Lina Khaled", studentId: "STU-10177", program: "Graphic Design", level: "Level 3", type: "Scholarship", status: "progress", priority: "low", updated: "1d ago", submitted: "May 8, 2025" },
-  { id: "REQ-1028", student: "Youssef Tarek", studentId: "STU-10156", program: "Computer Science", level: "Level 4", type: "Certificate", status: "review", priority: "high", updated: "2d ago", submitted: "May 7, 2025" },
-  { id: "REQ-1027", student: "Nourhan Ali", studentId: "STU-10142", program: "Finance", level: "Level 3", type: "Scholarship", status: "progress", priority: "medium", updated: "2d ago", submitted: "May 6, 2025" },
-  { id: "REQ-1026", student: "Hassan Mohamed", studentId: "STU-10119", program: "Architecture", level: "Level 2", type: "Certificate", status: "completed", priority: "low", updated: "3d ago", submitted: "May 5, 2025" },
-];
+const BP_ADVISOR_BASE = "http://localhost:8000";
 
 const BP_STATUS_META = {
-  review:    { label: "Needs Review",     badgeClass: "status-review" },
-  progress:  { label: "In Progress",      badgeClass: "status-progress" },
-  waiting:   { label: "Waiting for Student", badgeClass: "status-waiting" },
-  completed: { label: "Completed",        badgeClass: "status-completed" },
+  review:           { label: "Needs Review",          badgeClass: "status-review" },
+  progress:         { label: "In Progress",           badgeClass: "status-progress" },
+  waiting:          { label: "Waiting for Student",   badgeClass: "status-waiting" },
+  completed:        { label: "Completed",             badgeClass: "status-completed" },
+  pending_review:   { label: "Needs Review",          badgeClass: "status-review" },
+  in_progress:      { label: "In Progress",           badgeClass: "status-progress" },
+  approved:         { label: "Completed",             badgeClass: "status-completed" },
+  rejected:         { label: "Completed",             badgeClass: "status-completed" },
 };
 
-const BP_AGENTS = [
-  { key: "advisory_assistant", name: "Advisory Assistant", desc: "Provides academic guidance and general advising support.", accuracy: 92, lastActivity: "2m ago", active: true },
-  { key: "eligibility_agent", name: "Eligibility Agent", desc: "Checks eligibility for certificates and scholarships.", accuracy: 94, lastActivity: "3m ago", active: true },
-  { key: "policy_search_agent", name: "Policy Search Agent", desc: "Searches policies and academic rules.", accuracy: 90, lastActivity: "1m ago", active: true },
-  { key: "plan_generator_agent", name: "Plan Generator Agent", desc: "Generates academic plans and course recommendations.", accuracy: 91, lastActivity: "4m ago", active: true },
-];
+function _authHeaders() {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return {
+      "Content-Type": "application/json",
+      "X-User-Id":   String(user.id   || ""),
+      "X-User-Role": String(user.role || "advisor"),
+    };
+  } catch (e) {
+    return { "Content-Type": "application/json" };
+  }
+}
 
-/** GET /api/advisor/dashboard/stats  (TODO: replace with real endpoint) */
-async function bpFetchDashboardStats() {
+async function _apiFetch(path, options = {}) {
+  const res = await fetch(BP_ADVISOR_BASE + path, {
+    headers: _authHeaders(),
+    ...options,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+
+/** Maps a raw DB row from advisor_router to the shape pages expect */
+function _normalizeRequest(row) {
+  const typeLabel = row.request_type === "certificate" ? "Certificate" : "Scholarship";
+  const statusRaw = row.status || "pending_review";
   return {
-    total: BP_MOCK_REQUESTS.length + 21, // decorative — see report
-    inProgress: 14,
-    pendingReview: 12,
-    completed: 18,
-    deltas: { total: "+12% vs last week", inProgress: "+3 vs last week", pendingReview: "+2 vs last week", completed: "+8 vs last week" },
-    aiInsights: { avgEligibilityAccuracy: 92, requestsAnalyzed: 24, recommendationsGenerated: 16 },
-    needingAttention: BP_MOCK_REQUESTS.filter((r) => r.status !== "completed").slice(0, 3),
+    id:        String(row.request_id),
+    _type:     row.request_type,          // "certificate" | "scholarship"
+    student:   row.student_name || `Student #${row.student_id}`,
+    studentId: row.student_id,
+    type:      typeLabel,
+    status:    statusRaw,
+    priority:  "medium",
+    updated:   row.updated_at  || row.created_at || "",
+    submitted: row.created_at  || "",
+    purpose:   row.purpose     || "",
+    aiRecommendation: row.ai_recommendation
+      ? { verdict: row.ai_recommendation, confidence: row.confidence || 0, reasoning: row.reasoning || "" }
+      : null,
+    requirements: row.requirements || [],
+    timeline:     row.timeline     || [],
   };
 }
 
-/** GET /api/advisor/requests?query=&type=&status=&page= (TODO: replace with real endpoint) */
+/** GET /advisor/requests — advisor's full queue */
+async function bpFetchDashboardStats() {
+  const rows = await _apiFetch("/advisor/requests");
+  const items = rows.map(_normalizeRequest);
+
+  const inProgress   = items.filter(r => ["in_progress",  "progress"].includes(r.status)).length;
+  const pendingReview= items.filter(r => ["pending_review","review"].includes(r.status)).length;
+  const completed    = items.filter(r => ["approved","rejected","completed"].includes(r.status)).length;
+
+  return {
+    total:        items.length,
+    inProgress,
+    pendingReview,
+    completed,
+    deltas:       { total: "", inProgress: "", pendingReview: "", completed: "" },
+    aiInsights:   { avgEligibilityAccuracy: null, requestsAnalyzed: items.length, recommendationsGenerated: 0 },
+    needingAttention: items.filter(r => !["approved","rejected","completed"].includes(r.status)).slice(0, 3),
+  };
+}
+
+/** GET /advisor/requests with optional type / query filter */
 async function bpFetchRequests({ type = "all", query = "" } = {}) {
-  let items = BP_MOCK_REQUESTS;
-  if (type !== "all") items = items.filter((r) => r.type.toLowerCase() === type);
-  if (query) items = items.filter((r) => r.student.toLowerCase().includes(query.toLowerCase()) || r.id.toLowerCase().includes(query.toLowerCase()));
-  return { items, total: 28, page: 1, pages: 4 };
+  const params = new URLSearchParams();
+  if (type !== "all") params.set("request_type", type);
+
+  const rows = await _apiFetch(`/advisor/requests?${params}`);
+  let items = rows.map(_normalizeRequest);
+
+  if (query) {
+    const q = query.toLowerCase();
+    items = items.filter(r =>
+      r.student.toLowerCase().includes(q) ||
+      String(r.id).toLowerCase().includes(q)
+    );
+  }
+
+  return { items, total: items.length, page: 1, pages: 1 };
 }
 
-/** GET /api/advisor/requests/:id (TODO: replace with real endpoint) */
+/** GET /advisor/requests/{type}/{id} */
 async function bpFetchRequestById(id) {
-  return BP_MOCK_REQUESTS.find((r) => r.id === id) || null;
+  // id may be a plain number string or "certificate-5" style
+  // Try certificate first, then scholarship
+  for (const reqType of ["certificate", "scholarship"]) {
+    try {
+      const data = await _apiFetch(`/advisor/requests/${reqType}/${id}`);
+      if (data && data.row) {
+        const norm = _normalizeRequest({ ...data.row, request_type: reqType });
+        // Merge graph state if present
+        if (data.graph_state) {
+          norm._graphState = data.graph_state;
+          if (data.graph_state._interrupt && data.graph_state._interrupt[0]) {
+            const iv = data.graph_state._interrupt[0];
+            if (iv.ai_recommendation) norm.aiRecommendation = {
+              verdict:    iv.ai_recommendation,
+              confidence: iv.confidence  || 0,
+              reasoning:  iv.reasoning   || "",
+            };
+            if (iv.requirements) norm.requirements = iv.requirements;
+          }
+        }
+        return norm;
+      }
+    } catch (e) {
+      // not found under this type — try the next
+    }
+  }
+  return null;
 }
 
-/** GET /api/advisor/agents (TODO: replace with real endpoint / registry) */
+/** Agents — no backend endpoint yet, return empty list */
 async function bpFetchAgents() {
-  return BP_AGENTS;
+  return [];
 }
 
 /**
- * POST /api/advisor/requests/:id/decision
- * TODO (critical — see brief section 7):
- * This MUST call the real Advisory Graph resume/decision endpoint.
- * Do not treat this mock resolve() as a real decision. It exists only
- * so the HITL screen has something to call while wired to fake data.
+ * POST /advisor/requests/{id}/decision
+ * Resumes the Advisory Graph's human_review interrupt.
+ * decision: "approve" | "reject" | "request_more_info"
  */
 async function bpSubmitAdvisorDecision(requestId, { decision, notes }) {
-  console.warn(
-    `[MOCK] bpSubmitAdvisorDecision called for ${requestId} with decision="${decision}". ` +
-    `No real backend endpoint is connected — this decision is NOT persisted.`
-  );
-  return { ok: false, mocked: true, message: "No backend endpoint connected yet." };
+  try {
+    const data = await _apiFetch(`/advisor/requests/${requestId}/decision`, {
+      method: "POST",
+      body: JSON.stringify({ decision, notes: notes || "" }),
+    });
+    return { ok: true, ...data };
+  } catch (err) {
+    console.error("[AdvisorAPI] bpSubmitAdvisorDecision failed:", err.message);
+    return { ok: false, message: err.message };
+  }
 }

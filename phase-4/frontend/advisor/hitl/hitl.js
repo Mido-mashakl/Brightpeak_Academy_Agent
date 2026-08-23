@@ -10,8 +10,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // Backend is not connected — surface this clearly instead of pretending it works.
-  document.getElementById("bp-mock-warning").hidden = false;
+  // Backend is now connected — hide the mock warning if it exists.
+  const mockWarning = document.getElementById("bp-mock-warning");
+  if (mockWarning) mockWarning.hidden = true;
 
   const ai = req.aiRecommendation;
   const verdictEl = document.getElementById("bp-ai-verdict");
@@ -44,19 +45,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     resultEl.textContent = "";
     resultEl.className = "bp-decision-result";
 
-    // ⚠️ This calls the MOCK layer (see advisor-api.js). It intentionally
-    // does NOT claim success, because no real Advisory Graph resume
-    // endpoint is connected. Replace bpSubmitAdvisorDecision's internals
-    // with the real POST once the backend endpoint is identified.
     const res = await bpSubmitAdvisorDecision(req.id, { decision: selected.value, notes });
 
     submitBtn.textContent = "Submit Decision";
     submitBtn.disabled = false;
 
-    if (res.mocked) {
-      resultEl.textContent = "Not saved: no backend endpoint connected yet (see implementation report).";
-      resultEl.classList.add("error");
-    } else if (res.ok) {
+    if (res.ok) {
       resultEl.textContent = "Decision submitted and Advisory Graph updated.";
       resultEl.classList.add("success");
     } else {

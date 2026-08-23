@@ -1,6 +1,8 @@
 // AI Assistant (Nova) page logic.
 // BASE_URL: point this at your phase-4 backend origin once the chat/RAG router is ready.
-const BASE_URL = "http://localhost:3000";
+// Nova chat goes to FastAPI (port 8000); dashboard/logout stay on Express (port 3000).
+const BASE_URL      = "http://localhost:8000";
+const EXPRESS_URL   = "http://localhost:3000";
 
 const thread = document.getElementById("chat-thread");
 const typingIndicator = document.getElementById("typing-indicator");
@@ -552,24 +554,30 @@ async function sendMessage(text) {
   scrollToBottom();
 
   try {
-    const res = await fetch(`${BASE_URL}/api/nova/chat`, {
+    const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const res = await fetch(`${BASE_URL}/ai/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
       body: JSON.stringify({ message: text }),
     });
-    if (!res.ok) throw new Error(`chat request failed (${res.status})`);
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.detail || `chat request failed (${res.status})`);
+    }
     const data = await res.json();
     typingIndicator.classList.add("hidden");
     typingIndicator.classList.remove("flex");
-    appendBotMessage(data.reply ?? "…");
+    // Backend returns { answer, sources } per ai_assistant_router.py
+    appendBotMessage(data.answer ?? data.reply ?? "…");
   } catch (err) {
-    console.info("Nova chat: backend not reachable, showing demo reply —", err.message);
-    setTimeout(() => {
-      typingIndicator.classList.add("hidden");
-      typingIndicator.classList.remove("flex");
-      appendBotMessage("I'm running on demo data right now — once the chat endpoint is live I'll answer this for real.");
-    }, 900);
+    console.error("Nova chat error:", err.message);
+    typingIndicator.classList.add("hidden");
+    typingIndicator.classList.remove("flex");
+    appendBotMessage(`Sorry, I couldn't reach the server right now. Please try again. (${err.message})`);
   }
 }
 
@@ -620,7 +628,7 @@ applyLoggedInUser();
 // richer profile data once /api/dashboard is wired up).
 async function loadProfile() {
   try {
-    const res = await fetch(`${BASE_URL}/api/dashboard`, { credentials: "include" });
+    const res = await fetch(`${EXPRESS_URL}/api/dashboard`, { credentials: "include" });
     if (!res.ok) throw new Error("no session yet");
     const data = await res.json();
     if (data.student?.name) {
@@ -639,7 +647,7 @@ loadProfile();
 document.getElementById("logout-link").addEventListener("click", async (e) => {
   e.preventDefault();
   try {
-    await fetch(`${BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" });
+    await fetch(`${EXPRESS_URL}/api/auth/logout`, { method: "POST", credentials: "include" });
   } catch (err) {
     console.info("Logout: backend not reachable —", err.message);
   } finally {

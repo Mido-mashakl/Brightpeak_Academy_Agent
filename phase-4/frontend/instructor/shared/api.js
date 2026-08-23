@@ -13,21 +13,37 @@
 // the project's actual API conventions first.
 // =========================================================
 
-const BP_API_BASE = "/api/instructor"; // placeholder base path — align with real API client
-const BP_USE_MOCK = true; // flip to false once real endpoints exist
+const BP_API_BASE = "http://localhost:8000"; // FastAPI backend
+const BP_USE_MOCK = false;                   // real endpoints now wired
 
 // ---------------------------------------------------------
-// Low-level request helper (wire up auth headers / error
-// handling to match the project's existing API client)
+// Auth helper — reads logged-in instructor from localStorage
+// and forwards the headers that core/auth.py expects.
+// ---------------------------------------------------------
+function _bpAuthHeaders() {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    return {
+      "Content-Type": "application/json",
+      "X-User-Id":   String(user.id   || ""),
+      "X-User-Role": String(user.role || "instructor"),
+    };
+  } catch (e) {
+    return { "Content-Type": "application/json" };
+  }
+}
+
+// ---------------------------------------------------------
+// Low-level request helper
 // ---------------------------------------------------------
 async function bpRequest(path, options = {}) {
   const res = await fetch(`${BP_API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
+    headers: _bpAuthHeaders(),
     ...options,
   });
   if (!res.ok) {
-    const err = new Error(`Request failed: ${res.status}`);
+    const body = await res.json().catch(() => ({}));
+    const err = new Error(body.detail || `Request failed: ${res.status}`);
     err.status = res.status;
     throw err;
   }
@@ -276,7 +292,7 @@ async function getIntegrityCases({ search = "", status = "all" } = {}) {
     return rows;
   }
   const params = new URLSearchParams({ search, status });
-  return bpRequest(`/integrity/cases?${params.toString()}`);
+  return bpRequest(`/academic-integrity/cases?${params.toString()}`);
 }
 
 async function getIntegrityCase(id) {
@@ -286,7 +302,7 @@ async function getIntegrityCase(id) {
     if (!record) throw new Error("Case not found");
     return record;
   }
-  return bpRequest(`/integrity/cases/${id}`);
+  return bpRequest(`/academic-integrity/cases/${id}`);
 }
 
 // Form option lists — kept behind service functions so the real
@@ -313,7 +329,7 @@ async function submitIntegrityCase(formData) {
     // Simulated success for UI development only.
     return { id: String(Math.floor(1000 + Math.random() * 9000)), status: "reported" };
   }
-  return bpRequest("/integrity/cases", {
+  return bpRequest("/academic-integrity/cases", {
     method: "POST",
     body: JSON.stringify(formData),
   });
@@ -417,7 +433,7 @@ async function getHITLCases() {
     await bpDelay(350);
     return BP_MOCK.hitl;
   }
-  return bpRequest("/hitl/cases");
+  return bpRequest("/academic-integrity/cases");
 }
 
 async function getHITLCase(id) {
@@ -430,11 +446,10 @@ async function getHITLCase(id) {
     ];
     const record = all.find((c) => c.id === id);
     if (!record) throw new Error("HITL case not found");
-    // Merge with full case details for the review screen.
     const details = BP_MOCK.caseDetails[id] || null;
     return { ...record, details };
   }
-  return bpRequest(`/hitl/cases/${id}`);
+  return bpRequest(`/academic-integrity/cases/${id}`);
 }
 
 // Real mutation — backend authorizes/executes the decision.
@@ -443,7 +458,7 @@ async function submitHITLDecision(id, action) {
     await bpDelay(500);
     return { id, action, status: "recorded" };
   }
-  return bpRequest(`/hitl/cases/${id}/decision`, {
+  return bpRequest(`/academic-integrity/cases/${id}/committee-decision`, {
     method: "POST",
     body: JSON.stringify({ action }),
   });
