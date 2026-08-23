@@ -110,6 +110,31 @@ def submit_final_decision(*args, **kwargs):
     return _mod.submit_final_decision(*args, **kwargs)
 
 
+def get_case_state(case_id: int):
+    """Read-only: current graph values (incl. severity_rationale, which is
+    NOT persisted on the IntegrityCases row — see state.py's own comment,
+    'RAG-grounded explanation, for audit') + any pending interrupt, for one
+    case. Same pattern as get_advisor_request_state below. Used so the
+    Academic Integrity HITL screens can show the graph's real AI reasoning
+    instead of inventing a confidence/rationale field that has no column
+    behind it."""
+    if "academic_integrity" not in _cache:
+        from state_graph.academic_integrity import graph as _mod
+        _cache["academic_integrity"] = _mod
+    mod = _cache["academic_integrity"]
+    from state_graph.academic_integrity.checkpointing import thread_id_for_case
+    graph = mod.build_academic_integrity_graph()
+    config = {"configurable": {"thread_id": thread_id_for_case(case_id)}}
+    snapshot = graph.get_state(config)
+    if snapshot is None or not snapshot.values:
+        return None
+    return {
+        "values": snapshot.values,
+        "next": snapshot.next,
+        "interrupts": [i.value for i in (snapshot.interrupts or [])] if hasattr(snapshot, "interrupts") else [],
+    }
+
+
 def start_advisor_request(*args, **kwargs):
     if "advisory" not in _cache:
         from state_graph.advisory import graph as _mod

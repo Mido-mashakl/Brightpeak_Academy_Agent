@@ -81,6 +81,23 @@ def report_case(body: ReportCaseRequest, user: CurrentUser = Depends(require_rol
     return {"status": "ok", "case_id": case_id, "result": _safe_state(result)}
 
 
+def _enrich_case(case: dict) -> dict:
+    """Adds real display names (student/course/instructor) to a raw
+    IntegrityCases row so the frontend can show a name instead of a bare
+    id — joined straight from Students/Courses/Instructors, never
+    invented. Kept as a separate helper so list_cases/get_case both use
+    the exact same enrichment."""
+    student = db.get_student(case["student_id"])
+    course = db.get_course(case["course_id"])
+    instructor = db.get_instructor(case["reported_by"])
+    return {
+        **case,
+        "student_name": student["name"] if student else None,
+        "course_title": course["title"] if course else None,
+        "reported_by_name": instructor["name"] if instructor else None,
+    }
+
+
 @router.get("/cases")
 def list_cases(
     student_id: int | None = None,
@@ -98,7 +115,7 @@ def list_cases(
         sql += " AND course_id = ?"
         params.append(course_id)
     sql += " ORDER BY created_at DESC"
-    return db.query_all(sql, tuple(params))
+    return [_enrich_case(c) for c in db.query_all(sql, tuple(params))]
 
 
 @router.get("/cases/{case_id}")
@@ -109,7 +126,24 @@ def get_case(case_id: int, user: CurrentUser = Depends(require_role("student", "
     evidence = db.query_all("SELECT * FROM IntegrityEvidence WHERE case_id = ?", (case_id,))
     appeals = db.query_all("SELECT * FROM IntegrityAppeals WHERE case_id = ?", (case_id,))
     decisions = db.query_all("SELECT * FROM IntegrityDecisions WHERE case_id = ?", (case_id,))
-    return {"case": case, "evidence": evidence, "appeals": appeals, "decisions": decisions}
+
+    # severity_rationale lives only in the graph's checkpointed state (see
+    # state.py: "RAG-grounded explanation, for audit"), not on the
+    # IntegrityCases row itself — read it from the same checkpoint the
+    # graph itself resumes from, rather than re-deriving/inventing it here.
+    from core.graph_loader import get_case_state
+    graph_state = get_case_state(case_id)
+    severity_rationale = None
+    if graph_state and graph_state.get("values"):
+        severity_rationale = graph_state["values"].get("severity_rationale")
+
+    return {
+        "case": _enrich_case(case),
+        "evidence": evidence,
+        "appeals": appeals,
+        "decisions": decisions,
+        "severity_rationale": severity_rationale,
+    }
 
 
 @router.post("/cases/{case_id}/appeal")
