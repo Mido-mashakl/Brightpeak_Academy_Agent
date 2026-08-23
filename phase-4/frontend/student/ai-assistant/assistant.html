@@ -138,54 +138,43 @@
         </div>
 
         <div class="max-w-3xl w-full mx-auto flex flex-col gap-8 z-10" id="chat-thread">
-          <!-- Bot Message 1 -->
+          <!-- Welcome state: Nova greets the student and offers guided quick actions. -->
+          <!-- No fake conversation before this — this is the assistant's landing state. -->
           <div class="flex gap-4 items-end slide-up" style="animation-delay:.1s;">
             <img src="../../assets/images/student/nova-mascot.png" alt="Nova" class="w-8 h-8 rounded-full bg-surface-container-high object-cover shrink-0 border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"/>
-            <div class="bg-surface-container-high/80 backdrop-blur-md rounded-2xl rounded-bl-sm px-5 py-4 max-w-[85%] border border-white/10 shadow-lg text-body-md text-on-surface leading-relaxed">
-              Hi Alex! 👋 I'm Nova. How can I help you manage your university life today? I've analyzed your current progress and I'm ready to assist.
-            </div>
-          </div>
-
-          <!-- User Message 1 -->
-          <div class="flex gap-4 items-end justify-end slide-up" style="animation-delay:.3s;">
-            <div class="bg-gradient-to-br from-primary-container to-secondary-container rounded-2xl rounded-br-sm px-5 py-4 max-w-[85%] shadow-[0_8px_24px_rgba(128,131,255,0.2)] text-body-md text-on-primary-container leading-relaxed">
-              Can you recommend a track for me?
-            </div>
-            <img alt="Profile" class="w-8 h-8 rounded-full border border-primary/30 object-cover shrink-0 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
-                 src="https://lh3.googleusercontent.com/aida/AEtjO1Vx8d5t0PfRmJtRla9HP9jobizN6ktrzBpqjWhnkZigdp44WyQyiDOrKWOA6-4RbnwiJ1WVloOPrXaUaMli7HkBDfpjeRZi57W943sLaPATyFLFQJZ3_9JO3CpAcBeIOhYf8ImQmHaeqP9NRvKEJLzcLZRssy5A621kAq3Vzpwsy2XfkeemeOh0AZJs23lKBJyMTVJL39e8F3QVjBRugCwo9h8PNbkGLtdKbDuSn6tHu8m5jS5Fvy8mBbA"/>
-          </div>
-
-          <!-- Bot Message 2 with Inline Card -->
-          <div class="flex gap-4 items-end slide-up" style="animation-delay:.5s;">
-            <img src="../../assets/images/student/nova-mascot.png" alt="Nova" class="w-8 h-8 rounded-full bg-surface-container-high object-cover shrink-0 border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"/>
-            <div class="flex flex-col gap-3 max-w-[85%]">
+            <div class="flex flex-col gap-4 max-w-[85%]">
               <div class="bg-surface-container-high/80 backdrop-blur-md rounded-2xl rounded-bl-sm px-5 py-4 border border-white/10 shadow-lg text-body-md text-on-surface leading-relaxed">
-                Based on your outstanding grades in Advanced Bio-Eng and strong quantitative analysis skills, I highly suggest the Data Science specialization. Here is my analysis:
+                <p><span id="nova-greeting-name">Hi Ahmed! 👋</span></p>
+                <p class="mt-2 text-on-surface-variant">I'm Nova, your AI university assistant. I'm here to help you learn, grow, and make the most of your university journey.</p>
               </div>
 
-              <div class="bg-surface-container/60 backdrop-blur-lg rounded-xl p-5 border border-primary/20 shadow-[0_12px_32px_rgba(0,0,0,0.3)] group cursor-pointer hover:bg-surface-container-high/80 transition-all duration-300 relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-1 h-full bg-primary group-hover:bg-secondary transition-colors duration-300"></div>
-                <div class="flex items-center justify-between mb-4">
-                  <h4 class="font-headline-md text-[18px] leading-[24px] font-semibold text-on-surface flex items-center gap-2">
-                    Recommended Track: Data Science 🎯
-                  </h4>
-                  <span class="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                </div>
-                <div class="space-y-2">
-                  <div class="flex justify-between font-label-caps text-[10px] text-on-surface-variant uppercase tracking-wider">
-                    <span>AI Match Confidence</span>
-                    <span class="text-secondary font-semibold">94%</span>
-                  </div>
-                  <div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_12px_rgba(192,193,255,0.6)]" style="width:94%;"></div>
-                  </div>
+              <div class="bg-surface-container/60 backdrop-blur-lg rounded-xl p-5 border border-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.25)]">
+                <h3 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-1">What would you like help with today?</h3>
+                <p class="font-label-caps text-[10px] text-on-surface-variant/60 uppercase tracking-widest mb-5">Choose an option below to get started.</p>
+
+                <div class="flex flex-wrap gap-3" id="quick-actions-start">
+                  <button data-flow="track" class="quick-action px-4 py-3 rounded-xl bg-secondary-container/10 border border-secondary-container/30 hover:border-secondary-container/60 hover:bg-secondary-container/20 transition-all duration-200 text-body-sm font-medium text-on-surface flex items-center gap-2 group">
+                    <span class="text-base group-hover:scale-110 transition-transform inline-block">🎯</span> Recommend my Track
+                  </button>
+                  <button data-flow="material" class="quick-action px-4 py-3 rounded-xl bg-secondary-container/10 border border-secondary-container/30 hover:border-secondary-container/60 hover:bg-secondary-container/20 transition-all duration-200 text-body-sm font-medium text-on-surface flex items-center gap-2 group">
+                    <span class="text-base group-hover:scale-110 transition-transform inline-block">📖</span> Ask about course material
+                  </button>
+                  <button data-flow="assessment" class="quick-action px-4 py-3 rounded-xl bg-secondary-container/10 border border-secondary-container/30 hover:border-secondary-container/60 hover:bg-secondary-container/20 transition-all duration-200 text-body-sm font-medium text-on-surface flex items-center gap-2 group">
+                    <span class="text-base group-hover:scale-110 transition-transform inline-block">🧠</span> Start an Assessment
+                  </button>
+                  <button data-flow="certificate" class="quick-action px-4 py-3 rounded-xl bg-secondary-container/10 border border-secondary-container/30 hover:border-secondary-container/60 hover:bg-secondary-container/20 transition-all duration-200 text-body-sm font-medium text-on-surface flex items-center gap-2 group">
+                    <span class="text-base group-hover:scale-110 transition-transform inline-block">🎓</span> Certificate &amp; Scholarship
+                  </button>
+                  <button data-flow="cases" class="quick-action px-4 py-3 rounded-xl bg-secondary-container/10 border border-secondary-container/30 hover:border-error/40 hover:bg-error-container/10 transition-all duration-200 text-body-sm font-medium text-on-surface flex items-center gap-2 group">
+                    <span class="text-base group-hover:scale-110 transition-transform inline-block">⚠️</span> My Cases &amp; Appeals
+                  </button>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Typing indicator -->
-          <div class="hidden flex gap-4 items-end slide-up" id="typing-indicator">
+          <!-- Typing indicator (used for free-text chat fallback) -->
+          <div class="hidden gap-4 items-end slide-up" id="typing-indicator">
             <img src="../../assets/images/student/nova-mascot.png" alt="Nova" class="w-8 h-8 rounded-full bg-surface-container-high object-cover shrink-0 border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.2)]"/>
             <div class="bg-surface-container-high/80 backdrop-blur-md rounded-2xl rounded-bl-sm px-5 py-4 border border-white/10 shadow-lg flex items-center gap-1.5 h-12">
               <span class="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce"></span>
@@ -196,33 +185,15 @@
         </div>
       </div>
 
-      <!-- Bottom Section: Quick Actions & Input -->
+      <!-- Bottom Section: Input (secondary to the guided quick actions above) -->
       <div class="max-w-4xl w-full mx-auto mt-12 z-20 sticky bottom-0 bg-gradient-to-t from-background via-background/90 to-transparent pt-8 pb-4">
-        <div class="flex gap-3 overflow-x-auto pb-4 custom-scrollbar snap-x scroll-smooth no-scrollbar" id="quick-actions-row">
-          <button data-prompt="Can you recommend a track for me?" class="quick-action snap-start shrink-0 px-4 py-2 rounded-full bg-surface-container-low/80 backdrop-blur-md border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap group">
-            <span class="mr-1.5 group-hover:scale-110 transition-transform inline-block">🎯</span> Recommend my Track
-          </button>
-          <button data-prompt="I have a question about a course material." class="quick-action snap-start shrink-0 px-4 py-2 rounded-full bg-surface-container-low/80 backdrop-blur-md border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap group">
-            <span class="mr-1.5 group-hover:scale-110 transition-transform inline-block">📖</span> Ask about course material
-          </button>
-          <button data-prompt="I'd like to start an assessment." class="quick-action snap-start shrink-0 px-4 py-2 rounded-full bg-surface-container-low/80 backdrop-blur-md border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap group">
-            <span class="mr-1.5 group-hover:scale-110 transition-transform inline-block">🧠</span> Start an Assessment
-          </button>
-          <button data-prompt="Tell me about certificates and scholarships." class="quick-action snap-start shrink-0 px-4 py-2 rounded-full bg-surface-container-low/80 backdrop-blur-md border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface-variant hover:text-on-surface whitespace-nowrap group">
-            <span class="mr-1.5 group-hover:scale-110 transition-transform inline-block">🎓</span> Certificate &amp; Scholarship
-          </button>
-          <button data-prompt="I need to open a case or appeal." class="quick-action snap-start shrink-0 px-4 py-2 rounded-full bg-surface-container-low/80 backdrop-blur-md border border-white/10 hover:border-error/40 hover:bg-error-container/20 transition-all text-body-sm font-medium text-on-surface-variant hover:text-error whitespace-nowrap group">
-            <span class="mr-1.5 group-hover:scale-110 transition-transform inline-block">⚠️</span> My Cases &amp; Appeals
-          </button>
-        </div>
-
         <div class="relative group">
           <div class="absolute inset-0 bg-gradient-to-r from-primary-container to-secondary-container rounded-2xl blur-md opacity-30 group-focus-within:opacity-60 transition-opacity duration-500"></div>
           <div class="relative flex items-center bg-surface-container-highest/60 backdrop-blur-xl border border-white/10 focus-within:border-primary/50 rounded-2xl p-2 transition-colors duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
             <button class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-white/5 transition-colors text-on-surface-variant shrink-0">
               <span class="material-symbols-outlined text-xl">attach_file</span>
             </button>
-            <input class="flex-1 bg-transparent border-none outline-none text-body-md text-on-surface placeholder:text-on-surface-variant/50 px-3 min-w-0" id="chat-input" placeholder="Ask Nova anything..." type="text"/>
+            <input class="flex-1 bg-transparent border-none outline-none text-body-md text-on-surface placeholder:text-on-surface-variant/50 px-3 min-w-0" id="chat-input" placeholder="Or ask Nova anything..." type="text"/>
             <button class="w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary to-inverse-primary hover:shadow-[0_0_20px_rgba(192,193,255,0.4)] transition-all text-on-primary shrink-0 ml-2" id="send-btn">
               <span class="material-symbols-outlined text-lg" style="font-variation-settings:'FILL' 1;">send</span>
             </button>
