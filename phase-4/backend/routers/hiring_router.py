@@ -74,7 +74,7 @@ def _job_to_frontend_shape(row: dict) -> dict:
     }
 
 
-def _candidate_to_frontend_shape(row: dict, latest_score: dict | None) -> dict:
+def _candidate_to_frontend_shape(row: dict, latest_score: dict | None, latest_decision: dict | None = None) -> dict:
     breakdown = json.loads(latest_score["breakdown"]) if latest_score and latest_score.get("breakdown") else []
     parsed = json.loads(row["parsed_profile"]) if row.get("parsed_profile") else {}
     status = "parsing"
@@ -82,6 +82,25 @@ def _candidate_to_frontend_shape(row: dict, latest_score: dict | None) -> dict:
         status = "parsing"  # a Ticket will exist for this — see Tickets table
     elif latest_score:
         status = "ai_scored"
+
+    decision = None
+    # A recorded HiringDecisions row (hire/interview/rescore, from the
+    # decision endpoint below) always wins over the plain "ai_scored"
+    # state above — without this, candidates.js's UI would keep showing
+    # "AI Scored" forever after a Dept Head decision was actually made,
+    # even though the graph really did resume and record it.
+    if latest_decision:
+        status = {
+            "hire": "hired",
+            "interview": "interview",
+            "rescore": "rescore_requested",
+        }.get(latest_decision["decision"], status)
+        decision = {
+            "action": latest_decision["decision"],
+            "by": latest_decision["decided_by"],
+            "note": latest_decision.get("notes"),
+            "at": latest_decision.get("decided_at"),
+        }
 
     return {
         "id": row["candidate_id"],
@@ -95,7 +114,7 @@ def _candidate_to_frontend_shape(row: dict, latest_score: dict | None) -> dict:
         "status": status,
         "aiRecommendation": None,
         "keyStrengths": [b.get("evidence") for b in breakdown if b.get("status") == "PASS" and b.get("evidence")],
-        "decision": None,  # filled in once the HITL decision endpoints exist (see NOTE below)
+        "decision": decision,
         "source": "upload",
     }
 
@@ -113,7 +132,8 @@ def list_jobs():
 
 @router.get("/jobs/{job_id}/candidates")
 def list_job_candidates(job_id: int):
-    """Candidates for one job posting, each with its latest score (if scored)."""
+    """Candidates for one job posting, each with its latest score (if scored)
+    and its latest recorded Dept Head decision (if any)."""
     candidates = db.query_all(
         "SELECT * FROM Candidates WHERE job_id = ? ORDER BY submitted_at DESC", (job_id,)
     )
@@ -124,7 +144,12 @@ def list_job_candidates(job_id: int):
                ORDER BY scored_at DESC LIMIT 1""",
             (c["candidate_id"],),
         )
-        out.append(_candidate_to_frontend_shape(c, latest_score))
+        latest_decision = db.query_one(
+            """SELECT * FROM HiringDecisions WHERE candidate_id = ?
+               ORDER BY decided_at DESC LIMIT 1""",
+            (c["candidate_id"],),
+        )
+        out.append(_candidate_to_frontend_shape(c, latest_score, latest_decision))
     return out
 
 
@@ -140,7 +165,12 @@ def list_all_candidates():
                ORDER BY scored_at DESC LIMIT 1""",
             (c["candidate_id"],),
         )
-        out.append(_candidate_to_frontend_shape(c, latest_score))
+        latest_decision = db.query_one(
+            """SELECT * FROM HiringDecisions WHERE candidate_id = ?
+               ORDER BY decided_at DESC LIMIT 1""",
+            (c["candidate_id"],),
+        )
+        out.append(_candidate_to_frontend_shape(c, latest_score, latest_decision))
     return out
 
 
