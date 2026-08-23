@@ -3,9 +3,21 @@ database.py
 ===========
 SQLite-backed data layer for Brightpeak Academy MCP server.
 
-Looks for brightpeak.db in the same folder as this file (dp/).
-If the file doesn't exist, creates it and runs schema.sql.
-If the DB is empty, runs seed.sql.
+IMPORTANT — single source of truth for schema/seed/db (fixed 2026-08):
+This used to read phase-3/db/schema.sql + phase-3/db/seed.sql, which was
+a SEPARATE, independently-drifting copy of phase-4/db/schema.sql +
+phase-4/db/seed.sql (the files build-db.js / init-db.js / the frontend
+actually use). The two copies had already diverged — e.g. phase-3's
+JobPostings table was missing the `department` column entirely, which
+hiring_router.py's INSERT statement requires — and any seed-data work
+done on one side was invisible through this module, since this always
+opened its own copy of brightpeak.db.
+
+To make this the same physical file and the same schema/seed source
+Node's init-db.js uses (see phase-4/backend/init-db.js), this module
+now points directly at phase-4/db/ and phase-4/brightpeak.db (siblings
+of phase-3/). phase-3/db/schema.sql and phase-3/db/seed.sql are no
+longer read from at all — do not resurrect separate copies of them.
 """
 
 import sqlite3
@@ -14,10 +26,21 @@ from pathlib import Path
 from typing import Any
 
 # -----------------------------------------------------------------------
-# Paths  —  all three files live in the same folder (dp/)
+# Paths — phase-4/db is the single canonical source (see module
+# docstring). Falls back to the local phase-3/db copies only if phase-4
+# isn't present as a sibling directory (e.g. phase-3 deployed alone),
+# so this module still works in that degraded scenario.
 # -----------------------------------------------------------------------
-_DIR = Path(__file__).parent.parent / "db"
-_DB_PATH = _DIR / "brightpeak.db"
+_PHASE4_DIR = Path(__file__).resolve().parent.parent.parent / "phase-4"
+_LOCAL_DIR = Path(__file__).parent.parent / "db"
+
+if (_PHASE4_DIR / "db" / "schema.sql").exists():
+    _DIR = _PHASE4_DIR / "db"
+    _DB_PATH = _PHASE4_DIR / "brightpeak.db"
+else:
+    _DIR = _LOCAL_DIR
+    _DB_PATH = _LOCAL_DIR / "brightpeak.db"
+
 _SCHEMA  = _DIR / "schema.sql"
 _SEED    = _DIR / "seed.sql"
 
