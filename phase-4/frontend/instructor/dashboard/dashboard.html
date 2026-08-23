@@ -3,36 +3,52 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Instructor Portal · Brightpeak Academy</title>
+<title>Dashboard · Instructor · Brightpeak Academy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../shared/styles.css" />
 <script src="../../shared/auth.js"></script>
 <script src="../shared/auth-guard.js"></script>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    font-family: "Inter", sans-serif;
-    background: #05050B;
-    color: #F1F1F1;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-  }
-  .placeholder h1 { font-size: 1.6rem; margin-bottom: 0.5rem; }
-  .placeholder p { color: #B0B3C1; margin-bottom: 1.5rem; }
-  .placeholder a {
-    color: #60A5FA;
-    text-decoration: none;
-  }
-</style>
 </head>
 <body>
-  <div class="placeholder">
-    <h1>Instructor Dashboard — Coming Soon</h1>
-    <p>My Courses · Students · AI Agents · Requests · HITL</p>
-    <a href="../../login/login.html">&larr; Back to Login</a>
+  <div class="bp-shell" id="bp-shell">
+    <main class="bp-content">
+      <div class="bp-page-header">
+        <div>
+          <h1 id="bp-greeting">Good morning, Fatma 👋</h1>
+          <p>Here's your academic activity overview.</p>
+        </div>
+      </div>
+
+      <div class="bp-stat-grid" id="bp-stat-grid"></div>
+
+      <div class="bp-detail-grid">
+        <section class="bp-card bp-card-pad">
+          <div class="bp-card-header">
+            <h2>Academic Integrity Cases</h2>
+            <a class="bp-card-link" href="../integrity/integrity.html">View all cases <span style="width:14px;height:14px;display:inline-flex">→</span></a>
+          </div>
+
+          <div class="bp-status-summary" id="bp-status-summary"></div>
+
+          <div id="bp-recent-cases"></div>
+        </section>
+
+        <section class="bp-card bp-card-pad">
+          <div class="bp-card-header">
+            <h2>Recent Requests</h2>
+            <a class="bp-card-link" href="../requests/requests.html">View all requests <span style="width:14px;height:14px;display:inline-flex">→</span></a>
+          </div>
+
+          <div id="bp-recent-requests"></div>
+        </section>
+      </div>
+    </main>
   </div>
+
+  <script src="../shared/icons.js"></script>
+  <script src="../shared/api.js"></script>
+  <script src="../shared/layout.js"></script>
+  <script src="dashboard.js"></script>
 </body>
 </html>

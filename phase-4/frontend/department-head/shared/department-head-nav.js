@@ -17,24 +17,17 @@
  * ---------------------------------------------------------------
  */
 const DHAuth = {
-  ROLE_REQUIRED: "department_head",
+  ROLE_REQUIRED: "dept_head",
 
   /**
-   * INTEGRATION POINT: swap this for the real session/auth call.
-   * Expected shape from backend: { id, name, role, avatarUrl }
+   * window.currentUser is set by frontend/shared/auth.js (BrightPeakAuth)
+   * via this page's auth-guard.js, which runs before this file and
+   * already validated the session against the logged-in email.
    */
   getCurrentUser() {
-    if (window.App && window.App.auth && typeof window.App.auth.getUser === "function") {
-      return window.App.auth.getUser();
-    }
-    try {
-      const stored = localStorage.getItem("bp_current_user");
-      if (stored) return JSON.parse(stored);
-    } catch (e) {
-      /* ignore malformed storage */
-    }
+    if (window.currentUser) return window.currentUser;
     // Fallback so the design previews without a backend attached.
-    return { id: "demo-dept-head", name: "Ahmed", role: "department_head", avatarUrl: null };
+    return { id: "demo-dept-head", name: "Ahmed", role: "dept_head", avatarUrl: null };
   },
 
   /**

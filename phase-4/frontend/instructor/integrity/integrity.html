@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Requests · Instructor · Brightpeak Academy</title>
+<title>Academic Integrity · Instructor · Brightpeak Academy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="../shared/styles.css" />
@@ -15,27 +15,30 @@
     <main class="bp-content">
       <div class="bp-page-header">
         <div>
-          <h1>Requests</h1>
-          <p>Grade, attendance, and enrollment changes awaiting your confirmation.</p>
+          <h1>Academic Integrity</h1>
+          <p>Review and track academic integrity cases.</p>
         </div>
+        <button class="bp-btn bp-btn-primary" id="bp-report-btn"><span id="bp-plus-icon"></span><span>Report New Case</span></button>
       </div>
 
       <section class="bp-card bp-card-pad">
         <div class="bp-table-toolbar">
           <div class="bp-search">
             <span id="bp-search-icon"></span>
-            <input type="text" id="bp-search-input" placeholder="Search requests..." />
+            <input type="text" id="bp-search-input" placeholder="Search cases..." />
           </div>
           <select class="bp-select" id="bp-status-filter">
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="info_requested">Info Requested</option>
+            <option value="all">All Statuses</option>
+            <option value="reported">Reported</option>
+            <option value="under_review">Under Review</option>
+            <option value="awaiting_appeal">Awaiting Appeal</option>
+            <option value="committee_review">Committee Review</option>
+            <option value="closed">Closed</option>
           </select>
         </div>
 
-        <div id="bp-requests-container"></div>
+        <div id="bp-cases-container">
+        </div>
 
         <div class="bp-pagination" id="bp-pagination"></div>
       </section>
@@ -45,6 +48,6 @@
   <script src="../shared/icons.js"></script>
   <script src="../shared/api.js"></script>
   <script src="../shared/layout.js"></script>
-  <script src="requests.js"></script>
+  <script src="integrity.js"></script>
 </body>
 </html>

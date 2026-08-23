@@ -27,13 +27,12 @@ const BP_ICONS = {
   logout: '<svg class="bp-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
 };
 
-/**
- * TODO (backend): replace with real auth/session lookup.
- * e.g. return authService.getCurrentUser()  /  fetch('/api/me')
- */
+// window.currentUser is set by frontend/shared/auth.js (BrightPeakAuth)
+// via the page's auth-guard.js, which runs before this file and already
+// validated the session against the logged-in email.
 function bpGetCurrentUser() {
   return (
-    window.bpCurrentUser || {
+    window.currentUser || {
       name: "Advisor",
       role: "Academic Advisor",
       initials: "AD",
