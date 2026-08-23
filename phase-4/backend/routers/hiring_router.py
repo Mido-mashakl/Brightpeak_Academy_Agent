@@ -220,9 +220,94 @@ def close_job(job_id: int):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-# NOTE: Dept Head decision endpoints (hire / interview / rescore) need the
-# dept head to be authenticated first (see mcp_server/roles.py) — those
-# belong in admin_router.py once auth is wired up (step 8 of the plan),
-# not here. Deliberately left out of hiring_router.py on purpose.
-# candidates.html's decision panel (submitHiringDecision in
-# department-head-api.js) is still on localStorage mock until that lands.
+# ---------------------------------------------------------------------------
+# Dept Head decision endpoint — hire / interview / rescore.
+# Matches the exact shape department-head-api.js already documents and
+# calls (POST /hiring/candidates/{candidate_id}/decision), so only that
+# file's fetch needs to swap from mock to real, not its callers.
+#
+# TWO independent gates, both required:
+#   1. core.auth.require_role("dept_head") — the FastAPI-level check so an
+#      unauthenticated caller can't even reach this endpoint.
+#   2. mcp_server.roles.authenticate(...) — phase-3's own, stricter,
+#      passcode-based gate (see hitl.py's NotAuthorized / _require_dept_head),
+#      re-run per request here because roles.SESSION is a process-global
+#      singleton (not per-request) — see the note in DecisionRequest below.
+# ---------------------------------------------------------------------------
+
+from fastapi import Depends
+from pydantic import Field
+from core.auth import require_role, CurrentUser
+from core.graph_loader import (
+    submit_hire_decision,
+    submit_interview_request,
+    submit_rescore_request,
+)
+import mcp_server.roles as roles
+
+
+class DecisionRequest(BaseModel):
+    decision: str  # "hire" | "reject" | "interview" | "rescore"
+    notes: str | None = None
+    # Bridges to phase-3's existing passcode-gated dept_head auth
+    # (mcp_server/roles.py) — that mechanism predates this platform and is
+    # deliberately NOT bypassed. Default passcode documented in roles.py's
+    # own comments (change before prod): "brightpeak-depthead-2026".
+    passcode: str = Field(..., description="Dept Head passcode, per mcp_server/roles.py")
+
+
+def _candidate_job_id(candidate_id: int) -> int:
+    row = db.query_one("SELECT job_id FROM Candidates WHERE candidate_id = ?", (candidate_id,))
+    if row is None:
+        raise HTTPException(status_code=404, detail="Candidate not found.")
+    return row["job_id"]
+
+
+@router.post("/candidates/{candidate_id}/decision")
+def submit_candidate_decision(
+    candidate_id: int,
+    body: DecisionRequest,
+    user: CurrentUser = Depends(require_role("dept_head")),
+):
+    job_id = _candidate_job_id(candidate_id)
+
+    # KNOWN LIMITATION (see roles.py): SESSION is one global object shared by
+    # every concurrent request in this process, not per-request/per-user
+    # state. Re-authenticating right before the action minimizes the window
+    # where a second request from a different user could interleave, but
+    # does not eliminate it under real concurrency. Flagged in the final
+    # report as a genuine architectural gap inherited from phase-3, not
+    # something safe to silently paper over here.
+    ok, message = roles.authenticate(role="dept_head", dept_head_id=user.user_id, passcode=body.passcode)
+    if not ok:
+        raise HTTPException(status_code=401, detail=message)
+
+    try:
+        if body.decision == "hire":
+            result = submit_hire_decision(job_id=job_id, candidate_id=candidate_id, notes=body.notes)
+        elif body.decision == "interview":
+            result = submit_interview_request(job_id=job_id, candidate_id=candidate_id, notes=body.notes)
+        elif body.decision == "rescore":
+            result = submit_rescore_request(job_id=job_id, candidate_ids=[candidate_id], reason=body.notes)
+        elif body.decision == "reject":
+            # No analog exists in phase-3/state_graph/faculty_hiring/hitl.py —
+            # only hire / interview / rescore are real graph actions (see
+            # HiringDecisions.decision CHECK constraint in db/schema.sql).
+            # Reporting this honestly instead of inventing a fake accepted
+            # state; see the final report's Remaining TODOs.
+            raise HTTPException(
+                status_code=501,
+                detail="'reject' has no corresponding action in the Faculty Hiring graph yet "
+                       "(only hire/interview/rescore exist in hitl.py). Needs a graph-side addition, "
+                       "not something safe to fake at the router level.",
+            )
+        else:
+            raise HTTPException(status_code=400, detail="decision must be hire|reject|interview|rescore.")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Graph failed to resume: {e}")
+    finally:
+        roles.SESSION.reset()
+
+    return {"status": "ok", "candidate_id": candidate_id, "result": dict(result) if result else None}
