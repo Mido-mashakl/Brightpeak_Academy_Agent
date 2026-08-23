@@ -357,20 +357,37 @@ const DHApi = (function () {
 
     /**
      * Real endpoint: POST /hiring/candidates/{candidate_id}/decision
-     * body: { decision: "hire" | "reject" | "interview" | "rescore" }
+     * body: { decision, notes, passcode }
      * This is the human-in-the-loop node (hitl_dept_head_review). The AI
      * recommendation above is never treated as final here.
+     *
+     * Requires BOTH: (1) the FastAPI-level dept_head auth (X-User-Id /
+     * X-User-Role headers, attached automatically by BrightPeakGraphAPI
+     * from the logged-in user), and (2) phase-3's own passcode-gated
+     * dept_head session (mcp_server/roles.py) — a second, stricter check
+     * specific to this one endpoint. There's no dedicated passcode UI
+     * yet, so this prompts for it inline; a real settings/session flow
+     * is a follow-up, not something to fake here.
      */
     async submitHiringDecision(candidateId, decision, note) {
-      await delay();
-      const store = load();
-      const c = store.candidates.find((x) => x.id === candidateId);
-      if (!c) throw new Error("Candidate not found");
+      const passcode = window.prompt("Dept Head passcode (required to record a hiring decision):");
+      if (!passcode) {
+        const err = new Error("A passcode is required to record this decision.");
+        err.status = 401;
+        throw err;
+      }
+      const result = await BrightPeakGraphAPI.post(`/hiring/candidates/${candidateId}/decision`, {
+        decision,
+        notes: note || null,
+        passcode,
+      });
       const map = { hire: "hired", reject: "rejected", interview: "interview", rescore: "rescore_requested" };
-      c.status = map[decision] || c.status;
-      c.decision = { action: decision, by: "department_head", note: note || null, at: Date.now() };
-      save(store);
-      return c;
+      return {
+        id: candidateId,
+        status: map[decision] || decision,
+        decision: { action: decision, by: "department_head", note: note || null, at: Date.now() },
+        result: result.result,
+      };
     },
 
     /** ------------- ACADEMIC INTEGRITY / HITL ------------- */
