@@ -9,13 +9,16 @@
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <script src="../shared/department-head-theme.js"></script>
+<script src="../../shared/auth.js"></script>
+<script src="../shared/auth-guard.js"></script>
+<script src="../../shared/graph-api.js"></script>
 <link rel="stylesheet" href="candidates.css"/>
 </head>
 <body class="font-body-md text-body-md antialiased overflow-x-hidden">
-
+ 
 <div id="dh-sidebar"></div>
 <div id="dh-topbar"></div>
-
+ 
 <main class="ml-72 p-lg min-h-screen">
   <div class="flex justify-between items-center mb-lg">
     <div>
@@ -24,14 +27,14 @@
     </div>
     <select id="job-filter" class="form-select"></select>
   </div>
-
+ 
   <div class="grid grid-cols-4 gap-gutter mb-lg">
     <div class="stat-tile"><div class="font-label-caps text-label-caps text-on-surface-variant">Job Postings</div><div id="stat-jobs" class="font-headline-lg text-headline-lg text-on-surface">-</div></div>
     <div class="stat-tile"><div class="font-label-caps text-label-caps text-on-surface-variant">Applications</div><div id="stat-applications" class="font-headline-lg text-headline-lg text-on-surface">-</div></div>
     <div class="stat-tile"><div class="font-label-caps text-label-caps text-on-surface-variant">Shortlisted</div><div id="stat-shortlisted" class="font-headline-lg text-headline-lg text-on-surface">-</div></div>
     <div class="stat-tile"><div class="font-label-caps text-label-caps text-on-surface-variant">Pending Hiring Decisions</div><div id="stat-pending" class="font-headline-lg text-headline-lg text-secondary">-</div></div>
   </div>
-
+ 
   <div class="grid grid-cols-[1fr_420px] gap-gutter items-start">
     <div class="glass-panel rounded-xl p-lg">
       <div class="flex justify-between items-center mb-md">
@@ -45,7 +48,7 @@
       </table>
       <div id="empty-state" class="hidden text-on-surface-variant text-body-sm p-md text-center">No candidates yet for this posting.</div>
     </div>
-
+ 
     <div class="glass-panel rounded-xl p-lg" id="ai-insight-panel">
       <div class="text-center text-on-surface-variant p-lg">
         <span class="material-symbols-outlined text-4xl mb-sm block">touch_app</span>
@@ -54,9 +57,9 @@
     </div>
   </div>
 </main>
-
+ 
 <div id="toast-root"></div>
-
+ 
 <script src="../shared/department-head-nav.js"></script>
 <script src="../shared/department-head-api.js"></script>
 <script src="candidates.js"></script>

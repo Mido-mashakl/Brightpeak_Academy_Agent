@@ -157,7 +157,16 @@
           renderInsightPanel(updated);
         } catch (err) {
           console.error(err);
-          showToast("Could not record the decision.", "error");
+          if (err.status === 501) {
+            // 'reject' has no corresponding action in the faculty_hiring
+            // graph yet (see hiring_router.py) — report this honestly
+            // instead of pretending the decision was recorded.
+            showToast("Reject isn't supported by the hiring workflow yet.", "error");
+          } else if (err.status === 401) {
+            showToast(err.message || "Incorrect dept head passcode.", "error");
+          } else {
+            showToast(err.message || "Could not record the decision.", "error");
+          }
           btn.disabled = false;
         }
       })

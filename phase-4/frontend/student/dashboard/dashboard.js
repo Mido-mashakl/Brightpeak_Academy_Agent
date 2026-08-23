@@ -31,9 +31,16 @@ function applyLoggedInUser() {
 applyLoggedInUser();
 
 async function loadDashboard() {
+  const user = window.currentUser || window.BrightPeakAuth.getUser();
+  if (!user) return;
   try {
-    const res = await fetch(`${BASE_URL}/api/dashboard`, { credentials: "include" });
-    if (!res.ok) throw new Error(`dashboard request failed (${res.status})`);
+    const res = await fetch(`${BASE_URL}/api/dashboard`, {
+      headers: { "X-User-Id": String(user.id) },
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.message || `dashboard request failed (${res.status})`);
+    }
     const data = await res.json();
 
     // Dashboard stats/deadlines come from the backend; the name/track/
@@ -59,8 +66,13 @@ async function loadDashboard() {
       renderDeadlines(data.deadlines);
     }
   } catch (err) {
-    // Backend not wired yet — keep the static demo values already in the markup.
-    console.info("Dashboard: using static demo data —", err.message);
+    // Real backend error (e.g. not logged in, or DB unavailable) — show it,
+    // never silently fall back to the placeholder markup as if it were data.
+    console.error("Dashboard load failed:", err.message);
+    els.enrolled.textContent = "—";
+    els.completed.textContent = "—";
+    els.avg.textContent = "—";
+    els.hours.textContent = "—";
   }
 }
 
@@ -105,7 +117,7 @@ document.querySelectorAll(".quick-action").forEach((btn) => {
 document.getElementById("logout-link").addEventListener("click", async (e) => {
   e.preventDefault();
   try {
-    await fetch(`${BASE_URL}/api/auth/logout`, { method: "POST", credentials: "include" });
+    await fetch(`${BASE_URL}/api/auth/logout`, { method: "POST" });
   } catch (err) {
     console.info("Logout: backend not reachable —", err.message);
   } finally {
