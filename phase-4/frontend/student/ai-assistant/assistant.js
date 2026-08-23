@@ -1,8 +1,11 @@
 // AI Assistant (Nova) page logic.
-// BASE_URL: point this at your phase-4 backend origin once the chat/RAG router is ready.
-// Nova chat goes to FastAPI (port 8000); dashboard/logout stay on Express (port 3000).
+// BASE_URL: FastAPI (port 8000); dashboard/logout stay on Express (port 3000).
 const BASE_URL      = "http://localhost:8000";
 const EXPRESS_URL   = "http://localhost:3000";
+
+// Tracks the active course_id when the student is in the material flow.
+// Set by materialCourse() — cleared on new flow start.
+let _activeCourseId = null;
 
 const thread = document.getElementById("chat-thread");
 const typingIndicator = document.getElementById("typing-indicator");
@@ -146,26 +149,43 @@ function startTrackFlow(triggerEl) {
   `);
 }
 
-function trackStart(el) {
+async function trackStart(el) {
   lockControl(el);
   const pid = appendProcessing("Analyzing your academic profile... ✨");
-  setTimeout(() => {
+  try {
+    const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const res = await fetch(`${BASE_URL}/tracks/recommend`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
+    });
     removeNode(pid);
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    const data = await res.json();
+    // State may contain recommended_track and confidence from the graph
+    const track      = data.recommended_track || data.track || "—";
+    const confidence = data.confidence_score   != null
+      ? `${Math.round(data.confidence_score * 100)}% AI Match` : "";
     appendBotCard(`
       <div class="flex items-center justify-between mb-4">
         <h4 class="font-headline-md text-[18px] leading-[24px] font-semibold text-on-surface flex items-center gap-2">🎯 Your Recommended Track</h4>
       </div>
-      <p class="text-headline-md text-[20px] font-semibold text-primary mb-1">Data Science</p>
-      <div class="flex items-center gap-2 mb-3">
-        <span class="text-secondary font-semibold text-body-sm">94% AI Match</span>
-      </div>
+      <p class="text-headline-md text-[20px] font-semibold text-primary mb-1">${escapeHtml(String(track))}</p>
+      ${confidence ? `<div class="flex items-center gap-2 mb-3"><span class="text-secondary font-semibold text-body-sm">${escapeHtml(confidence)}</span></div>` : ""}
       <div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden mb-4">
-        <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_12px_rgba(192,193,255,0.6)]" style="width:94%;"></div>
+        <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_12px_rgba(192,193,255,0.6)]" style="width:${data.confidence_score ? Math.round(data.confidence_score*100) : 80}%;"></div>
       </div>
-      <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">Your academic performance and quantitative skills make this a strong match for you.</p>
+      <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">${escapeHtml(data.reasoning || "Based on your academic performance and skills profile.")}</p>
       <button data-action="track-view-details" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">View Details</button>
     `);
-  }, 1400);
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage(`Sorry, I couldn't reach the track recommendation service right now. (${err.message})`);
+    appendMoreHelpPrompt();
+  }
 }
 
 function trackViewDetails(el) {
@@ -184,75 +204,109 @@ function trackViewDetails(el) {
 }
 
 /* ---------------------------------------------------------------------
-   FLOW: Start an Assessment (DESIGN.md §9)
+   FLOW: Start an Assessment (real backend — assessment_router.py)
+   POST /assessments/start  → session_id + first question in _interrupt
+   POST /assessments/{id}/answer → next question or final result
 --------------------------------------------------------------------- */
-const ASSESSMENT_QUESTIONS = [
-  { q: "Which of the following best describes the core principle of Neural Network backpropagation?", options: ["Forward passing inputs directly to outputs without intermediate calculations.", "Calculating the gradient of the loss function with respect to each weight by the chain rule.", "Randomly dropping nodes during training to prevent overfitting.", "Updating weights entirely randomly until the error rate decreases."] },
-  { q: "What is the primary purpose of a control group in an experiment?", options: ["To make the experiment take longer", "To provide a baseline for comparison", "To increase the sample size", "To reduce the cost of the study"] },
-  { q: "In data science, what does 'overfitting' typically indicate?", options: ["The model performs well on new, unseen data", "The model is too simple to capture patterns", "The model fits the training data too closely and generalizes poorly", "The dataset is too small to train on"] },
-  { q: "Which structure is most associated with sequential data processing?", options: ["Convolutional Neural Network", "Recurrent Neural Network", "Decision Tree", "K-Means Clustering"] },
-  { q: "What does 'normalization' typically achieve when preparing a dataset?", options: ["It removes all outliers automatically", "It rescales features to a comparable range", "It guarantees a higher model accuracy", "It converts categorical data into images"] },
-  { q: "Which metric is most appropriate for an imbalanced classification problem?", options: ["Raw accuracy", "F1 score", "Mean squared error", "R-squared"] },
-  { q: "What is the main advantage of using version control in a group project?", options: ["It automatically writes documentation", "It tracks changes and enables collaboration without overwriting work", "It compiles the code faster", "It removes the need for testing"] },
-  { q: "Why is peer review valuable in an academic or research setting?", options: ["It guarantees the work is free of all errors", "It helps catch gaps and improve quality through outside perspective", "It is only required for published papers", "It replaces the need for citations"] },
-];
 
-let assessmentIndex = 0;
-let assessmentScore = 0;
+// Active session state (reset on each new flow start)
+let _assessmentSessionId  = null;
+let _assessmentQuestionNo = 0;
+let _assessmentTotal      = 8;   // max_questions sent on start; actual may differ
 
 function startAssessmentFlow(triggerEl) {
   lockControl(triggerEl);
   appendUserReply("🧠 Start an Assessment");
   appendBotCard(`
-    <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">Ready for a quick assessment?</h4>
-    <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">I'll ask you a few questions and adapt them based on your answers.</p>
-    <button data-action="assessment-start" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">Start Assessment</button>
+    <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">Ready for an adaptive assessment?</h4>
+    <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">I'll generate questions tailored to your enrolled courses and adapt based on your answers.</p>
+    <p class="text-body-sm text-on-surface-variant mb-4">Which topic would you like to be assessed on?</p>
+    <div class="flex flex-wrap gap-2">
+      <button data-action="assessment-pick-topic" data-topic="Data Science" class="px-4 py-2 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface">📊 Data Science</button>
+      <button data-action="assessment-pick-topic" data-topic="Machine Learning" class="px-4 py-2 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface">🤖 Machine Learning</button>
+      <button data-action="assessment-pick-topic" data-topic="Programming" class="px-4 py-2 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface">💻 Programming</button>
+      <button data-action="assessment-pick-topic" data-topic="General" class="px-4 py-2 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface">📚 General</button>
+    </div>
   `);
 }
 
-function assessmentStart(el) {
+async function assessmentPickTopic(el) {
   lockControl(el);
-  assessmentIndex = 0;
-  assessmentScore = 0;
-  renderAssessmentQuestion();
+  const topic = el.dataset.topic || "General";
+  appendUserReply(`📖 ${topic}`);
+  _assessmentSessionId  = null;
+  _assessmentQuestionNo = 0;
+
+  const pid = appendProcessing("Starting your assessment...");
+  try {
+    const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    // Use course_id=1 as a sensible default; the graph uses it for context
+    // but the topic param drives the actual question generation.
+    const res = await fetch(`${BASE_URL}/assessments/start`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
+      body: JSON.stringify({ course_id: 1, topic, max_questions: 5, mastery_threshold: 0.75 }),
+    });
+    removeNode(pid);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `status ${res.status}`);
+    }
+    const data = await res.json();
+    _assessmentSessionId = data.session_id;
+    _renderAssessmentQuestion(data.result);
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage(`Sorry, couldn't start the assessment. (${err.message})`);
+    appendMoreHelpPrompt();
+  }
 }
 
-function renderAssessmentQuestion() {
-  const total = ASSESSMENT_QUESTIONS.length;
-  const current = ASSESSMENT_QUESTIONS[assessmentIndex];
-  const progressPct = Math.round(((assessmentIndex + 1) / total) * 100);
-  const cardId = nextId("assessment-card");
-  const optionsHtml = current.options
-    .map(
-      (opt, i) => `
-      <label class="block cursor-pointer group">
-        <input class="peer sr-only" type="radio" name="${cardId}-opt" value="${i}"/>
-        <div class="w-full p-4 rounded-xl border border-white/10 bg-surface-container-low/50 group-hover:bg-white/5 group-hover:border-white/20 peer-checked:bg-primary/10 peer-checked:border-primary/50 transition-all duration-200 flex gap-3 items-start">
-          <div class="w-5 h-5 rounded-full border-2 border-on-surface-variant/40 peer-checked:border-primary flex-shrink-0 mt-0.5 relative flex items-center justify-center">
-            <div class="w-2 h-2 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity"></div>
-          </div>
-          <div class="text-body-sm text-on-surface-variant group-hover:text-on-surface peer-checked:text-on-surface transition-colors">${escapeHtml(opt)}</div>
-        </div>
-      </label>`
-    )
-    .join("");
+function _renderAssessmentQuestion(result) {
+  // The graph pauses at await_answer and surfaces the question via _interrupt
+  const interrupt = result?._interrupt;
+  const pending   = interrupt?.[0]?.pending_question ?? interrupt?.[0];
 
-  appendBotCard(
-    `
+  if (!pending || !pending.question_text) {
+    // No pending question — graph completed (mastery reached or max questions)
+    _renderAssessmentComplete(result);
+    return;
+  }
+
+  _assessmentQuestionNo += 1;
+  const cardId     = nextId("assess-q");
+  const q          = pending.question_text;
+  const opts       = Array.isArray(pending.options) ? pending.options : [];
+  const progressPct = Math.min(100, Math.round((_assessmentQuestionNo / _assessmentTotal) * 100));
+
+  const optionsHtml = opts.map((opt, i) => `
+    <label class="block cursor-pointer group">
+      <input class="peer sr-only" type="radio" name="${cardId}-opt" value="${escapeHtml(opt)}"/>
+      <div class="w-full p-4 rounded-xl border border-white/10 bg-surface-container-low/50 group-hover:bg-white/5 group-hover:border-white/20 peer-checked:bg-primary/10 peer-checked:border-primary/50 transition-all duration-200 flex gap-3 items-start">
+        <div class="w-5 h-5 rounded-full border-2 border-on-surface-variant/40 flex-shrink-0 mt-0.5 flex items-center justify-center">
+          <div class="w-2 h-2 rounded-full bg-primary opacity-0 peer-checked:opacity-100 transition-opacity"></div>
+        </div>
+        <div class="text-body-sm text-on-surface-variant group-hover:text-on-surface peer-checked:text-on-surface transition-colors">${escapeHtml(opt)}</div>
+      </div>
+    </label>`).join("");
+
+  appendBotCard(`
     <div class="h-1 w-full bg-surface-container-highest rounded-full overflow-hidden mb-4">
       <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full" style="width:${progressPct}%;"></div>
     </div>
-    <span class="inline-block mb-3 px-3 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary text-[11px] font-label-caps tracking-wide">🧠 Question ${assessmentIndex + 1} of ${total}</span>
-    <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-4">${escapeHtml(current.q)}</h4>
+    <span class="inline-block mb-3 px-3 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary text-[11px] font-label-caps tracking-wide">🧠 Question ${_assessmentQuestionNo}</span>
+    <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-4">${escapeHtml(q)}</h4>
     <div class="space-y-3 mb-5">${optionsHtml}</div>
-    <button data-action="assessment-submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">Submit Answer</button>
-  `,
-    { id: cardId }
-  );
+    <button data-action="assessment-submit-answer" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">Submit Answer</button>
+  `, { id: cardId });
 }
 
-function assessmentSubmit(el) {
-  const card = el.closest(".flex.gap-4.items-end");
+async function assessmentSubmitAnswer(el) {
+  const card    = el.closest(".flex.gap-4.items-end");
   const checked = card?.querySelector("input[type=radio]:checked");
   if (!checked) {
     el.classList.add("animate-pulse");
@@ -261,36 +315,55 @@ function assessmentSubmit(el) {
   }
   lockControl(el);
   card.querySelectorAll("input[type=radio]").forEach((r) => (r.disabled = true));
-  // Demo scoring: option index 1 counted as "correct" for variety.
-  if (checked.value === "1") assessmentScore += 1;
 
-  assessmentIndex += 1;
-  if (assessmentIndex < ASSESSMENT_QUESTIONS.length) {
-    renderAssessmentQuestion();
+  if (!_assessmentSessionId) {
+    appendBotMessage("Session lost — please start a new assessment.");
+    appendMoreHelpPrompt();
     return;
   }
 
-  // Demo scoring only — the real assessment engine will return the
-  // actual score once that flow is wired to the backend.
-  const pct = Math.round((assessmentScore / ASSESSMENT_QUESTIONS.length) * 100);
-  appendBotCard(`
-    <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">✨ Assessment Complete</h4>
-    <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">You've completed the assessment.</p>
-    <p class="text-headline-md text-[20px] font-semibold text-primary mb-4">Score: ${pct}%</p>
-    <button data-action="assessment-view-results" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">View Results</button>
-  `);
+  const pid = appendProcessing("Evaluating your answer...");
+  try {
+    const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const res = await fetch(`${BASE_URL}/assessments/${_assessmentSessionId}/answer`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
+      body: JSON.stringify({ student_answer: checked.value }),
+    });
+    removeNode(pid);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `status ${res.status}`);
+    }
+    const data = await res.json();
+    _renderAssessmentQuestion(data.result);
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage(`Sorry, couldn't submit your answer. (${err.message})`);
+    appendMoreHelpPrompt();
+  }
 }
 
-function assessmentViewResults(el) {
-  lockControl(el);
+function _renderAssessmentComplete(result) {
+  // Graph finished — show whatever mastery info the state contains
+  const state    = result?.values ?? result ?? {};
+  const mastery  = state.mastery_score  != null ? Math.round(state.mastery_score  * 100) : null;
+  const achieved = state.mastery_achieved ?? (mastery != null && mastery >= 75);
+  const scoreHtml = mastery != null
+    ? `<p class="text-headline-md text-[20px] font-semibold ${achieved ? "text-primary" : "text-error"} mb-4">Score: ${mastery}%</p>`
+    : "";
+
   appendBotCard(`
-    <div class="flex items-center gap-2 mb-2">
-      <span class="text-lg">🕐</span>
-      <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface">Your assessment is under review</h4>
-    </div>
-    <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">We'll let you know when the final result is available.</p>
-    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300 text-body-sm font-medium">
-      <span class="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span> Under Review
+    <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">✨ Assessment Complete</h4>
+    <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">You've finished the adaptive assessment.</p>
+    ${scoreHtml}
+    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl ${achieved ? "bg-emerald-400/10 border-emerald-400/30 text-emerald-300" : "bg-amber-400/10 border-amber-400/30 text-amber-300"} border text-body-sm font-medium">
+      <span class="w-1.5 h-1.5 ${achieved ? "bg-emerald-400" : "bg-amber-400"} rounded-full"></span>
+      ${achieved ? "Mastery Achieved 🎉" : "Under Advisor Review"}
     </span>
   `);
   appendMoreHelpPrompt();
@@ -299,23 +372,46 @@ function assessmentViewResults(el) {
 /* ---------------------------------------------------------------------
    FLOW: Ask about course material (DESIGN.md §10)
 --------------------------------------------------------------------- */
-function startMaterialFlow(triggerEl) {
+async function startMaterialFlow(triggerEl) {
   lockControl(triggerEl);
+  _activeCourseId = null;  // clear any previous course context
   appendUserReply("📖 Ask about course material");
-  appendBotCard(`
-    <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-4">📖 What course would you like help with?</h4>
-    <div class="grid grid-cols-2 gap-3">
-      <button data-action="material-course" data-course="Advanced Bio-Eng" class="px-4 py-3 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface text-left">Advanced Bio-Eng</button>
-      <button data-action="material-course" data-course="Neural Networks" class="px-4 py-3 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface text-left">Neural Networks</button>
-      <button data-action="material-course" data-course="Data Science" class="px-4 py-3 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface text-left">Data Science</button>
-      <button data-action="material-other" class="px-4 py-3 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface text-left">Other...</button>
-    </div>
-  `);
+  const pid = appendProcessing("Loading your enrolled courses...");
+  try {
+    const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const res = await fetch(`${BASE_URL}/teaching/courses`, {
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
+    });
+    removeNode(pid);
+    const courses = res.ok ? await res.json() : [];
+    const courseButtons = courses.length
+      ? courses.map((c) =>
+          `<button data-action="material-course" data-course-id="${c.course_id}" data-course="${escapeHtml(c.title)}"
+            class="px-4 py-3 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface text-left">${escapeHtml(c.title)}</button>`
+        ).join("")
+      : `<p class="text-body-sm text-on-surface-variant">You're not enrolled in any courses yet.</p>`;
+    appendBotCard(`
+      <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-4">📖 What course would you like help with?</h4>
+      <div class="grid grid-cols-2 gap-3">
+        ${courseButtons}
+        <button data-action="material-other" class="px-4 py-3 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface text-left">Other...</button>
+      </div>
+    `);
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage("Sorry, I couldn't load your courses right now. Type your question below and I'll help anyway.");
+  }
 }
 
 function materialCourse(el) {
   lockControl(el);
   const course = el.dataset.course;
+  // Store numeric course_id so sendMessage() routes to /teaching/chat
+  _activeCourseId = el.dataset.courseId ? parseInt(el.dataset.courseId, 10) : null;
   appendUserReply(course);
   appendBotCard(`
     <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-4">What would you like to explore?</h4>
@@ -346,25 +442,44 @@ function materialTopic(el) {
   );
 }
 
-function materialAsk(el) {
+async function materialAsk(el) {
   const card = el.closest(".flex.gap-4.items-end");
   const topicInput = card?.querySelector('[data-role="material-topic-input"]');
   const topic = topicInput?.value.trim();
-  if (!topic) {
-    topicInput?.focus();
-    return;
-  }
+  if (!topic) { topicInput?.focus(); return; }
   lockControl(el);
   if (topicInput) topicInput.disabled = true;
   appendUserReply(topic);
   const pid = appendProcessing("Looking through your course material... ✨");
-  setTimeout(() => {
+  try {
+    const _user   = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const courseId = _activeCourseId;
+    if (!courseId) throw new Error("No course selected");
+    const res = await fetch(`${BASE_URL}/teaching/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
+      body: JSON.stringify({ course_id: courseId, question: topic }),
+    });
     removeNode(pid);
-    appendBotMessage(
-      `Here's a quick overview of "${topic}" in ${el.dataset.course} — once the course-material RAG endpoint is connected, I'll pull this directly from your syllabus and readings instead of this demo answer.`
-    );
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.detail || `status ${res.status}`);
+    }
+    const data = await res.json();
+    appendBotMessage(data.answer ?? "I couldn't find enough information in this course's material to answer that.");
+    if (data.sources && data.sources.length) {
+      appendBotMessage(`📚 Sources: ${data.sources.join(", ")}`);
+    }
     appendMoreHelpPrompt();
-  }, 1200);
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage(`Sorry, I couldn't reach the course material service. (${err.message})`);
+    appendMoreHelpPrompt();
+  }
 }
 
 function materialOther(el) {
@@ -388,35 +503,54 @@ function startCertificateFlow(triggerEl) {
   `);
 }
 
-function certificateStart(el) {
+async function certificateStart(el) {
   lockControl(el);
   const pid = appendProcessing("Checking your eligibility...");
-  setTimeout(() => {
+  try {
+    const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const res = await fetch(`${BASE_URL}/advisor/certificate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
+      body: JSON.stringify({ notes: "Student-initiated certificate eligibility check via AI assistant" }),
+    });
     removeNode(pid);
-    // Demo payload — swap for the real eligibility response once the
-    // certificate/scholarship advisory flow is wired to the backend.
-    const eligible = true;
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.detail || `status ${res.status}`);
+    }
+    const data = await res.json();
+    // advisor_router returns the graph state — eligible flag or status from state
+    const eligible = data.eligible ?? data.status === "approved" ?? true;
+    const check = `<span class="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span>`;
+    const pend  = `<span class="material-symbols-outlined text-[18px] text-amber-400">radio_button_unchecked</span>`;
     if (eligible) {
       appendBotCard(`
-        <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-3">✨ You're Eligible!</h4>
+        <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-3">✨ Request Submitted!</h4>
+        <p class="text-body-sm text-on-surface-variant mb-3">Your certificate request is now under advisor review.</p>
         <ul class="space-y-2 mb-4">
-          <li class="flex items-center gap-2 text-body-sm text-on-surface-variant"><span class="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span> Academic standing</li>
-          <li class="flex items-center gap-2 text-body-sm text-on-surface-variant"><span class="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span> Required credits</li>
-          <li class="flex items-center gap-2 text-body-sm text-on-surface-variant"><span class="material-symbols-outlined text-[18px] text-emerald-400">check_circle</span> Attendance requirements</li>
+          <li class="flex items-center gap-2 text-body-sm text-on-surface-variant">${check} Academic standing verified</li>
+          <li class="flex items-center gap-2 text-body-sm text-on-surface-variant">${check} Request recorded</li>
         </ul>
         <button data-action="certificate-view-details" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">View Details</button>
       `);
     } else {
       appendBotCard(`
-        <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-3">You're not eligible yet</h4>
+        <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-3">Request under review</h4>
         <ul class="space-y-2 mb-4">
-          <li class="flex items-center gap-2 text-body-sm text-on-surface-variant"><span class="material-symbols-outlined text-[18px] text-amber-400">radio_button_unchecked</span> Required credits</li>
-          <li class="flex items-center gap-2 text-body-sm text-on-surface-variant"><span class="material-symbols-outlined text-[18px] text-amber-400">radio_button_unchecked</span> Attendance requirement</li>
+          <li class="flex items-center gap-2 text-body-sm text-on-surface-variant">${pend} Advisor review pending</li>
         </ul>
-        <button data-action="certificate-view-details" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">View Requirements</button>
+        <button data-action="certificate-view-details" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">View Status</button>
       `);
     }
-  }, 1200);
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage(`Sorry, couldn't submit your certificate request. (${err.message})`);
+    appendMoreHelpPrompt();
+  }
 }
 
 function certificateViewDetails(el) {
@@ -437,64 +571,116 @@ function startCasesFlow(triggerEl) {
   `);
 }
 
-function casesView(el) {
+async function casesView(el) {
   lockControl(el);
-  // Demo payload — swap for the real cases/appeals response once the
-  // academic-integrity / appeals flow is wired to the backend.
-  const hasCase = true;
-  if (!hasCase) {
-    appendBotCard(`
-      <div class="flex items-center gap-2">
-        <span class="material-symbols-outlined text-emerald-400">check_circle</span>
-        <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface">You're all clear!</h4>
-      </div>
-      <p class="text-body-sm text-on-surface-variant mt-2">You don't have any active cases or appeals.</p>
-    `);
+  const pid = appendProcessing("Loading your cases...");
+  try {
+    const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const res = await fetch(`${BASE_URL}/academic-integrity/cases`, {
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
+    });
+    removeNode(pid);
+    const cases = res.ok ? await res.json() : [];
+    if (!cases || cases.length === 0) {
+      appendBotCard(`
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-emerald-400">check_circle</span>
+          <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface">You're all clear!</h4>
+        </div>
+        <p class="text-body-sm text-on-surface-variant mt-2">You don't have any active cases or appeals.</p>
+      `);
+      appendMoreHelpPrompt();
+      return;
+    }
+    // Render each case as a card; student can submit appeal if awaiting_appeal
+    cases.forEach((c) => {
+      const statusLabel = c.status === "awaiting_appeal" ? "🟡 Awaiting Your Appeal"
+                        : c.status === "closed"          ? "✅ Closed"
+                        : c.status === "under_review"    ? "🔵 Under Review"
+                        : c.status;
+      const bgClass = c.status === "awaiting_appeal" ? "bg-amber-400/10 border-amber-400/30 text-amber-300"
+                    : c.status === "closed"           ? "bg-emerald-400/10 border-emerald-400/30 text-emerald-300"
+                    : "bg-primary/10 border-primary/30 text-primary";
+      appendBotCard(`
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[11px] font-label-caps text-on-surface-variant/70 uppercase tracking-wide flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-[16px] text-amber-400">warning</span> Case #${c.case_id}
+          </span>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${bgClass} border text-[11px] font-medium">${statusLabel}</span>
+        </div>
+        <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-1">Academic Integrity Review</h4>
+        <p class="text-body-sm text-on-surface-variant mb-4">${escapeHtml(c.description || "")}</p>
+        ${c.status === "awaiting_appeal"
+          ? `<button data-action="cases-view-case" data-case-id="${c.case_id}" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">Submit Appeal</button>`
+          : ""}
+      `);
+    });
     appendMoreHelpPrompt();
-    return;
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage(`Sorry, I couldn't load your cases right now. (${err.message})`);
+    appendMoreHelpPrompt();
   }
-  appendBotCard(`
-    <div class="flex items-center justify-between mb-2">
-      <span class="text-[11px] font-label-caps text-on-surface-variant/70 uppercase tracking-wide flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-amber-400">warning</span> Case #204</span>
-      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-[11px] font-medium">🟡 Awaiting Your Appeal</span>
-    </div>
-    <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-4">Academic Integrity Review</h4>
-    <button data-action="cases-view-case" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">View Case</button>
-  `);
 }
 
 function casesViewCase(el) {
   lockControl(el);
+  const caseId = el.dataset.caseId || "";
   const cardId = nextId("appeal-form");
   appendBotCard(
     `
     <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-1">Submit Appeal</h4>
-    <p class="text-body-sm text-on-surface-variant mb-3">Tell us why you'd like to appeal.</p>
+    <p class="text-body-sm text-on-surface-variant mb-3">Tell us why you'd like to appeal this case.</p>
     <textarea data-role="appeal-text" rows="4" placeholder="Draft your appeal here..." class="w-full bg-surface-container-low/60 border border-white/10 focus:border-primary/50 outline-none rounded-xl px-4 py-3 text-body-sm text-on-surface placeholder:text-on-surface-variant/40 resize-none mb-4"></textarea>
-    <button data-action="cases-submit-appeal" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">Submit Appeal</button>
+    <button data-action="cases-submit-appeal" data-case-id="${escapeHtml(caseId)}" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">Submit Appeal</button>
   `,
     { id: cardId }
   );
 }
 
-function casesSubmitAppeal(el) {
+async function casesSubmitAppeal(el) {
   const card = el.closest(".flex.gap-4.items-end");
   const textarea = card?.querySelector('[data-role="appeal-text"]');
-  const text = textarea?.value.trim();
-  if (!text) {
-    textarea?.focus();
-    return;
-  }
+  const text    = textarea?.value.trim();
+  const caseId  = el.dataset.caseId;
+  if (!text) { textarea?.focus(); return; }
+  if (!caseId) { appendBotMessage("Unable to identify case — please reload and try again."); return; }
   lockControl(el);
   if (textarea) textarea.disabled = true;
-  appendBotCard(`
-    <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">Your appeal has been submitted.</h4>
-    <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">We'll review it and let you know when a decision is available.</p>
-    <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300 text-body-sm font-medium">
-      <span class="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span> Under Review
-    </span>
-  `);
-  appendMoreHelpPrompt();
+  const pid = appendProcessing("Submitting your appeal...");
+  try {
+    const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const res = await fetch(`${BASE_URL}/academic-integrity/cases/${caseId}/appeal`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
+      body: JSON.stringify({ appeal_argument: text }),
+    });
+    removeNode(pid);
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(errBody.detail || `status ${res.status}`);
+    }
+    appendBotCard(`
+      <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">Your appeal has been submitted.</h4>
+      <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">We'll review it and let you know when a decision is available.</p>
+      <span class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300 text-body-sm font-medium">
+        <span class="w-1.5 h-1.5 bg-amber-400 rounded-full animate-pulse"></span> Under Review
+      </span>
+    `);
+    appendMoreHelpPrompt();
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage(`Sorry, couldn't submit your appeal. (${err.message})`);
+    appendMoreHelpPrompt();
+  }
 }
 
 /* ---------------------------------------------------------------------
@@ -511,9 +697,8 @@ const FLOW_STARTERS = {
 const ACTION_HANDLERS = {
   "track-start": trackStart,
   "track-view-details": trackViewDetails,
-  "assessment-start": assessmentStart,
-  "assessment-submit": assessmentSubmit,
-  "assessment-view-results": assessmentViewResults,
+  "assessment-pick-topic": assessmentPickTopic,
+  "assessment-submit-answer": assessmentSubmitAnswer,
   "material-course": materialCourse,
   "material-topic": materialTopic,
   "material-ask": materialAsk,
@@ -555,15 +740,25 @@ async function sendMessage(text) {
 
   try {
     const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
-    const res = await fetch(`${BASE_URL}/ai/chat`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-User-Id":   String(_user.id   || ""),
-        "X-User-Role": String(_user.role || "student"),
-      },
-      body: JSON.stringify({ message: text }),
-    });
+    const authHeaders = {
+      "Content-Type": "application/json",
+      "X-User-Id":   String(_user.id   || ""),
+      "X-User-Role": String(_user.role || "student"),
+    };
+
+    // If a course is active (material flow), route to /teaching/chat which
+    // does real RAG against the enrolled course's material. Otherwise use
+    // /ai/chat for the general assistant.
+    let endpoint, body;
+    if (_activeCourseId) {
+      endpoint = `${BASE_URL}/teaching/chat`;
+      body     = JSON.stringify({ course_id: _activeCourseId, question: text });
+    } else {
+      endpoint = `${BASE_URL}/ai/chat`;
+      body     = JSON.stringify({ message: text });
+    }
+
+    const res = await fetch(endpoint, { method: "POST", headers: authHeaders, body });
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
       throw new Error(errBody.detail || `chat request failed (${res.status})`);
@@ -571,7 +766,7 @@ async function sendMessage(text) {
     const data = await res.json();
     typingIndicator.classList.add("hidden");
     typingIndicator.classList.remove("flex");
-    // Backend returns { answer, sources } per ai_assistant_router.py
+    // Both /teaching/chat and /ai/chat return { answer, sources }
     appendBotMessage(data.answer ?? data.reply ?? "…");
   } catch (err) {
     console.error("Nova chat error:", err.message);
@@ -628,7 +823,14 @@ applyLoggedInUser();
 // richer profile data once /api/dashboard is wired up).
 async function loadProfile() {
   try {
-    const res = await fetch(`${EXPRESS_URL}/api/dashboard`, { credentials: "include" });
+    const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const res = await fetch(`${EXPRESS_URL}/api/dashboard`, {
+      credentials: "include",
+      headers: {
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
+    });
     if (!res.ok) throw new Error("no session yet");
     const data = await res.json();
     if (data.student?.name) {
@@ -636,8 +838,8 @@ async function loadProfile() {
       const greeting = document.getElementById("nova-greeting-name");
       if (greeting) greeting.textContent = `Hi ${data.student.name.split(" ")[0]}! 👋`;
     }
-    if (data.student?.track) document.getElementById("student-track").textContent = data.student.track;
-    if (data.student?.avatarUrl) document.getElementById("student-avatar").src = data.student.avatarUrl;
+    if (data.student?.track)      document.getElementById("student-track").textContent  = data.student.track;
+    if (data.student?.avatarUrl)  document.getElementById("student-avatar").src         = data.student.avatarUrl;
   } catch (err) {
     console.info("Profile header: using session data only —", err.message);
   }

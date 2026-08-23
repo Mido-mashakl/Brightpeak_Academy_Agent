@@ -106,6 +106,20 @@ def analyze_severity(state: AcademicIntegrityState) -> dict:
         description=state.description,
         policy_context=policy_context,
     )
+    # BUG FIX (found via real end-to-end testing, phase-4/backend/e2e_test_integrity.py):
+    # `severity` was only ever kept in the LangGraph checkpoint state and
+    # returned here — nothing wrote it back to IntegrityCases.severity.
+    # Every other node in this graph that changes something the platform's
+    # DB-facing API reads (gather_evidence's status, minor_warning's status,
+    # notify_student's status, log_and_close's status) persists via
+    # db.execute() the same way; severity was the one exception, which meant
+    # IntegrityCases.severity stayed NULL forever and every case showed up
+    # as "pending" in the instructor UI (integrity.js, hitl.js, case-details.js,
+    # hitl-review.js) no matter what the AI actually classified.
+    db.execute(
+        "UPDATE IntegrityCases SET severity = ?, updated_at = ? WHERE case_id = ?",
+        (severity, datetime.utcnow().isoformat(), state.case_id),
+    )
     if severity != "minor":
         _open_hitl_task(state.case_id, "committee_review", {"status": "under_review"})
     return {"severity": severity, "severity_rationale": rationale}

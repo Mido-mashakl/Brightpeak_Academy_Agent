@@ -35,7 +35,10 @@ async function loadDashboard() {
   if (!user) return;
   try {
     const res = await fetch(`${BASE_URL}/api/dashboard`, {
-      headers: { "X-User-Id": String(user.id) },
+      headers: {
+        "X-User-Id":   String(user.id),
+        "X-User-Role": String(user.role || "student"),
+      },
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));

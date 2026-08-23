@@ -100,6 +100,28 @@ def resume_case(*args, **kwargs):
     return _cache["academic_integrity"].resume_case(*args, **kwargs)
 
 
+def get_case_state(case_id: int):
+    """Read-only: current LangGraph state values for one academic-integrity
+    case (severity_rationale, appeal_evaluation, decisions, etc.) — none of
+    which live in the IntegrityCases table itself (only case_id, student_id,
+    course_id, assignment_id, reported_by, description, similarity_score,
+    severity, status, created_at, updated_at do). Mirrors the read-only
+    get_advisor_request_state / get_assessment_session_state pattern below.
+    Used by academic_integrity_router.py so the instructor/student-facing
+    case detail responses can include the AI's actual reasoning instead of
+    leaving it blank."""
+    if "academic_integrity" not in _cache:
+        from state_graph.academic_integrity import graph as _mod
+        _cache["academic_integrity"] = _mod
+    mod = _cache["academic_integrity"]
+    config = {"configurable": {"thread_id": mod.thread_id_for_case(case_id)}}
+    graph = mod.build_academic_integrity_graph()
+    snapshot = graph.get_state(config)
+    if snapshot is None or not snapshot.values:
+        return None
+    return snapshot.values
+
+
 def submit_committee_decision(*args, **kwargs):
     from state_graph.academic_integrity import hitl as _mod
     return _mod.submit_committee_decision(*args, **kwargs)

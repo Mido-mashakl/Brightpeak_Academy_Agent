@@ -29,10 +29,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
+// Matches the real decision vocabulary the graph understands (see
+// backend/routers/academic_integrity_router.py's _COMMITTEE_ACTIONS /
+// _FINAL_ACTIONS: "uphold" | "dismiss" | "request_more_evidence" |
+// "reduce_penalty"). The old approve/reject/confirm labels never matched
+// any value the backend actually sends, so every button fell through to
+// the `BP_ACTION_LABELS[a] || a` fallback and rendered the raw snake_case
+// string instead of a real label.
 const BP_ACTION_LABELS = {
-  approve: "Approve",
-  reject: "Reject",
-  confirm: "Confirm",
+  uphold: "Uphold Violation",
+  dismiss: "Dismiss Case",
+  request_more_evidence: "Request More Evidence",
+  reduce_penalty: "Reduce Penalty",
 };
 
 function renderReview(c) {
@@ -121,8 +129,12 @@ function wireActions(c) {
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       ${actions
         .map((a) => {
-          const isReject = a === "reject";
-          return `<button class="bp-btn ${isReject ? "bp-btn-danger" : "bp-btn-primary"} bp-action-btn" data-action="${a}">${BP_ACTION_LABELS[a] || a}</button>`;
+          // "uphold" confirms the violation — the consequential action for
+          // the student, so it gets the danger styling that "reject" used
+          // to carry. Everything else (dismissing the case, asking for more
+          // evidence, reducing a penalty) is a softer/neutral outcome.
+          const styleClass = a === "uphold" ? "bp-btn-danger" : "bp-btn-primary";
+          return `<button class="bp-btn ${styleClass} bp-action-btn" data-action="${a}">${BP_ACTION_LABELS[a] || a}</button>`;
         })
         .join("")}
     </div>
