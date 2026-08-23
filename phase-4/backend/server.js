@@ -129,6 +129,106 @@ app.post("/api/login", (req, res) => {
 });
 
 /* =========================
+   STUDENT DASHBOARD
+   Real query against Students / Enrollments / Courses / Grades /
+   Assignments — no session cookie exists anywhere in this stack yet
+   (see core/auth.py's docstring on the FastAPI side for the same
+   gap), so like every FastAPI graph route, this identifies the
+   caller via an explicit header set by the frontend from the
+   already-logged-in user (shared/auth.js's stored "user" object).
+========================= */
+
+app.get("/api/dashboard", (req, res) => {
+    try {
+        const studentId = Number(req.header("X-User-Id"));
+        if (!studentId) {
+            return res.status(401).json({ message: "Missing X-User-Id header. Log in first." });
+        }
+
+        const student = db
+            .prepare(`SELECT student_id, name, email, level FROM Students WHERE student_id = ?`)
+            .get(studentId);
+        if (!student) {
+            return res.status(401).json({ message: "No student with that id. Log in again." });
+        }
+
+        const enrolled = db
+            .prepare(`SELECT COUNT(*) AS n FROM Enrollments WHERE student_id = ? AND status = 'active'`)
+            .get(studentId).n;
+
+        const completed = db
+            .prepare(`SELECT COUNT(*) AS n FROM Enrollments WHERE student_id = ? AND status = 'completed'`)
+            .get(studentId).n;
+
+        const avgRow = db
+            .prepare(
+                `SELECT AVG(g.score) AS avg
+                 FROM Grades g
+                 WHERE g.student_id = ?`
+            )
+            .get(studentId);
+        const avgScore = avgRow.avg != null ? Math.round(avgRow.avg) : null;
+
+        // No time-tracking table exists anywhere in the schema — there is
+        // no real "hours studied" to report. Rather than invent a number,
+        // this is total course duration across active enrollments, which
+        // IS real data (Courses.duration), just labeled honestly for what
+        // it is: enrolled course hours, not hours actually spent studying.
+        const hoursRow = db
+            .prepare(
+                `SELECT COALESCE(SUM(c.duration), 0) AS hours
+                 FROM Enrollments e
+                 JOIN Courses c ON c.course_id = e.course_id
+                 WHERE e.student_id = ? AND e.status = 'active'`
+            )
+            .get(studentId);
+
+        const deadlineRows = db
+            .prepare(
+                `SELECT a.title, a.deadline
+                 FROM Assignments a
+                 JOIN Enrollments e ON e.course_id = a.course_id
+                 WHERE e.student_id = ? AND e.status = 'active' AND a.deadline >= DATE('now')
+                 ORDER BY a.deadline ASC
+                 LIMIT 5`
+            )
+            .all(studentId);
+
+        const deadlines = deadlineRows.map((d) => {
+            const date = new Date(d.deadline);
+            return {
+                day: isNaN(date) ? "--" : String(date.getDate()).padStart(2, "0"),
+                title: d.title,
+                when: d.deadline,
+            };
+        });
+
+        return res.json({
+            student: { name: student.name, track: student.level },
+            stats: {
+                enrolled,
+                completed,
+                avgScore,
+                studyHours: hoursRow.hours,
+            },
+            deadlines,
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "Unable to load dashboard data." });
+    }
+});
+
+app.post("/api/auth/logout", (req, res) => {
+    // Stateless (no server-side session to invalidate — see the
+    // /api/dashboard comment above for why). This exists so the
+    // frontend has a real endpoint to call instead of failing
+    // silently; the actual sign-out is clearing localStorage("user")
+    // client-side (shared/auth.js's BrightPeakAuth.logout()).
+    return res.json({ status: "ok" });
+});
+
+/* =========================
    SERVER
 ========================= */
 
