@@ -957,20 +957,39 @@ def add_cv(job_id: int, name: str, raw_cv_text: str) -> Any:
 
     This RESUMES the existing thread for job_id — does NOT start a new graph.
     The new candidate goes into incoming_batch only; old candidates are untouched.
+
+    job_id/job_title/qualifications are re-asserted on every call (not just
+    left to whatever the checkpoint already has). For a job created through
+    start_job() this is a harmless no-op merge — those keys are already on
+    the checkpoint with the same values. But JobPostings rows created any
+    other way (e.g. seeded directly into the DB) never had start_job() run
+    for them, so their thread's state never had job_id set at all. Without
+    this, ingest_cv_batch's `INSERT INTO Candidates (job_id, ...)` runs with
+    state.job_id == None, which fails Candidates.job_id's NOT NULL
+    constraint — surfacing to the user as a generic "Something went wrong
+    submitting this CV" with no indication this was the actual cause.
     """
     graph = build_faculty_hiring_graph()
     config = {"configurable": {"thread_id": thread_id_for_job(job_id)}}
 
     new_candidate = CandidateResult(name=name, raw_cv_text=raw_cv_text)
 
-    # Update state with only the new CV and set the event type
-    graph.update_state(
-        config,
-        {
-            "incoming_batch": [new_candidate],
-            "pending_event": "new_cv",
-        },
+    job_row = db.query_one(
+        "SELECT title, qualifications FROM JobPostings WHERE job_id = ?", (job_id,)
     )
+
+    state_update = {
+        "job_id": job_id,
+        "incoming_batch": [new_candidate],
+        "pending_event": "new_cv",
+    }
+    if job_row:
+        state_update["job_title"] = job_row["title"]
+        state_update["qualifications"] = (
+            json.loads(job_row["qualifications"]) if job_row["qualifications"] else []
+        )
+
+    graph.update_state(config, state_update)
     return graph.invoke(None, config=config)
 
 

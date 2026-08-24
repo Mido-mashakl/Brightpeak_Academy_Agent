@@ -29,8 +29,22 @@
     updateCountdowns();
   }
 
+  // job.deadline comes straight from the API as the raw DB string (e.g.
+  // "2026-09-14T23:59:00" — see hiring_router.py's _job_to_frontend_shape,
+  // which just does row.get("application_deadline") with no conversion).
+  // isLocked() used to compare that STRING directly against Date.now()
+  // (a number). `number > string` coerces the string with Number(), and
+  // Number() on an ISO datetime string is NaN — so `Date.now() > NaN` was
+  // ALWAYS false, meaning the deadline could never lock the UI on its own
+  // (only the manual "End Application Window Now" button — closedManually
+  // — ever did). This converts it to a real timestamp first.
+  function deadlineMs(job) {
+    return job.deadline ? new Date(job.deadline).getTime() : null;
+  }
+
   function isLocked(job) {
-    return job.status === "closed" || job.closedManually || (job.deadline && Date.now() > job.deadline);
+    const dl = deadlineMs(job);
+    return job.status === "closed" || job.closedManually || (dl && Date.now() > dl);
   }
 
   function jobCardHtml(job, candidates) {
@@ -53,7 +67,7 @@
 
         <div>${qualChips || '<span class="text-on-surface-variant text-body-sm">No qualifications listed</span>'}</div>
 
-        <div class="deadline-box" data-deadline="${job.deadline || ""}" data-locked="${locked}">
+        <div class="deadline-box" data-deadline="${deadlineMs(job) || ""}" data-locked="${locked}">
           <div>
             <div class="deadline-label">${locked ? "Applications Closed" : "Application Deadline"}</div>
             <div class="deadline-value" data-countdown>${locked ? "CV uploads disabled" : "Calculating..."}</div>
