@@ -23,6 +23,8 @@ from routers.tracks_router import router as tracks_router
 from routers.teaching_router import router as teaching_router
 from routers.ai_assistant_router import router as ai_assistant_router
 from routers.instructor_router import router as instructor_router
+from routers.tickets_router import router as tickets_router
+from routers.department_head_router import router as department_head_router
 
 app = FastAPI(title="Brightpeak Academy Platform")
 
@@ -47,6 +49,8 @@ app.include_router(tracks_router)
 app.include_router(teaching_router)
 app.include_router(ai_assistant_router)
 app.include_router(instructor_router)
+app.include_router(tickets_router)
+app.include_router(department_head_router)
 
 
 @app.get("/health")

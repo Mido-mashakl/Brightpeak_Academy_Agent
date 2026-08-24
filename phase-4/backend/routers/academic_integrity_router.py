@@ -266,7 +266,7 @@ def list_cases(
 
 @router.get("/cases/hitl")
 def list_hitl_cases(
-    user: CurrentUser = Depends(require_role("instructor", "advisor")),
+    user: CurrentUser = Depends(require_role("instructor", "advisor", "dept_head")),
 ):
     """instructor/hitl/hitl.js reads: {needsAttention, awaitingAppeal,
     committeeDecisions}, each a list of cards with id, student, course,
@@ -418,7 +418,7 @@ def submit_appeal(case_id: int, body: AppealRequest, user: CurrentUser = Depends
 
 
 @router.post("/cases/{case_id}/committee-decision")
-def committee_decision(case_id: int, body: CommitteeDecisionRequest, user: CurrentUser = Depends(require_role("instructor", "advisor"))):
+def committee_decision(case_id: int, body: CommitteeDecisionRequest, user: CurrentUser = Depends(require_role("instructor", "advisor", "dept_head"))):
     """Admin resolves the first HITL gate (needs_committee_review)."""
     _case_row(case_id)
     try:
@@ -429,7 +429,7 @@ def committee_decision(case_id: int, body: CommitteeDecisionRequest, user: Curre
 
 
 @router.post("/cases/{case_id}/final-decision")
-def final_decision(case_id: int, body: FinalDecisionRequest, user: CurrentUser = Depends(require_role("instructor", "advisor"))):
+def final_decision(case_id: int, body: FinalDecisionRequest, user: CurrentUser = Depends(require_role("instructor", "advisor", "dept_head"))):
     """Admin resolves the second HITL gate (committee_final_decision, after
     Tree-of-Thoughts appeal evaluation)."""
     _case_row(case_id)
