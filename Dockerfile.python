@@ -1,0 +1,28 @@
+FROM python:3.11-slim
+
+WORKDIR /repo
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Only the requirements files first, so pip install is cached
+# and doesn't rerun on every code change.
+COPY Phase-2/requirements.txt Phase-2/requirements.txt
+COPY phase-3/requirements.txt phase-3/requirements.txt
+
+RUN pip install --no-cache-dir \
+    -r Phase-2/requirements.txt \
+    -r phase-3/requirements.txt
+
+# graph_loader.py finds phase-3/ by walking up from its own file path
+# (parents[3] -> repo root), so phase-3/ and phase-4/ must stay siblings
+# inside the image exactly like they are in the repo.
+COPY phase-3/ phase-3/
+COPY phase-4/ phase-4/
+
+WORKDIR /repo/phase-4/backend
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

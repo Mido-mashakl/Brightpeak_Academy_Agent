@@ -1,0 +1,33 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persist phase-3's brightpeak.db (state graphs, checkpoints,
+      # tickets) across container restarts / rebuilds. Safe: phase-3/db/
+      # only holds db files, no app code lives there.
+      - phase3_db:/repo/phase-3/db
+    env_file:
+      - .env
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    ports:
+      - "3000:3000"
+    # NOTE: phase-4/brightpeak.db is NOT persisted with a volume yet.
+    # It currently lives inside phase-4/ next to the app code itself
+    # (frontend, index.html, etc.), so mounting a volume on that whole
+    # folder would wipe out the code copied into the image. Once db.js
+    # is fixed to auto-build the file, revisit this with the teammate
+    # who owns db.js -- e.g. move brightpeak.db into its own
+    # phase-4/data/ subfolder so only that gets a volume.
+    depends_on:
+      - api
+
+volumes:
+  phase3_db:
