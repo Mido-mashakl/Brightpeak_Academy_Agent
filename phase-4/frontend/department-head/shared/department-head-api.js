@@ -18,14 +18,15 @@
  *   POST /hiring/jobs/{job_id}/cv                (multipart file upload)
  *   POST /hiring/jobs/{job_id}/close
  *
- * NOT WIRED YET (still mock — need dept_head auth session first, see
- * mcp_server/roles.py + hiring_router.py's bottom note):
- *   POST /hiring/candidates/{candidate_id}/decision   (hire/reject/interview/rescore)
- *   GET  /hitl/academic-integrity/cases
- *   POST /hitl/academic-integrity/cases/{case_id}/decision
- *   GET  /tickets
- *   PATCH /tickets/{ticket_id}/status
- *   GET  /agents
+ * ALSO LIVE (wired after initial version):
+ *   POST /hiring/candidates/{candidate_id}/decision   (hire/interview/rescore — reject returns 501)
+ *   GET  /tickets                                     (tickets_router.py)
+ *   PATCH /tickets/{ticket_id}/status                 (tickets_router.py)
+ *   GET  /department-head/dashboard                   (department_head_router.py)
+ *   GET  /department-head/agents                      (department_head_router.py)
+ *
+ * STILL MOCK (no backend endpoint confirmed — Gap 2 per status doc):
+ *   GET  /academic-integrity/cases/hitl  scoped to dept_head  (needs product decision first)
  *
  * BASE_URL points straight at the FastAPI backend (port 8000). The rest
  * of the platform's shared/api.js points at port 3000 (Express, login +
@@ -398,11 +399,18 @@ const DHApi = (function () {
         err.status = 401;
         throw err;
       }
-      const result = await BrightPeakGraphAPI.post(`/hiring/candidates/${candidateId}/decision`, {
-        decision,
-        notes: note || null,
-        passcode,
+      const res = await fetch(`${BASE_URL}/hiring/candidates/${candidateId}/decision`, {
+        method: "POST",
+        headers: _dhAuthHeaders(),
+        body: JSON.stringify({ decision, notes: note || null, passcode }),
       });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const err = new Error(body.detail || "Failed to submit hiring decision.");
+        err.status = res.status;
+        throw err;
+      }
+      const result = await res.json();
       const map = { hire: "hired", reject: "rejected", interview: "interview", rescore: "rescore_requested" };
       return {
         id: candidateId,
@@ -412,80 +420,121 @@ const DHApi = (function () {
       };
     },
 
-    /** ------------- ACADEMIC INTEGRITY / HITL ------------- */
-    // Real endpoint: GET /hitl/academic-integrity/cases (NOT CONFIRMED — mocked)
+    /** ------------- ACADEMIC INTEGRITY / HITL (LIVE — academic_integrity_router.py) ------------- */
+    /**
+     * GET /academic-integrity/cases/hitl  (dept_head now allowed — Gap 2 fix)
+     * Returns a flat list of open cases for the HITL queue.
+     * The real endpoint returns {needsAttention[], awaitingAppeal[], committeeDecisions[]}.
+     * We flatten all three into one list and fetch full details per case so
+     * hitl.js's renderIntegrityDetail() has the report, policy, evidence, AI fields it needs.
+     * GET /academic-integrity/cases/{id} already returns all those fields and
+     * is already accessible to dept_head.
+     */
     async listIntegrityCases() {
-      await delay();
-      return load().integrityCases;
-    },
+      const res = await fetch(`${BASE_URL}/academic-integrity/cases/hitl`, { headers: _dhAuthHeaders() });
+      if (!res.ok) throw new Error("Failed to load integrity cases.");
+      const grouped = await res.json();
 
-    // Real endpoint: POST /hitl/academic-integrity/cases/{case_id}/decision (NOT CONFIRMED — mocked)
-    async submitIntegrityDecision(caseId, action, note) {
-      await delay();
-      const store = load();
-      const c = store.integrityCases.find((x) => x.id === caseId);
-      if (!c) throw new Error("Case not found");
-      c.decision = { action, by: "department_head", note: note || null, at: Date.now() };
-      if (action === "confirm_finding" || action === "dismiss_case") {
-        c.status = "closed";
-      } else if (action === "request_appeal") {
-        c.status = "awaiting_appeal";
-      }
-      save(store);
-      return c;
-    },
-
-    /** ------------- TICKETS ------------- */
-    // Real endpoint: GET /tickets (NOT CONFIRMED — mocked; reuse existing Tickets DB structure)
-    async listTickets() {
-      await delay();
-      return load().tickets;
-    },
-
-    // Real endpoint: PATCH /tickets/{ticket_id}/status (NOT CONFIRMED — mocked)
-    async updateTicketStatus(ticketId, status) {
-      await delay();
-      const store = load();
-      const t = store.tickets.find((x) => x.id === ticketId);
-      if (!t) throw new Error("Ticket not found");
-      t.status = status;
-      save(store);
-      return t;
-    },
-
-    /** ------------- AI AGENTS ------------- */
-    // Real endpoint: GET /agents (NOT CONFIRMED — mocked, visual-only per brief)
-    async listAgents() {
-      await delay();
-      return load().agents;
-    },
-
-    /** ------------- DASHBOARD ------------- */
-    async getDashboardStats() {
-      await delay();
-      const store = load();
-      const openJobs = store.jobs.filter((j) => j.status === "open").length;
-      const awaitingDecision = store.candidates.filter((c) => ["shortlisted", "ai_scored"].includes(c.status) && !c.decision).length;
-      const integrityAwaiting = store.integrityCases.filter((c) => c.status !== "closed").length;
-      const openTickets = store.tickets.filter((t) => t.status !== "Resolved").length;
-      return {
-        activeFacultyPositions: openJobs,
-        candidatesAwaitingDecision: awaitingDecision,
-        integrityCasesAwaitingReview: integrityAwaiting,
-        openTickets,
-        hiring: {
-          jobPostings: store.jobs.length,
-          applications: store.candidates.length,
-          shortlisted: store.candidates.filter((c) => c.status === "shortlisted").length,
-          pendingDecisions: awaitingDecision
-        },
-        integrity: {
-          openCases: store.integrityCases.filter((c) => c.status !== "closed").length,
-          awaitingReview: store.integrityCases.filter((c) => c.status === "reported").length,
-          appeals: store.integrityCases.filter((c) => c.status === "awaiting_appeal").length,
-          finalDecisionsPending: store.integrityCases.filter((c) => c.status !== "closed").length
+      // Flatten the three lists (needsAttention, awaitingAppeal, committeeDecisions),
+      // deduplicating by case id.
+      const seen = new Set();
+      const cards = [];
+      for (const list of [grouped.needsAttention, grouped.awaitingAppeal, grouped.committeeDecisions]) {
+        for (const card of (list || [])) {
+          if (!seen.has(card.id)) { seen.add(card.id); cards.push(card); }
         }
+      }
+
+      // Fetch full detail for each card so the detail panel has all fields.
+      const full = await Promise.all(cards.map(async (card) => {
+        try {
+          const r = await fetch(`${BASE_URL}/academic-integrity/cases/${card.id}`, { headers: _dhAuthHeaders() });
+          if (!r.ok) return null;
+          const d = await r.json();
+          // Map real response shape → what hitl.js renderIntegrityDetail() reads.
+          return {
+            id: String(d.id),
+            student: d.student,
+            course: d.course,
+            instructor: d.reportedBy || "—",
+            severity: d.severity || "pending",
+            status: d.status,
+            report: d.description || "—",
+            policy: [],          // no policy column in schema; leave empty
+            evidence: (d.evidence || []).map(e => e.label || e.content || String(e)),
+            aiSeverity: d.aiAssessment ? d.aiAssessment.severity : (d.severity || "pending"),
+            aiConfidence: d.aiAssessment ? (d.aiAssessment.policyMatchPct || 0) : 0,
+            aiRationale: d.aiAssessment ? d.aiAssessment.reasoning : "AI assessment not available.",
+            timeline: (d.workflow && d.workflow.steps || []).map(s => ({
+              label: s.label,
+              detail: s.key === d.status ? "Current Stage" : (d.workflow.steps.indexOf(s) < d.workflow.steps.findIndex(x => x.key === d.status) ? "Completed" : "Pending"),
+              state: s.key === d.status ? "current" : (d.workflow.steps.indexOf(s) < d.workflow.steps.findIndex(x => x.key === d.status) ? "done" : "pending"),
+            })),
+            decision: null,
+          };
+        } catch (_) { return null; }
+      }));
+
+      return full.filter(Boolean);
+    },
+
+    /**
+     * POST /academic-integrity/cases/{case_id}/committee-decision
+     * Maps the hitl.js action vocabulary → the graph's decision vocabulary.
+     *
+     * hitl.js sends:  confirm_finding | request_evidence | request_appeal | dismiss_case
+     * Graph expects:  uphold | request_more_evidence | (notify_student path) | dismiss
+     */
+    async submitIntegrityDecision(caseId, action, note) {
+      // Map frontend action labels to graph decision values
+      const actionMap = {
+        confirm_finding:  "uphold",
+        request_evidence: "request_more_evidence",
+        request_appeal:   "uphold",   // "uphold" → notify_student → await_appeal in graph
+        dismiss_case:     "dismiss",
       };
+      const graphDecision = actionMap[action] || action;
+      const res = await fetch(`${BASE_URL}/academic-integrity/cases/${caseId}/committee-decision`, {
+        method: "POST",
+        headers: _dhAuthHeaders(),
+        body: JSON.stringify({ decision: graphDecision, notes: note || null }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.detail || "Failed to submit committee decision.");
+      }
+      return res.json();
+    },
+
+    /** ------------- TICKETS (LIVE — tickets_router.py) ------------- */
+    async listTickets() {
+      const res = await fetch(`${BASE_URL}/tickets`, { headers: _dhAuthHeaders() });
+      if (!res.ok) throw new Error("Failed to load tickets.");
+      return res.json();
+    },
+
+    async updateTicketStatus(ticketId, status) {
+      const res = await fetch(`${BASE_URL}/tickets/${ticketId}/status`, {
+        method: "PATCH",
+        headers: _dhAuthHeaders(),
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Failed to update ticket status.");
+      return res.json();
+    },
+
+    /** ------------- AI AGENTS (LIVE — department_head_router.py) ------------- */
+    async listAgents() {
+      const res = await fetch(`${BASE_URL}/department-head/agents`, { headers: _dhAuthHeaders() });
+      if (!res.ok) throw new Error("Failed to load agents.");
+      return res.json();
+    },
+
+    /** ------------- DASHBOARD (LIVE — department_head_router.py) ------------- */
+    async getDashboardStats() {
+      const res = await fetch(`${BASE_URL}/department-head/dashboard`, { headers: _dhAuthHeaders() });
+      if (!res.ok) throw new Error("Failed to load dashboard stats.");
+      return res.json();
     },
 
     _debugReset() {
