@@ -96,7 +96,15 @@
     ["more_info_requested", "assessment_requested"].forEach((evt) => {
       es.addEventListener(evt, (e) => {
         try {
-          SNBus.emit(evt, JSON.parse(e.data));
+          const data = JSON.parse(e.data);
+          // Backend includes the DB row id as _notification_id so a
+          // notification seen live can still be marked read (same key
+          // shape as the poll path's _notificationId below) — otherwise
+          // it would stay "unread" in the DB and reappear on next load.
+          if (data._notification_id != null) {
+            data._notificationId = data._notification_id;
+          }
+          SNBus.emit(evt, data);
         } catch (err) {
           console.error(`[SNBus] bad ${evt} payload:`, err);
         }

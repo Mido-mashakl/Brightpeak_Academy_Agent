@@ -119,9 +119,17 @@ def _notify_if_needs_student(result: dict) -> None:
                     "missing_info": iv.get("missing_info", []),
                 }
                 # 1) Durable — survives page close/reopen
-                sn.write_notification(student_id, "more_info_requested", payload)
-                # 2) Real-time — instant if the student's chat page is open
-                publish(_student_channel(student_id), "more_info_requested", payload)
+                notification_id = sn.write_notification(student_id, "more_info_requested", payload)
+                # 2) Real-time — instant if the student's chat page is open.
+                # Include the DB id so the frontend can mark it read the
+                # moment it's shown live, same as the poll path does —
+                # otherwise a student who sees this via SSE would see the
+                # same card reappear as "unread" next time they reload.
+                publish(
+                    _student_channel(student_id),
+                    "more_info_requested",
+                    {**payload, "_notification_id": notification_id},
+                )
             break
 
 

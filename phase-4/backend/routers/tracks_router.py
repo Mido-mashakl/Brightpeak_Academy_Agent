@@ -166,9 +166,17 @@ def advisor_decision(thread_id: str, body: AdvisorDecisionRequest, user: Current
                     "message": iv.get("message", "Your advisor requested a targeted assessment."),
                 }
                 # 1) Durable — survives page close/reopen
-                sn.write_notification(student_id, "assessment_requested", payload)
-                # 2) Real-time — instant if the student's tracks page is open
-                publish(_student_channel(student_id), "assessment_requested", payload)
+                notification_id = sn.write_notification(student_id, "assessment_requested", payload)
+                # 2) Real-time — instant if the student's tracks page is open.
+                # Include the DB id so the frontend can mark it read the
+                # moment it's shown live, same as the poll path does —
+                # otherwise a student who sees this via SSE would see the
+                # same card reappear as "unread" next time they reload.
+                publish(
+                    _student_channel(student_id),
+                    "assessment_requested",
+                    {**payload, "_notification_id": notification_id},
+                )
             break
     return {"status": "ok", "result": safe}
 
