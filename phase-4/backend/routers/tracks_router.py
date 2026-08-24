@@ -21,15 +21,26 @@ alone with no data loss.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 import mcp_server.database as db
-from core.auth import require_role, CurrentUser
+from core.auth import require_role, verify_user_query, CurrentUser
 from core.graph_loader import (
     start_track_recommendation,
     resume_track_recommendation,
     get_track_recommendation_state,
 )
+from core.notifications import event_stream, publish
+from core import student_notifications as sn
+
+# Per-student channel — same naming convention as advisor_router so both
+# graphs (advisory + track_recommendation) can push to the same student
+# SSE stream if they ever share one endpoint. advisor_router.py already
+# owns GET /advisor/notifications/student-stream; this router reuses the
+# identical channel key so a single SSE subscription covers both.
+def _student_channel(student_id: int) -> str:
+    return f"student:{student_id}"
 
 router = APIRouter(prefix="/tracks", tags=["tracks"])
 
@@ -74,7 +85,14 @@ def recommend(user: CurrentUser = Depends(require_role("student"))):
 
 
 @router.get("/recommendations")
-def list_recommendations(student_id: int | None = None, user: CurrentUser = Depends(require_role("student", "advisor"))):
+def list_recommendations(
+    student_id: int | None = None,
+    status: str | None = None,
+    user: CurrentUser = Depends(require_role("student", "advisor")),
+):
+    """Student's own history, or (with status='awaiting_advisor') the
+    advisor's Track Recommendation review queue — the counterpart to
+    advisor_router's GET /advisor/requests for certificate/scholarship."""
     if user.role == "student":
         student_id = user.user_id
     sql = "SELECT * FROM TrackRecommendations WHERE 1=1"
@@ -82,6 +100,9 @@ def list_recommendations(student_id: int | None = None, user: CurrentUser = Depe
     if student_id is not None:
         sql += " AND student_id = ?"
         params.append(student_id)
+    if status is not None:
+        sql += " AND status = ?"
+        params.append(status)
     sql += " ORDER BY created_at DESC"
     return db.query_all(sql, tuple(params))
 
@@ -128,7 +149,28 @@ def advisor_decision(thread_id: str, body: AdvisorDecisionRequest, user: Current
         result = resume_track_recommendation(thread_id, payload)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Graph failed to resume: {e}")
-    return {"status": "ok", "result": _safe_state(result)}
+    safe = _safe_state(result)
+    # If the advisor chose "request_assessment", the graph routes to
+    # await_targeted_assessment_response — notify the student in real time.
+    # The awaiting_student interrupt payload includes the subject and
+    # assessment_id; student_id comes from the graph state values.
+    for iv in safe.get("_interrupt") or []:
+        if isinstance(iv, dict) and iv.get("type") == "awaiting_student":
+            student_id = safe.get("student_id")
+            if student_id:
+                payload = {
+                    "thread_id": thread_id,
+                    "subject": iv.get("subject"),
+                    "assessment_id": iv.get("assessment_id"),
+                    "adaptive_thread_id": iv.get("adaptive_thread_id"),
+                    "message": iv.get("message", "Your advisor requested a targeted assessment."),
+                }
+                # 1) Durable — survives page close/reopen
+                sn.write_notification(student_id, "assessment_requested", payload)
+                # 2) Real-time — instant if the student's tracks page is open
+                publish(_student_channel(student_id), "assessment_requested", payload)
+            break
+    return {"status": "ok", "result": safe}
 
 
 @router.post("/thread/{thread_id}/targeted-assessment-complete")

@@ -388,6 +388,12 @@ CREATE TABLE IF NOT EXISTS TrackRecommendations (
     recommendation_id  INTEGER PRIMARY KEY AUTOINCREMENT, 
     student_id         INTEGER NOT NULL REFERENCES Students(student_id), 
     advisor_id         INTEGER REFERENCES Advisors(advisor_id),
+    thread_id          TEXT, -- LangGraph thread_id for this recommendation's
+                              -- track_recommendation graph run; written back
+                              -- by start_track_recommendation() right after
+                              -- the row is created. Lets the advisor UI look
+                              -- up "which thread do I resume?" from the row
+                              -- alone instead of holding thread_id client-side.
 
     recommended_track  TEXT, 
     decided_by TEXT,

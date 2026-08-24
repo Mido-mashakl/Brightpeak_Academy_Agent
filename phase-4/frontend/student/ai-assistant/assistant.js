@@ -651,10 +651,211 @@ async function certificateStart(el) {
   }
 }
 
-function certificateViewDetails(el) {
+// ---- Certificate/Scholarship status card & student-reply flow ----
+
+// request_id of the most-recently-viewed cert/scholarship request —
+// used by the student-reply submit handler.
+let _certRequestId = null;
+
+// Wire SNBus handler (student-notifications.js fires this on both
+// page-load poll AND real-time SSE — one handler covers both paths).
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.SNBus) {
+    SNBus.on("more_info_requested", (data) => {
+      // Show the card if it's for the request we're tracking,
+      // or always if we haven't seen any request yet.
+      if (!_certRequestId || data.request_id === _certRequestId) {
+        _certRequestId = data.request_id;
+        _showCertInfoRequestCard(data.request_id, data.missing_info, data._notificationId);
+      }
+    });
+  }
+});
+
+/**
+ * Renders a card telling the student the advisor needs more information,
+ * with the missing_info list and a text-area to reply.
+ * notificationId — DB id to mark as read once shown (optional).
+ */
+function _showCertInfoRequestCard(requestId, missingInfo, notificationId) {
+  _certRequestId = requestId;
+  // Mark durable notification as read — student has now seen the card.
+  if (notificationId && window.SNMarkRead) SNMarkRead(notificationId);
+  const infoList = (missingInfo || [])
+    .map((m) => `<li class="flex items-start gap-2 text-body-sm text-on-surface-variant"><span class="material-symbols-outlined text-amber-400 text-[16px] mt-0.5">info</span>${escapeHtml(m)}</li>`)
+    .join("") || `<li class="text-body-sm text-on-surface-variant">Please provide additional information.</li>`;
+
+  const cardId = nextId("cert-info-request");
+  appendBotCard(`
+    <div class="flex items-center gap-2 mb-3">
+      <span class="material-symbols-outlined text-amber-400">pending_actions</span>
+      <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface">Advisor needs more information</h4>
+    </div>
+    <p class="text-body-sm text-on-surface-variant mb-3">Your advisor reviewed your request and needs the following before they can proceed:</p>
+    <ul class="space-y-2 mb-4">${infoList}</ul>
+    <textarea
+      id="cert-reply-text-${cardId}"
+      placeholder="Type your reply here…"
+      rows="3"
+      class="w-full bg-surface-container-high/60 border border-white/10 rounded-xl px-4 py-3 text-body-sm text-on-surface placeholder:text-on-surface-variant/50 resize-none focus:outline-none focus:border-primary/50 mb-3"
+    ></textarea>
+    <button
+      data-action="certificate-send-reply"
+      data-card-id="${cardId}"
+      class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all"
+    >Send Reply</button>
+  `, { id: cardId });
+}
+
+/**
+ * Fetches the student's latest certificate/scholarship request and shows a
+ * status card.  Replaces the old stub that just printed a "coming soon" message.
+ */
+async function certificateViewDetails(el) {
   lockControl(el);
-  appendBotMessage("Opening the full certificate & scholarship details will be available once that module is connected — for now this confirms your current status. 🎓");
-  appendMoreHelpPrompt();
+  const pid = appendProcessing("Fetching your request status…");
+  try {
+    const user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const headers = {
+      "Content-Type": "application/json",
+      "X-User-Id":   String(user.id   || ""),
+      "X-User-Role": String(user.role || "student"),
+    };
+    // GET /advisor/requests returns the student's own history when called as
+    // a student (advisor_router filters by student_id automatically).
+    const requests = await fetch(`${BASE_URL}/advisor/requests`, { headers }).then(async (r) => {
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || `status ${r.status}`);
+      return r.json();
+    });
+
+    removeNode(pid);
+
+    if (!requests || requests.length === 0) {
+      appendBotMessage("I couldn't find any certificate or scholarship request on your account. Please try submitting a new one.");
+      appendMoreHelpPrompt();
+      return;
+    }
+
+    // Most recent request first (router already sorts DESC).
+    const req = requests[0];
+    _certRequestId = req.request_id;
+
+    // Fetch the graph state to check for a live wait_for_student interrupt.
+    let graphState = null;
+    try {
+      const detail = await fetch(`${BASE_URL}/advisor/requests/${req.request_type}/${req.request_id}`, { headers })
+        .then(async (r) => {
+          if (!r.ok) return null;
+          return r.json();
+        });
+      graphState = detail?.graph_state || null;
+    } catch (_) { /* non-critical */ }
+
+    // Check for live wait_for_student interrupt in graph state.
+    const interrupts = graphState?.interrupts || [];
+    const studentInterrupt = interrupts.find((iv) => iv?.type === "student_info_request");
+
+    const STATUS_LABELS = {
+      pending:      { icon: "radio_button_unchecked", color: "text-amber-400",  label: "Pending" },
+      needs_review: { icon: "pending_actions",         color: "text-blue-400",   label: "Under Advisor Review" },
+      in_progress:  { icon: "autorenew",               color: "text-primary",    label: "In Progress" },
+      eligible:     { icon: "check_circle",             color: "text-emerald-400", label: "Approved — Eligible" },
+      ineligible:   { icon: "cancel",                   color: "text-error",       label: "Not Eligible" },
+      approved:     { icon: "check_circle",             color: "text-emerald-400", label: "Approved" },
+      rejected:     { icon: "cancel",                   color: "text-error",       label: "Rejected" },
+    };
+    const meta = STATUS_LABELS[req.status] || { icon: "help", color: "text-on-surface-variant", label: req.status };
+
+    const typeLabel = req.request_type === "certificate" ? "Certificate" : "Scholarship";
+    const notes = req.recommendation
+      ? `<p class="text-body-sm text-on-surface-variant mt-3 p-3 bg-surface-container-high/50 rounded-xl border border-white/10">${escapeHtml(req.recommendation)}</p>`
+      : "";
+
+    // If a wait_for_student interrupt is live, show the reply form inline.
+    if (studentInterrupt) {
+      const missingInfo = studentInterrupt.missing_info || [];
+      removeNode(pid); // already removed above but guard anyway
+      _showCertInfoRequestCard(req.request_id, missingInfo);
+      return;
+    }
+
+    const decidedBy = req.decided_by ? `<p class="text-body-sm text-on-surface-variant/70 mt-2">Reviewed by: ${escapeHtml(req.decided_by)}</p>` : "";
+    const decidedAt = req.decided_at ? `<p class="text-body-sm text-on-surface-variant/70">On: ${new Date(req.decided_at).toLocaleDateString()}</p>` : "";
+
+    appendBotCard(`
+      <div class="flex items-center gap-2 mb-3">
+        <span class="material-symbols-outlined ${meta.color}">${meta.icon}</span>
+        <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface">${typeLabel} Request — ${meta.label}</h4>
+      </div>
+      <div class="space-y-1 mb-2">
+        <p class="text-body-sm text-on-surface-variant">Request #${req.request_id}</p>
+        ${decidedBy}
+        ${decidedAt}
+      </div>
+      ${notes}
+      <p class="text-body-sm text-on-surface-variant/60 mt-3 text-[11px]">
+        You'll be notified here if your advisor needs additional information.
+      </p>
+    `);
+    appendMoreHelpPrompt();
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage(`Sorry, couldn't load your request status. (${err.message})`);
+    appendMoreHelpPrompt();
+  }
+}
+
+/**
+ * Submits the student's free-text reply to the advisor's "more info" request
+ * via POST /advisor/requests/{id}/student-response.
+ */
+async function certificateSendReply(el) {
+  lockControl(el);
+  const cardId = el.dataset.cardId;
+  const textarea = document.getElementById(`cert-reply-text-${cardId}`);
+  const reply = textarea?.value?.trim();
+  if (!reply) {
+    textarea?.focus();
+    el.disabled = false;
+    el.classList.remove("opacity-50", "pointer-events-none");
+    return;
+  }
+  if (!_certRequestId) {
+    appendBotMessage("I lost track of which request to reply to — please refresh and try again.");
+    return;
+  }
+
+  appendUserReply(reply);
+  const pid = appendProcessing("Sending your reply to the advisor…");
+  try {
+    const user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const res = await fetch(`${BASE_URL}/advisor/requests/${_certRequestId}/student-response`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(user.id   || ""),
+        "X-User-Role": String(user.role || "student"),
+      },
+      body: JSON.stringify({ response: reply }),
+    });
+    removeNode(pid);
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(_readableDetail(errBody.detail) || `status ${res.status}`);
+    }
+    appendBotCard(`
+      <div class="flex items-center gap-2 mb-2">
+        <span class="material-symbols-outlined text-emerald-400">check_circle</span>
+        <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface">Reply sent!</h4>
+      </div>
+      <p class="text-body-sm text-on-surface-variant">Your response has been forwarded to the advisor. They'll review it and you'll be notified here if anything else is needed.</p>
+    `);
+    appendMoreHelpPrompt();
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage(`Sorry, couldn't send your reply. (${err.message})`);
+    appendMoreHelpPrompt();
+  }
 }
 
 /* ---------------------------------------------------------------------
@@ -805,6 +1006,7 @@ const ACTION_HANDLERS = {
   "material-other": materialOther,
   "certificate-start": certificateStart,
   "certificate-view-details": certificateViewDetails,
+  "certificate-send-reply": certificateSendReply,
   "cases-view": casesView,
   "cases-view-case": casesViewCase,
   "cases-submit-appeal": casesSubmitAppeal,

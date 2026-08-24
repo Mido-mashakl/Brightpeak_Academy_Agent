@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Track Reviews — Brightpeak Advisor Portal</title>
+<link rel="stylesheet" href="../shared/advisor-shared.css" />
+<link rel="stylesheet" href="../hitl/hitl.css" />
+<link rel="stylesheet" href="track-review.css" />
+</head>
+<body>
+  <div class="bp-shell">
+    <aside class="bp-sidebar" id="bp-sidebar"></aside>
+
+    <div class="bp-main">
+      <header class="bp-topbar" id="bp-topbar"></header>
+
+      <main class="bp-content">
+        <div class="bp-page-head">
+          <h1>Track Recommendation Reviews</h1>
+          <p class="bp-muted">Students waiting on an advisor decision from the Track Recommendation graph.</p>
+        </div>
+
+        <!-- Queue view: list of TrackRecommendations rows with status = 'awaiting_advisor' -->
+        <div class="bp-card bp-table-card" id="bp-tr-queue-card">
+          <table class="bp-table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Recommended Track</th>
+                <th>Runner-up</th>
+                <th>Confidence</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="bp-tr-queue-body"></tbody>
+          </table>
+          <p id="bp-tr-empty" class="bp-muted" hidden>No track recommendations are currently awaiting advisor review.</p>
+        </div>
+
+        <!-- Decision view: one recommendation's live interrupt payload + the advisor's action -->
+        <div class="bp-hitl-grid" id="bp-tr-decision" hidden>
+          <div class="bp-card">
+            <span class="bp-ai-tag">Track Recommendation</span>
+            <div id="bp-tr-top"></div>
+
+            <h3 class="bp-section-h">Alternative</h3>
+            <p id="bp-tr-alt" class="bp-reasoning-text"></p>
+
+            <h3 class="bp-section-h">Concerns</h3>
+            <div id="bp-tr-concerns" class="bp-req-list"></div>
+          </div>
+
+          <div class="bp-card bp-decision-card">
+            <h2 class="bp-card-title">Advisor Decision</h2>
+            <p class="bp-card-sub">Your Decision</p>
+
+            <!--
+              Values here MUST match nodes_hitl.py's hitl_node interrupt
+              "actions" list: approve | choose_other | request_assessment
+              (route_hitl reads state["advisor_decision"]["action"] with
+              exactly these three strings).
+            -->
+            <div class="bp-decision-options" id="bp-tr-decision-options">
+              <label class="bp-decision-opt">
+                <input type="radio" name="tr-decision" value="approve" />
+                <span>Approve Top Track<br/><small>Go with the graph's top recommendation</small></span>
+              </label>
+              <label class="bp-decision-opt">
+                <input type="radio" name="tr-decision" value="choose_other" />
+                <span>Choose Alternative<br/><small>Override with the runner-up track</small></span>
+              </label>
+              <label class="bp-decision-opt">
+                <input type="radio" name="tr-decision" value="request_assessment" />
+                <span>Request Assessment<br/><small>Ask the student to take a targeted assessment</small></span>
+              </label>
+            </div>
+
+            <div id="bp-tr-subject-wrap" class="bp-field" hidden>
+              <p class="bp-card-sub" style="margin-top:14px;">Subject for assessment</p>
+              <input id="bp-tr-subject" class="bp-textarea bp-input" placeholder="e.g. Database Design & SQL" />
+            </div>
+
+            <button id="bp-tr-submit" class="bp-btn bp-submit-btn" disabled>Submit Decision</button>
+            <p id="bp-tr-result" class="bp-decision-result"></p>
+            <button id="bp-tr-back" class="bp-btn ghost" style="margin-top:10px;">← Back to Queue</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="../shared/advisor-nav.js"></script>
+  <script src="../shared/advisor-api.js"></script>
+  <script src="track-review.js"></script>
+</body>
+</html>

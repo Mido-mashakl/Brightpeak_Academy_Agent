@@ -1,0 +1,31 @@
+.bp-page-head {
+  margin-bottom: 20px;
+}
+
+#bp-tr-top {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 10px 0 18px;
+}
+
+.bp-input {
+  width: 100%;
+  min-height: unset;
+  padding: 10px 12px;
+}
+
+.bp-field {
+  margin-bottom: 6px;
+}
+
+.bp-review-link {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+.bp-review-link .bp-action-btn {
+  pointer-events: none;
+}

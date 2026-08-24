@@ -292,6 +292,20 @@ def start_track_recommendation(student_id: int, thread_id: str | None = None):
     result = graph.invoke({"student_id": student_id, "thread_id": thread_id}, config=config)
     result = dict(result)
     result["thread_id"] = thread_id
+
+    # Write thread_id back onto the row the graph just created (or is about
+    # to create — collect_student_data/db.create_recommendation runs before
+    # the first pause) so the advisor UI can find "which thread do I resume
+    # for this row?" from TrackRecommendations alone, without the platform
+    # having to persist thread_id anywhere itself. See db/schema.sql's
+    # TrackRecommendations.thread_id comment for why this exists.
+    recommendation_id = result.get("recommendation_id")
+    if recommendation_id is not None:
+        import mcp_server.database as db
+        db.execute(
+            "UPDATE TrackRecommendations SET thread_id = ? WHERE recommendation_id = ?",
+            (thread_id, recommendation_id),
+        )
     return result
 
 
@@ -314,10 +328,31 @@ def resume_track_recommendation(thread_id: str, resume_payload: dict):
 
 
 def get_track_recommendation_state(thread_id: str):
+    """Returns the graph's committed state PLUS the live interrupt payload,
+    if the thread is currently paused.
+
+    graph.get_state() (unlike graph.invoke()) does NOT put the interrupt
+    payload under a "__interrupt__" key in snapshot.values — it lives on
+    snapshot.tasks[*].interrupts[*].value instead, since interrupt() args
+    are never committed to state. hitl_node's advisor_review payload
+    (student, top_recommendation, alternative, concerns, actions) is built
+    from local variables and only exists there, so without this extraction
+    the advisor UI would see recommended_track/confidence etc. from
+    `values` but never the concerns list or the allowed actions — this
+    mirrors the "_interrupt" convention _safe_state() already uses for the
+    other four graphs, for a consistent shape across routers."""
     graph_mod, _Command = _with_track_recommendation_module()
     config = {"configurable": {"thread_id": thread_id}}
     graph = graph_mod.build_graph()
     snapshot = graph.get_state(config)
     if snapshot is None:
         return None
-    return {"values": snapshot.values, "next": snapshot.next}
+    out = {"values": snapshot.values, "next": snapshot.next}
+    interrupts = [
+        getattr(iv, "value", iv)
+        for task in snapshot.tasks
+        for iv in (getattr(task, "interrupts", None) or ())
+    ]
+    if interrupts:
+        out["_interrupt"] = interrupts
+    return out

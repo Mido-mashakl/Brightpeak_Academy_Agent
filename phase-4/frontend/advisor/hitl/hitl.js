@@ -19,8 +19,18 @@ document.addEventListener("DOMContentLoaded", async () => {
   verdictEl.textContent = `● ${ai.verdict}`;
   if (ai.verdict.toLowerCase() !== "eligible") verdictEl.classList.add("not-eligible");
 
-  document.getElementById("bp-confidence-pct").textContent = `${ai.confidence}%`;
-  document.getElementById("bp-confidence-fill").style.width = `${ai.confidence}%`;
+  // confidence is only known while the graph's human_review interrupt is
+  // actually open (see advisor-api.js) — once a request is decided, the
+  // DB row has no confidence column to fall back on, so hide the bar
+  // rather than showing a fabricated "0%".
+  const confWrap = document.querySelector(".bp-confidence-bar-wrap");
+  if (typeof ai.confidence === "number") {
+    if (confWrap) confWrap.hidden = false;
+    document.getElementById("bp-confidence-pct").textContent = `${ai.confidence}%`;
+    document.getElementById("bp-confidence-fill").style.width = `${ai.confidence}%`;
+  } else if (confWrap) {
+    confWrap.hidden = true;
+  }
   document.getElementById("bp-ai-reasoning").textContent = ai.reasoning;
 
   document.getElementById("bp-req-check").innerHTML = (req.requirements || [])

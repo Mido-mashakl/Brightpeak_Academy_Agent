@@ -88,6 +88,30 @@ def create_request_row(
         return cur.lastrowid
 
 
+def mark_needs_review(request_type: str, request_id: int) -> None:
+    """Written the moment human_review_node is about to pause (right before
+    interrupt(), see hitl.py) — mirrors track_recommendation/nodes_hitl.py's
+    `db.update_recommendation(..., status="awaiting_advisor")` pattern for
+    this graph. Without this, `status` stays 'pending' (set by
+    create_request_row) for the entire time the request is sitting with an
+    advisor, which is indistinguishable from "just submitted, not evaluated
+    yet" — an advisor has no way to tell which pending requests actually
+    need a decision from them right now.
+
+    'needs_review' is already a valid value under both tables' CHECK
+    constraint (see schema.sql) and is already what the frontend
+    (advisor-api.js's BP_STATUS_META / _VERDICT_BY_STATUS) expects for
+    "needs advisor attention" — it just was never actually written here.
+    """
+    table = "CertificateRequests" if request_type == "certificate" else "ScholarshipApplications"
+    id_col = "request_id" if request_type == "certificate" else "application_id"
+    with db._conn() as con:
+        con.execute(
+            f"UPDATE {table} SET status = 'needs_review' WHERE {id_col} = ?",
+            (request_id,),
+        )
+
+
 def finalize_request_row(
     request_type: str,
     request_id: int,

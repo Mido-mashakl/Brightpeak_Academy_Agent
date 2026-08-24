@@ -75,6 +75,33 @@ def _load_user(role: str, user_id: int) -> CurrentUser:
     return CurrentUser(user_id=user_id, role=role, name=row.get("name"), email=row.get("email"))
 
 
+def verify_user_query(role: str, user_id: int, allowed_roles: tuple[str, ...]) -> CurrentUser:
+    """Same identity check as require_role's dependency, but for endpoints
+    that can't rely on the X-User-Id/X-User-Role headers — specifically
+    Server-Sent Events. Browsers' EventSource API cannot set custom request
+    headers, so the SSE endpoint (advisor_router.py's
+    /advisor/notifications/stream) takes user_id/role as query params
+    instead and verifies them through this same _load_user() lookup rather
+    than trusting them as a bare claim.
+
+    This is strictly weaker than the header scheme (a URL is more likely to
+    end up in logs/browser history than a header), which is an acceptable
+    trade for a read-only, no-PII notification stream in a codebase that
+    doesn't have a token/session scheme to begin with (see this file's
+    module docstring) — but it's worth keeping this path away from any
+    endpoint that returns or accepts sensitive data.
+    """
+    if role not in ROLE_TABLE_LOOKUP:
+        raise HTTPException(status_code=401, detail=f"Unknown role '{role}'.")
+    user = _load_user(role, user_id)
+    if user.role not in allowed_roles:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Role '{user.role}' is not permitted here. Requires one of {list(allowed_roles)}.",
+        )
+    return user
+
+
 def require_role(*allowed_roles: str):
     """FastAPI dependency factory. Usage:
 

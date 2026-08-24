@@ -50,22 +50,28 @@
             <h2 class="bp-card-title">Advisor Decision</h2>
             <p class="bp-card-sub">Your Decision</p>
 
+            <!--
+              Values here MUST match state_graph/advisory/state.py's
+              DecisionRecord.decision: Literal["approve","reject",
+              "request_more_info"] — that's the only vocabulary
+              human_review_node (hitl.py) understands. This used to send
+              "deny"/"more_info"/"escalate", none of which match (and
+              "escalate" isn't a graph action at all), so submitting a
+              decision here either silently mapped to the wrong outcome
+              or failed Pydantic validation server-side.
+            -->
             <div class="bp-decision-options" id="bp-decision-options">
               <label class="bp-decision-opt">
                 <input type="radio" name="decision" value="approve" />
                 <span>Approve Request<br/><small>Student is eligible</small></span>
               </label>
               <label class="bp-decision-opt">
-                <input type="radio" name="decision" value="more_info" />
+                <input type="radio" name="decision" value="request_more_info" />
                 <span>Request More Info<br/><small>Ask student for more information</small></span>
               </label>
               <label class="bp-decision-opt">
-                <input type="radio" name="decision" value="deny" />
+                <input type="radio" name="decision" value="reject" />
                 <span>Deny Request<br/><small>Does not meet requirements</small></span>
-              </label>
-              <label class="bp-decision-opt">
-                <input type="radio" name="decision" value="escalate" />
-                <span>Escalate<br/><small>Send to department head</small></span>
               </label>
             </div>
 

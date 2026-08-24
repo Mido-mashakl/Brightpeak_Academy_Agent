@@ -15,13 +15,27 @@ not interrupt_before=[...]).
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 import mcp_server.database as db
-from core.auth import require_role, CurrentUser
+from core.auth import require_role, verify_user_query, CurrentUser
 from core.graph_loader import start_advisor_request, resume_advisor_request, get_advisor_request_state
+from core.notifications import event_stream, publish
+from core import student_notifications as sn
 
 router = APIRouter(prefix="/advisor", tags=["advisor"])
+
+# All advisors share one queue (list_requests below never filters by
+# advisor_id — requests aren't assigned to a specific advisor), so one
+# broadcast channel matches how the queue is actually modeled.
+_ADVISOR_CHANNEL = "advisor_requests"
+
+# Per-student channel: "student:{student_id}" — used to push
+# "more_info_requested" events so the student's chat page reacts without
+# a manual refresh.  notifications.py is generic; no change needed there.
+def _student_channel(student_id: int) -> str:
+    return f"student:{student_id}"
 
 
 class StartRequestBody(BaseModel):
@@ -51,6 +65,64 @@ def _table_for(request_type: str) -> str:
     if request_type not in ("certificate", "scholarship"):
         raise HTTPException(status_code=400, detail="request_type must be 'certificate' or 'scholarship'.")
     return "CertificateRequests" if request_type == "certificate" else "ScholarshipApplications"
+
+
+def _notify_if_needs_review(result: dict) -> None:
+    """Publishes to the advisor SSE channel the moment a request lands on
+    human_review_node's interrupt() — i.e. exactly when data.py's
+    mark_needs_review() just wrote status='needs_review' for it. Called
+    from every endpoint that can cause the graph to reach that node
+    (starting a request, or a student reply that re-evaluates and still
+    isn't confident enough): _start() and student_response() below.
+    admin_decision() doesn't need this — resuming human_review never routes
+    straight back into human_review (see route_after_human_review in
+    advisory/graph.py), so an admin's own decision can't retrigger it.
+
+    request_type comes straight off the interrupt payload itself
+    (human_review_node's interrupt() call includes it) rather than being
+    passed in separately, so certificate and scholarship requests — same
+    graph, same interrupt shape — are handled identically here."""
+    for iv in result.get("_interrupt") or []:
+        if isinstance(iv, dict) and iv.get("type") == "admin_review":
+            publish(
+                _ADVISOR_CHANNEL,
+                "needs_review",
+                {
+                    "request_id": iv.get("request_id"),
+                    "request_type": iv.get("request_type"),
+                    "student_id": iv.get("student_id"),
+                },
+            )
+            break
+
+
+def _notify_if_needs_student(result: dict) -> None:
+    """Publishes to the per-student SSE channel when the graph lands on
+    wait_for_student_node's interrupt() — i.e. when the advisor chose
+    'request_more_info' and the graph now needs the student's reply.
+
+    The interrupt payload shape from advisory/hitl.py::wait_for_student_node:
+        {
+            "type": "student_info_request",
+            "request_id": <int>,
+            "student_id": <int>,
+            "missing_info": [<str>, ...]
+        }
+    Called from admin_decision() — the only place a human_review resume
+    can produce a wait_for_student interrupt."""
+    for iv in result.get("_interrupt") or []:
+        if isinstance(iv, dict) and iv.get("type") == "student_info_request":
+            student_id = iv.get("student_id")
+            if student_id:
+                payload = {
+                    "request_id": iv.get("request_id"),
+                    "missing_info": iv.get("missing_info", []),
+                }
+                # 1) Durable — survives page close/reopen
+                sn.write_notification(student_id, "more_info_requested", payload)
+                # 2) Real-time — instant if the student's chat page is open
+                publish(_student_channel(student_id), "more_info_requested", payload)
+            break
 
 
 def _id_col_for(request_type: str) -> str:
@@ -84,6 +156,7 @@ def _start(student_id: int, request_type: str, body: StartRequestBody):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Graph failed to start: {e}")
     result = _safe_state(result)
+    _notify_if_needs_review(result)
     return {"status": "ok", "request_id": result.get("request_id"), "result": result}
 
 
@@ -136,7 +209,37 @@ def student_response(request_id: int, body: StudentReplyBody, user: CurrentUser 
         result = resume_advisor_request(request_id, body.response)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Graph failed to resume: {e}")
-    return {"status": "ok", "result": _safe_state(result)}
+    result = _safe_state(result)
+    # Re-evaluating the student's new info can route straight back into
+    # human_review (see route_after_evaluation in advisory/graph.py) — the
+    # advisor needs to hear about that too, not just the initial submission.
+    _notify_if_needs_review(result)
+    return {"status": "ok", "result": result}
+
+
+@router.get("/notifications/stream")
+async def advisor_notifications_stream(user_id: int, role: str = "advisor"):
+    """SSE stream of 'needs_review' events for the advisor queue.
+
+    Query params instead of the usual X-User-Id/X-User-Role headers because
+    the browser's EventSource API can't set custom headers — see
+    core.auth.verify_user_query's docstring for the trade-off this makes.
+    """
+    verify_user_query(role, user_id, allowed_roles=("advisor",))
+    return StreamingResponse(event_stream(_ADVISOR_CHANNEL), media_type="text/event-stream")
+
+
+@router.get("/notifications/student-stream")
+async def student_notifications_stream(user_id: int, role: str = "student"):
+    """SSE stream of 'more_info_requested' events for a specific student.
+
+    Mirrors /notifications/stream (advisor channel) exactly — same query-param
+    auth workaround because EventSource can't send custom headers.
+    The student's chat page opens this on load so it learns within seconds
+    when an advisor chose 'Request More Info' instead of waiting for a refresh.
+    """
+    verify_user_query(role, user_id, allowed_roles=("student",))
+    return StreamingResponse(event_stream(_student_channel(user_id)), media_type="text/event-stream")
 
 
 @router.post("/requests/{request_id}/decision")
@@ -147,4 +250,8 @@ def admin_decision(request_id: int, body: AdminDecisionBody, user: CurrentUser =
         result = resume_advisor_request(request_id, payload)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Graph failed to resume: {e}")
-    return {"status": "ok", "result": _safe_state(result)}
+    safe = _safe_state(result)
+    # If the advisor chose "request_more_info", the graph routes to
+    # wait_for_student_node — notify the student in real time.
+    _notify_if_needs_student(safe)
+    return {"status": "ok", "result": safe}

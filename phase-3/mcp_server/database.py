@@ -97,6 +97,15 @@ def _run_migrations(con: sqlite3.Connection) -> None:
     if "department" not in existing_cols:
         con.execute("ALTER TABLE JobPostings ADD COLUMN department TEXT")
 
+    # thread_id — added so the platform (advisor UI) can look up a
+    # TrackRecommendations row and resume its LangGraph thread without
+    # having to hold onto thread_id client-side (see tracks_router.py /
+    # graph_loader.start_track_recommendation, which now writes this back
+    # right after the row is created).
+    track_rec_cols = {row["name"] for row in con.execute("PRAGMA table_info(TrackRecommendations)").fetchall()}
+    if "thread_id" not in track_rec_cols:
+        con.execute("ALTER TABLE TrackRecommendations ADD COLUMN thread_id TEXT")
+
 
 # -----------------------------------------------------------------------
 # READ — Students & Instructors

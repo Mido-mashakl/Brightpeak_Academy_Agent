@@ -341,3 +341,25 @@ if (activeThreadId) {
 } else {
   renderStart();
 }
+
+// Real-time + durable notifications for track assessment requests.
+// student-notifications.js (loaded before this script) handles both
+// the page-load DB poll and the SSE stream — we just listen on the bus.
+document.addEventListener("DOMContentLoaded", () => {
+  if (!window.SNBus) return;
+
+  SNBus.on("assessment_requested", (data) => {
+    // Mark durable notification as read — student has seen the card.
+    if (data._notificationId && window.SNMarkRead) SNMarkRead(data._notificationId);
+
+    const threadId = data.thread_id || getStoredThreadId();
+    if (!threadId) return;
+
+    // Save thread_id so the page can resume correctly.
+    saveThreadId(threadId);
+
+    // If we already have a thread loaded, refresh it to show the new state.
+    // If not, load it now.
+    loadThread(threadId);
+  });
+});

@@ -13,6 +13,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   await loadRequests();
+
+  // Real-time: bpRenderNav() above already opened the SSE connection
+  // (advisor-nav.js) — just re-fetch the list when it fires so a new
+  // needs_review request appears without a manual refresh.
+  window.addEventListener("bp-advisor-needs-review", () => loadRequests());
 });
 
 async function loadRequests() {

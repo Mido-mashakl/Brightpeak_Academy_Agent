@@ -15,6 +15,13 @@ const BP_NAV_ITEMS = [
   { key: "dashboard", label: "Dashboard", href: "../dashboard/dashboard.html", icon: "grid" },
   { key: "requests", label: "Requests", href: "../requests/requests.html", icon: "list" },
   { key: "hitl", label: "HITL", href: "../hitl/hitl.html", icon: "check" },
+  // Track Recommendation graph's advisor review queue (hitl_node in
+  // state_graph/track_recommendation/nodes_hitl.py) — a separate pause
+  // point from the certificate/scholarship "HITL" tab above, on a
+  // separate table (TrackRecommendations) and a separate router
+  // (tracks_router.py). Previously had no nav entry or page at all, so
+  // rows stuck at status='awaiting_advisor' were invisible to advisors.
+  { key: "track-review", label: "Track Reviews", href: "../track-review/track-review.html", icon: "check" },
   { key: "agents", label: "AI Agents", href: "../agents/agents.html", icon: "cpu" },
 ];
 
@@ -121,8 +128,9 @@ function bpRenderNav(opts) {
           : `<div></div>`
       }
       <div class="bp-topbar-right">
-        <div class="bp-bell">
+        <div class="bp-bell" id="bp-bell">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="bp-bell-dot" id="bp-bell-dot"></span>
         </div>
         <div class="bp-user">
           <div class="bp-avatar">${initials}</div>
@@ -133,5 +141,47 @@ function bpRenderNav(opts) {
         </div>
       </div>
     `;
+    document.getElementById("bp-bell")?.addEventListener("click", () => {
+      document.getElementById("bp-bell-dot")?.classList.remove("show");
+    });
   }
+
+  // ------------------------------------------------------------
+  // Real-time "a request needs your review" notifications (SSE).
+  // Runs once per page load, on every page that calls bpRenderNav — so
+  // an advisor sees a new request within seconds no matter which page
+  // they're on, not just while sitting on Requests. See advisor-api.js's
+  // bpSubscribeAdvisorNotifications for the connection itself and
+  // advisor_router.py's /notifications/stream + advisory/hitl.py's
+  // human_review_node for what triggers the event server-side.
+  // window._bpAdvisorSSE guards against opening a second connection if
+  // bpRenderNav is ever called more than once on the same page.
+  // ------------------------------------------------------------
+  if (!window._bpAdvisorSSE && typeof bpSubscribeAdvisorNotifications === "function") {
+    window._bpAdvisorSSE = bpSubscribeAdvisorNotifications((payload) => {
+      document.getElementById("bp-bell-dot")?.classList.add("show");
+      bpShowToast(
+        `New ${payload.request_type || "advisor"} request #${payload.request_id} needs your review`
+      );
+      // Let whichever page is open react (e.g. requests.js re-fetches the
+      // list) without every page needing its own SSE wiring.
+      window.dispatchEvent(new CustomEvent("bp-advisor-needs-review", { detail: payload }));
+    });
+  }
+}
+
+/** Minimal toast, self-contained so every advisor page gets it for free
+ * just by calling bpRenderNav (no extra <script> tag needed). */
+function bpShowToast(message) {
+  let toast = document.querySelector(".bp-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.className = "bp-toast";
+    toast.innerHTML = `<span class="dot"></span><span class="msg"></span>`;
+    document.body.appendChild(toast);
+  }
+  toast.querySelector(".msg").textContent = message;
+  toast.classList.add("show");
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.remove("show"), 5000);
 }

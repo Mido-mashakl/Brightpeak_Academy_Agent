@@ -25,6 +25,7 @@ from __future__ import annotations
 
 from langgraph.types import interrupt
 
+from . import data
 from .state import DecisionRecord, StudentAdvisorState
 
 
@@ -49,6 +50,12 @@ def wait_for_student_node(state: StudentAdvisorState) -> dict:
 
 def human_review_node(state: StudentAdvisorState) -> dict:
     """Pause for an admin decision: approve / reject / request_more_info."""
+    # Persisted BEFORE interrupt() — same reason track_recommendation's
+    # hitl_node writes status="awaiting_advisor" before its own interrupt():
+    # once interrupt() suspends the graph, nothing in this process runs
+    # again until Command(resume=...) is called, so this is the only chance
+    # to record "an advisor decision is now needed here" durably.
+    data.mark_needs_review(state.request_type, state.request_id)
     decision_payload = interrupt(
         {
             "type": "admin_review",
