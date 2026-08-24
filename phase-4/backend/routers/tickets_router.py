@@ -47,6 +47,14 @@ from core.auth import require_role, CurrentUser
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
 
+# Which source_graphs a Dept Head is actually responsible for. Matches the
+# scope department_head_router.py's own /department-head/dashboard already
+# uses (it aggregates Faculty Hiring + Academic Integrity only, never
+# Adaptive Assessment / Track Recommendation / Advisory) — Tickets was the
+# only place that scope wasn't applied, which is why Assessment-graph
+# tickets were leaking into the Dept Head's ticket list.
+_DEPT_HEAD_SOURCE_GRAPHS = ("faculty_hiring", "academic_integrity")
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -120,8 +128,12 @@ def list_tickets(
       - dashboard.js  (openTickets count, via getDashboardStats calling this route
         — see department-head-router.py)
     """
-    clauses = []
-    params = []
+    # Scope to this role's own tickets FIRST — every other filter narrows
+    # further, never widens past this. Without this clause every dept_head
+    # saw every ticket from every workflow, regardless of whether it was
+    # theirs to act on.
+    clauses = [f"source_graph IN ({','.join('?' for _ in _DEPT_HEAD_SOURCE_GRAPHS)})"]
+    params = list(_DEPT_HEAD_SOURCE_GRAPHS)
 
     if status:
         db_status = _STATUS_UI_TO_DB.get(status)
@@ -134,7 +146,7 @@ def list_tickets(
         clauses.append("source_graph = ?")
         params.append(source_graph)
 
-    where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+    where = "WHERE " + " AND ".join(clauses)
     rows = db.query_all(f"SELECT * FROM Tickets {where} ORDER BY created_at DESC", tuple(params))
     return [_ticket_to_frontend(r) for r in rows]
 

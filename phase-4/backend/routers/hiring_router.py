@@ -18,6 +18,7 @@ dept_head session — those aren't wired yet, see the note at the bottom.
 """
 
 import json
+from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, UploadFile, Form
 from pydantic import BaseModel
@@ -216,10 +217,26 @@ async def submit_cv(job_id: int, cv_file: UploadFile, candidate_name: str = Form
     """A candidate uploads a CV file for an already-open job. Extracts plain
     text from the file first (cv_text_extraction.py), then resumes the
     existing graph thread for this job_id — does not start a new one."""
-    job = db.query_one("SELECT status FROM JobPostings WHERE job_id = ?", (job_id,))
+    job = db.query_one(
+        "SELECT status, application_deadline FROM JobPostings WHERE job_id = ?", (job_id,)
+    )
     if not job:
         raise HTTPException(status_code=404, detail="Job not found.")
-    if job["status"] != "open":
+
+    # application_deadline was previously "display/validation only" (see
+    # db/schema.sql's own comment) — nothing actually stopped an upload
+    # after the deadline passed unless someone had already clicked "Close
+    # Applications" (status='closed'). Enforced here for real now, using
+    # the same 409/APPLICATIONS_CLOSED shape jobs.js already handles, so
+    # no frontend change is needed.
+    deadline_passed = False
+    if job["application_deadline"]:
+        try:
+            deadline_passed = datetime.fromisoformat(job["application_deadline"]) < datetime.utcnow()
+        except ValueError:
+            deadline_passed = False
+
+    if job["status"] != "open" or deadline_passed:
         # Matches jobs.js's APPLICATIONS_CLOSED handling.
         raise HTTPException(status_code=409, detail="APPLICATIONS_CLOSED")
 

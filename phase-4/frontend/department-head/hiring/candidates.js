@@ -53,7 +53,7 @@
     tbody.innerHTML = allCandidates
       .map(
         (c) => `
-      <tr data-candidate-id="${c.id}" class="${c.id === selectedCandidateId ? "selected" : ""}">
+      <tr data-candidate-id="${c.id}" class="${String(c.id) === selectedCandidateId ? "selected" : ""}">
         <td>
           <div class="flex items-center">
             <span class="avatar-chip">${initials(c.name)}</span>
@@ -73,9 +73,15 @@
 
     tbody.querySelectorAll("tr").forEach((row) =>
       row.addEventListener("click", () => {
+        // row.dataset.candidateId is always a string (data-* attributes),
+        // but c.id comes back from the API as a number (hiring_router.py's
+        // _candidate_to_frontend_shape does "id": row["candidate_id"], an
+        // INTEGER straight from SQLite) — so the old `c.id === selectedCandidateId`
+        // strict-equality check was comparing number to string and always
+        // failing, which is why clicking a row never showed any details.
         selectedCandidateId = row.dataset.candidateId;
         renderTable();
-        renderInsightPanel(allCandidates.find((c) => c.id === selectedCandidateId));
+        renderInsightPanel(allCandidates.find((c) => String(c.id) === selectedCandidateId));
       })
     );
   }
