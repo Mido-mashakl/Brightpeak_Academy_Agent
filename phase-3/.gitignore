@@ -4,4 +4,4 @@ __pycache__/
 *.db
 *.db-shm
 *.db-wal
-phase-3/rag/store/
+store/ 
