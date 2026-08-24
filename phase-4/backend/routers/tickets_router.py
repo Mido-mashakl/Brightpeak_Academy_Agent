@@ -44,8 +44,24 @@ from pydantic import BaseModel
 
 import mcp_server.database as db
 from core.auth import require_role, CurrentUser
+from core.graph_loader import (
+    resolve_faculty_hiring_ticket,
+    resolve_academic_integrity_ticket,
+)
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])
+
+# Maps a ticket's source_graph to the function that actually resumes that
+# graph from its stuck checkpoint (state_graph/*/tickets.py's own
+# resolve_ticket). Marking a ticket "Resolved" without calling one of
+# these only flips the DB column — the LangGraph checkpoint stays wedged
+# at the node that raised, so e.g. a stuck CV parse/score never runs
+# again and the job can never reach generate_shortlist. Scoped to the
+# same two graphs _DEPT_HEAD_SOURCE_GRAPHS already exposes to this role.
+_RESOLVE_BY_SOURCE_GRAPH = {
+    "faculty_hiring": resolve_faculty_hiring_ticket,
+    "academic_integrity": resolve_academic_integrity_ticket,
+}
 
 # Which source_graphs a Dept Head is actually responsible for. Matches the
 # scope department_head_router.py's own /department-head/dashboard already
@@ -153,6 +169,7 @@ def list_tickets(
 
 class UpdateStatusRequest(BaseModel):
     status: str  # "Open" | "Investigating" | "Resolved"
+    notes: str | None = None  # optional resolution note, only used when status == "Resolved"
 
 
 @router.patch("/{ticket_id}/status")
@@ -169,6 +186,17 @@ def update_ticket_status(
     to strip the prefix before calling.
 
     Used by tickets.js drawer's status action buttons.
+
+    IMPORTANT — "Resolved" is not a plain status flip: a ticket exists
+    because a graph node raised and its checkpoint is stuck sitting right
+    before that node (see faculty_hiring/tickets.py's with_ticket_on_failure
+    docstring). Marking it resolved without re-running the graph would just
+    hide the ticket while the checkpoint — and everything waiting behind it
+    (e.g. that job's generate_shortlist / HITL step) — stays wedged forever.
+    So for the two graphs this role owns, "Resolved" delegates to that
+    graph's own resolve_ticket(), which marks the row resolved AND resumes
+    the thread from the stuck node. Any other target status is a plain
+    column update — no resume implied.
     """
     # Accept both "TKT-8942" and "8942"
     raw_id = ticket_id.upper().removeprefix("TKT-")
@@ -186,10 +214,22 @@ def update_ticket_status(
         raise HTTPException(status_code=404, detail=f"Ticket {ticket_id} not found.")
 
     if db_status == "resolved":
-        db.execute(
-            "UPDATE Tickets SET status = ?, resolved_at = DATETIME('now') WHERE ticket_id = ?",
-            (db_status, int_id),
-        )
+        resolver = _RESOLVE_BY_SOURCE_GRAPH.get(existing.get("source_graph"))
+        if resolver is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Don't know how to resume source_graph '{existing.get('source_graph')}' for ticket {ticket_id}.",
+            )
+        try:
+            resolver(int_id, body.notes or f"Resolved via dashboard by {user.name}")
+        except Exception as e:
+            # The node was re-run and failed again (or failed differently) —
+            # with_ticket_on_failure already opened a fresh ticket for that,
+            # so surface this clearly rather than pretending it resolved.
+            raise HTTPException(
+                status_code=409,
+                detail=f"Resuming the graph failed — the underlying issue isn't fixed yet: {e}",
+            )
     else:
         db.execute(
             "UPDATE Tickets SET status = ?, resolved_at = NULL WHERE ticket_id = ?",

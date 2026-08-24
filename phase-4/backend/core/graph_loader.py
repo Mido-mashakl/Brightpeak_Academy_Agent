@@ -66,6 +66,9 @@ from state_graph.faculty_hiring.hitl import (    # noqa: E402
     submit_rescore_request,
     submit_interview_result,
 )
+from state_graph.faculty_hiring.tickets import (  # noqa: E402
+    resolve_ticket as resolve_faculty_hiring_ticket,
+)
 
 # ---------------------------------------------------------------------------
 # 3) academic_integrity, advisory, adaptive_assessment
@@ -130,6 +133,15 @@ def submit_committee_decision(*args, **kwargs):
 def submit_final_decision(*args, **kwargs):
     from state_graph.academic_integrity import hitl as _mod
     return _mod.submit_final_decision(*args, **kwargs)
+
+
+def resolve_academic_integrity_ticket(*args, **kwargs):
+    """Marks the ticket resolved AND resumes the academic_integrity graph
+    from its stuck checkpoint — mirrors resolve_faculty_hiring_ticket above.
+    Lazy-imported for the same GEMINI_API_KEY-at-import-time reason as the
+    other academic_integrity wrappers in this block."""
+    from state_graph.academic_integrity import tickets as _mod
+    return _mod.resolve_ticket(*args, **kwargs)
 
 
 def start_advisor_request(*args, **kwargs):
