@@ -7,6 +7,27 @@ const EXPRESS_URL   = "http://localhost:3000";
 // Set by materialCourse() — cleared on new flow start.
 let _activeCourseId = null;
 
+// Explicit flow state ("track" | "material" | "assessment" | "certificate"
+// | "cases" | null). More robust than inferring routing purely from
+// whether _activeCourseId happens to be truthy — every flow starter sets
+// this so sendMessage() always knows the real active context.
+let _currentFlow = null;
+
+// Extracts a readable string from a FastAPI error body's `detail` field,
+// which can be a plain string, an array of Pydantic validation error
+// objects, or something else entirely. Passing an array/object straight
+// into `new Error(...)` stringifies it as "[object Object]", so every
+// catch block in this file should route `detail` through this first.
+function _readableDetail(detail) {
+  if (!detail) return "";
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((e) => (e && typeof e === "object" ? (e.msg || JSON.stringify(e)) : String(e))).join("; ");
+  }
+  if (typeof detail === "object") return JSON.stringify(detail);
+  return String(detail);
+}
+
 const thread = document.getElementById("chat-thread");
 const typingIndicator = document.getElementById("typing-indicator");
 const input = document.getElementById("chat-input");
@@ -141,6 +162,8 @@ function appendMoreHelpPrompt() {
 --------------------------------------------------------------------- */
 function startTrackFlow(triggerEl) {
   lockControl(triggerEl);
+  _activeCourseId = null; // leaving material flow context — don't route free text there
+  _currentFlow = "track";
   appendUserReply("🎯 Recommend my Track");
   appendBotCard(`
     <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">🎯 Let's find the right track for you!</h4>
@@ -165,20 +188,43 @@ async function trackStart(el) {
     removeNode(pid);
     if (!res.ok) throw new Error(`status ${res.status}`);
     const data = await res.json();
-    // State may contain recommended_track and confidence from the graph
-    const track      = data.recommended_track || data.track || "—";
-    const confidence = data.confidence_score   != null
-      ? `${Math.round(data.confidence_score * 100)}% AI Match` : "";
+    // The real track/confidence fields live inside data.result, named
+    // final_track / final_confidence (state.py). final_confidence is
+    // already a 0-100 number — don't multiply by 100 again.
+    const result = data.result || {};
+    const track      = result.final_track;
+    const confidence = result.final_confidence;
+
+    if (!track) {
+      // Graph hasn't reached final_track yet — e.g. still mid-flow /
+      // awaiting a diagnostic (result._interrupt set). Show an
+      // in-progress state instead of a blank "—" card.
+      const interrupted = !!result._interrupt;
+      appendBotCard(`
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-lg">🕐</span>
+          <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface">${interrupted ? "We need a bit more information first" : "Still working on your recommendation"}</h4>
+        </div>
+        <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">${interrupted
+          ? "Some of your prerequisite data is missing, so a diagnostic step or advisor review is needed before I can give you a final recommendation."
+          : "I wasn't able to finalize a recommendation just yet. Please try again in a moment."}</p>
+      `);
+      appendMoreHelpPrompt();
+      return;
+    }
+
+    const confidencePct  = confidence != null ? Math.round(confidence) : null;
+    const confidenceText = confidencePct != null ? `${confidencePct}% AI Match` : "";
     appendBotCard(`
       <div class="flex items-center justify-between mb-4">
         <h4 class="font-headline-md text-[18px] leading-[24px] font-semibold text-on-surface flex items-center gap-2">🎯 Your Recommended Track</h4>
       </div>
       <p class="text-headline-md text-[20px] font-semibold text-primary mb-1">${escapeHtml(String(track))}</p>
-      ${confidence ? `<div class="flex items-center gap-2 mb-3"><span class="text-secondary font-semibold text-body-sm">${escapeHtml(confidence)}</span></div>` : ""}
+      ${confidenceText ? `<div class="flex items-center gap-2 mb-3"><span class="text-secondary font-semibold text-body-sm">${escapeHtml(confidenceText)}</span></div>` : ""}
       <div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden mb-4">
-        <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_12px_rgba(192,193,255,0.6)]" style="width:${data.confidence_score ? Math.round(data.confidence_score*100) : 80}%;"></div>
+        <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full shadow-[0_0_12px_rgba(192,193,255,0.6)]" style="width:${confidencePct != null ? confidencePct : 80}%;"></div>
       </div>
-      <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">${escapeHtml(data.reasoning || "Based on your academic performance and skills profile.")}</p>
+      <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">Based on your academic performance and skills profile.</p>
       <button data-action="track-view-details" class="px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-inverse-primary text-on-primary text-body-sm font-semibold shadow-[0_0_16px_rgba(192,193,255,0.25)] hover:shadow-[0_0_24px_rgba(192,193,255,0.4)] transition-all">View Details</button>
     `);
   } catch (err) {
@@ -214,34 +260,67 @@ let _assessmentSessionId  = null;
 let _assessmentQuestionNo = 0;
 let _assessmentTotal      = 8;   // max_questions sent on start; actual may differ
 
-function startAssessmentFlow(triggerEl) {
+async function startAssessmentFlow(triggerEl) {
   lockControl(triggerEl);
+  _activeCourseId = null; // leaving material flow context — don't route free text there
+  _currentFlow = "assessment";
   appendUserReply("🧠 Start an Assessment");
-  appendBotCard(`
-    <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">Ready for an adaptive assessment?</h4>
-    <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">I'll generate questions tailored to your enrolled courses and adapt based on your answers.</p>
-    <p class="text-body-sm text-on-surface-variant mb-4">Which topic would you like to be assessed on?</p>
-    <div class="flex flex-wrap gap-2">
-      <button data-action="assessment-pick-topic" data-topic="Data Science" class="px-4 py-2 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface">📊 Data Science</button>
-      <button data-action="assessment-pick-topic" data-topic="Machine Learning" class="px-4 py-2 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface">🤖 Machine Learning</button>
-      <button data-action="assessment-pick-topic" data-topic="Programming" class="px-4 py-2 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface">💻 Programming</button>
-      <button data-action="assessment-pick-topic" data-topic="General" class="px-4 py-2 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface">📚 General</button>
-    </div>
-  `);
+  const pid = appendProcessing("Loading your enrolled courses...");
+  try {
+    const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
+    const res = await fetch(`${BASE_URL}/teaching/courses`, {
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-Id":   String(_user.id   || ""),
+        "X-User-Role": String(_user.role || "student"),
+      },
+    });
+    removeNode(pid);
+    const courses = res.ok ? await res.json() : [];
+    if (!courses.length) {
+      appendBotCard(`
+        <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">Ready for an adaptive assessment?</h4>
+        <p class="text-body-sm text-on-surface-variant leading-relaxed">You're not enrolled in any courses yet, so there's nothing for me to generate questions from. Once you're enrolled in a course, come back and I'll build an assessment for it.</p>
+      `);
+      appendMoreHelpPrompt();
+      return;
+    }
+    const courseButtons = courses.map((c) =>
+      `<button data-action="assessment-pick-topic" data-course-id="${c.course_id}" data-topic="${escapeHtml(c.title)}"
+        class="px-4 py-2 rounded-xl bg-surface-container-low/60 border border-white/10 hover:border-primary/40 hover:bg-surface-container-high transition-all text-body-sm font-medium text-on-surface">${escapeHtml(c.title)}</button>`
+    ).join("");
+    appendBotCard(`
+      <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">Ready for an adaptive assessment?</h4>
+      <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">I'll generate questions tailored to your enrolled courses and adapt based on your answers.</p>
+      <p class="text-body-sm text-on-surface-variant mb-4">Which course would you like to be assessed on?</p>
+      <div class="flex flex-wrap gap-2">${courseButtons}</div>
+    `);
+  } catch (err) {
+    removeNode(pid);
+    appendBotMessage(`Sorry, I couldn't load your courses right now. (${err.message})`);
+    appendMoreHelpPrompt();
+  }
 }
 
 async function assessmentPickTopic(el) {
   lockControl(el);
-  const topic = el.dataset.topic || "General";
+  const topic    = el.dataset.topic || "General";
+  const courseId = el.dataset.courseId ? parseInt(el.dataset.courseId, 10) : null;
   appendUserReply(`📖 ${topic}`);
   _assessmentSessionId  = null;
   _assessmentQuestionNo = 0;
 
+  if (!courseId) {
+    appendBotMessage("Sorry, I couldn't tell which course this was for — please start the assessment again.");
+    appendMoreHelpPrompt();
+    return;
+  }
+
   const pid = appendProcessing("Starting your assessment...");
   try {
     const _user = window.currentUser || JSON.parse(localStorage.getItem("user") || "{}");
-    // Use course_id=1 as a sensible default; the graph uses it for context
-    // but the topic param drives the actual question generation.
+    // Real course_id (not hardcoded) + topic derived from the course's own
+    // title, so decompose_and_pick_question has real material to work from.
     const res = await fetch(`${BASE_URL}/assessments/start`, {
       method: "POST",
       headers: {
@@ -249,12 +328,12 @@ async function assessmentPickTopic(el) {
         "X-User-Id":   String(_user.id   || ""),
         "X-User-Role": String(_user.role || "student"),
       },
-      body: JSON.stringify({ course_id: 1, topic, max_questions: 5, mastery_threshold: 0.75 }),
+      body: JSON.stringify({ course_id: courseId, topic, max_questions: 5, mastery_threshold: 0.75 }),
     });
     removeNode(pid);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `status ${res.status}`);
+      throw new Error(_readableDetail(err.detail) || `status ${res.status}`);
     }
     const data = await res.json();
     _assessmentSessionId = data.session_id;
@@ -272,7 +351,20 @@ function _renderAssessmentQuestion(result) {
   const pending   = interrupt?.[0]?.pending_question ?? interrupt?.[0];
 
   if (!pending || !pending.question_text) {
-    // No pending question — graph completed (mastery reached or max questions)
+    if (_assessmentQuestionNo === 0) {
+      // The graph never asked a single question — this is a genuine
+      // "no questions available" failure, not a completed assessment.
+      // Rendering these identically would make a silent backend failure
+      // look like the student aced it.
+      appendBotCard(`
+        <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">No questions available</h4>
+        <p class="text-body-sm text-on-surface-variant leading-relaxed">I wasn't able to generate any questions for this course yet. This usually means there isn't enough material indexed for it — please try a different course, or check back later.</p>
+      `);
+      appendMoreHelpPrompt();
+      return;
+    }
+    // At least one question was asked — graph completed normally
+    // (mastery reached or max questions).
     _renderAssessmentComplete(result);
     return;
   }
@@ -337,7 +429,7 @@ async function assessmentSubmitAnswer(el) {
     removeNode(pid);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || `status ${res.status}`);
+      throw new Error(_readableDetail(err.detail) || `status ${res.status}`);
     }
     const data = await res.json();
     _renderAssessmentQuestion(data.result);
@@ -375,6 +467,7 @@ function _renderAssessmentComplete(result) {
 async function startMaterialFlow(triggerEl) {
   lockControl(triggerEl);
   _activeCourseId = null;  // clear any previous course context
+  _currentFlow = "material";
   appendUserReply("📖 Ask about course material");
   const pid = appendProcessing("Loading your enrolled courses...");
   try {
@@ -467,7 +560,7 @@ async function materialAsk(el) {
     removeNode(pid);
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
-      throw new Error(errBody.detail || `status ${res.status}`);
+      throw new Error(_readableDetail(errBody.detail) || `status ${res.status}`);
     }
     const data = await res.json();
     appendBotMessage(data.answer ?? "I couldn't find enough information in this course's material to answer that.");
@@ -495,6 +588,8 @@ function materialOther(el) {
 --------------------------------------------------------------------- */
 function startCertificateFlow(triggerEl) {
   lockControl(triggerEl);
+  _activeCourseId = null; // leaving material flow context — don't route free text there
+  _currentFlow = "certificate";
   appendUserReply("🎓 Certificate & Scholarship");
   appendBotCard(`
     <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">Let's check your eligibility.</h4>
@@ -515,12 +610,15 @@ async function certificateStart(el) {
         "X-User-Id":   String(_user.id   || ""),
         "X-User-Role": String(_user.role || "student"),
       },
-      body: JSON.stringify({ notes: "Student-initiated certificate eligibility check via AI assistant" }),
+      // StartRequestBody requires request_type (no default); "notes" isn't
+      // even a field on that model, so it was silently dropped and the
+      // request always failed 422 with a missing request_type.
+      body: JSON.stringify({ request_type: "certificate" }),
     });
     removeNode(pid);
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
-      throw new Error(errBody.detail || `status ${res.status}`);
+      throw new Error(_readableDetail(errBody.detail) || `status ${res.status}`);
     }
     const data = await res.json();
     // advisor_router returns the graph state — eligible flag or status from state
@@ -564,6 +662,8 @@ function certificateViewDetails(el) {
 --------------------------------------------------------------------- */
 function startCasesFlow(triggerEl) {
   lockControl(triggerEl);
+  _activeCourseId = null; // leaving material flow context — don't route free text there
+  _currentFlow = "cases";
   appendUserReply("⚠️ My Cases & Appeals");
   appendBotCard(`
     <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">Let's check your cases &amp; appeals.</h4>
@@ -666,7 +766,7 @@ async function casesSubmitAppeal(el) {
     removeNode(pid);
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
-      throw new Error(errBody.detail || `status ${res.status}`);
+      throw new Error(_readableDetail(errBody.detail) || `status ${res.status}`);
     }
     appendBotCard(`
       <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface mb-2">Your appeal has been submitted.</h4>
@@ -746,11 +846,13 @@ async function sendMessage(text) {
       "X-User-Role": String(_user.role || "student"),
     };
 
-    // If a course is active (material flow), route to /teaching/chat which
-    // does real RAG against the enrolled course's material. Otherwise use
-    // /ai/chat for the general assistant.
+    // Only route to /teaching/chat when we're actually still in the
+    // material flow AND have a course selected — otherwise use /ai/chat
+    // for the general assistant. Checking _currentFlow (not just
+    // _activeCourseId) means a stale course id from an earlier material
+    // session can never leak into another flow's free text.
     let endpoint, body;
-    if (_activeCourseId) {
+    if (_currentFlow === "material" && _activeCourseId) {
       endpoint = `${BASE_URL}/teaching/chat`;
       body     = JSON.stringify({ course_id: _activeCourseId, question: text });
     } else {
@@ -761,7 +863,7 @@ async function sendMessage(text) {
     const res = await fetch(endpoint, { method: "POST", headers: authHeaders, body });
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}));
-      throw new Error(errBody.detail || `chat request failed (${res.status})`);
+      throw new Error(_readableDetail(errBody.detail) || `chat request failed (${res.status})`);
     }
     const data = await res.json();
     typingIndicator.classList.add("hidden");

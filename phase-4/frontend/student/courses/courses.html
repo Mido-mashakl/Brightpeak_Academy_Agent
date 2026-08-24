@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Brightpeak · My Cases &amp; Appeals</title>
+<title>Brightpeak · My Courses</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="../shared/theme.config.js"></script>
@@ -29,8 +29,8 @@
     <a href="../dashboard/dashboard.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
       <span class="material-symbols-outlined mr-4 group-hover:text-primary">dashboard</span>Dashboard
     </a>
-    <a href="../courses/courses.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
-      <span class="material-symbols-outlined mr-4 group-hover:text-primary">school</span>My Courses
+    <a href="../courses/courses.html" aria-current="page" class="flex items-center px-4 py-3 rounded-xl transition-all group bg-primary-container text-on-primary-container shadow-[0_0_20px_rgba(128,131,255,0.3)]">
+      <span class="material-symbols-outlined mr-4" style="font-variation-settings:'FILL' 1;">school</span>My Courses
     </a>
     <a href="../ai-assistant/assistant.html?prompt=I%20have%20a%20question%20about%20a%20course%20material." class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
       <span class="material-symbols-outlined mr-4 group-hover:text-primary">folder_open</span>Materials
@@ -41,14 +41,14 @@
     <a href="../agents/agents.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
       <span class="material-symbols-outlined mr-4 group-hover:text-primary">smart_toy</span>AI Agents
     </a>
-    <a href="../assessment/assessment.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
-      <span class="material-symbols-outlined mr-4 group-hover:text-primary">quiz</span>Adaptive Assessment
-    </a>
     <a href="../tracks/tracks.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
       <span class="material-symbols-outlined mr-4 group-hover:text-primary">explore</span>Track Recommendation
     </a>
-    <a href="integrity.html" aria-current="page" class="flex items-center px-4 py-3 rounded-xl transition-all group bg-primary-container text-on-primary-container shadow-[0_0_20px_rgba(128,131,255,0.3)]">
-      <span class="material-symbols-outlined mr-4" style="font-variation-settings:'FILL' 1;">gavel</span>My Cases &amp; Appeals
+    <a href="../assessment/assessment.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">quiz</span>Adaptive Assessment
+    </a>
+    <a href="../integrity/integrity.html" class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group">
+      <span class="material-symbols-outlined mr-4 group-hover:text-primary">gavel</span>My Cases &amp; Appeals
     </a>
     <span class="flex items-center px-4 py-3 rounded-xl text-on-surface-variant/40 cursor-not-allowed" aria-disabled="true" title="Coming soon">
       <span class="material-symbols-outlined mr-4">calendar_today</span>Calendar
@@ -79,13 +79,15 @@
 
       <div>
         <h1 class="font-headline-md text-[28px] leading-[36px] font-semibold text-on-surface flex items-center gap-2">
-          ⚠️ My Cases &amp; Appeals
+          🎓 My Courses
         </h1>
-        <p class="mt-2 text-body-sm text-on-surface-variant">Academic integrity cases reported against you, and their current status.</p>
+        <p class="mt-2 text-body-sm text-on-surface-variant">The courses you're currently enrolled in.</p>
       </div>
 
-      <div id="cases-root" class="flex flex-col gap-4">
-        <p class="text-body-sm text-on-surface-variant">Loading…</p>
+      <div id="courses-root" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="bg-surface-container/60 backdrop-blur-xl border border-white/10 rounded-xl p-6 col-span-2">
+          <p class="text-body-sm text-on-surface-variant">Loading…</p>
+        </div>
       </div>
 
     </div>
@@ -93,6 +95,6 @@
 </div>
 
 <script src="../shared/student-api.js"></script>
-<script src="integrity.js"></script>
+<script src="courses.js"></script>
 </body>
 </html>
