@@ -4,3 +4,6 @@ brightpeak.db
 npm
 __pycache__/
 *.pyc
+.env
+brightpeak.db-shm
+brightpeak.db-wal
