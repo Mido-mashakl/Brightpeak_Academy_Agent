@@ -5,16 +5,30 @@ Uses LangGraph's SQLite checkpointer pointed at the SAME brightpeak.db used
 by the rest of Phase-3 (not a separate checkpoint file), so a killed process
 resumes with `graph.invoke(None, config)` using the same thread_id, no
 re-execution of completed nodes, no state loss.
+
+FIXED: this used to hardcode its own path to phase-3/db/brightpeak.db, a
+stale separate copy -- NOT the canonical file (phase-4/brightpeak.db)
+mcp_server/database.py resolves to and IntegrityCases/etc. actually live
+in. See adaptive_assessment/checkpointing.py's docstring for the full
+rationale (multiple physical .db files + mixed journal modes is a real
+corruption risk). Now reuses database.py's already-resolved _DB_PATH.
 """
 
 from __future__ import annotations
 
-import os
 import sqlite3
+import sys
+from pathlib import Path
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "db", "brightpeak.db")
+_MCP_DIR = Path(__file__).resolve().parent.parent.parent / "mcp_server"
+if str(_MCP_DIR) not in sys.path:
+    sys.path.insert(0, str(_MCP_DIR))
+
+import database as db  # noqa: E402
+
+DB_PATH = str(db._DB_PATH)
 
 _checkpointer: SqliteSaver | None = None
 

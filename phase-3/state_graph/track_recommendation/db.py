@@ -23,12 +23,24 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
-DB_PATH = Path(__file__).resolve().parent.parent.parent / "db" / "brightpeak.db"
+_PHASE4 = Path(__file__).resolve().parent.parent.parent.parent / "phase-4" / "brightpeak.db"
+_PHASE3 = Path(__file__).resolve().parent.parent.parent / "db" / "brightpeak.db"
+DB_PATH = _PHASE4 if _PHASE4.exists() else _PHASE3
 
-_DB = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+_DB = sqlite3.connect(str(DB_PATH), check_same_thread=False, timeout=30)
 _DB.row_factory = sqlite3.Row
 _DB.execute("PRAGMA foreign_keys = ON")
-_DB.execute("PRAGMA journal_mode = WAL")
+# FIXED: this used to also set "PRAGMA journal_mode = WAL" here, while
+# mcp_server/database.py (the connection nearly everything else in the
+# app goes through) and advisory/checkpointing.py leave the default
+# rollback-journal mode. Multiple sqlite3 connections -- from this
+# module, database.py, several SqliteSaver checkpointers, AND the
+# Node/better-sqlite3 process (server.js) -- all opening the SAME
+# physical brightpeak.db with inconsistent journal modes across
+# processes is a real, reproducible cause of "database disk image is
+# malformed" corruption, especially on Windows. Matching the default
+# mode everyone else already uses (with a busy-timeout instead, same as
+# advisory/checkpointing.py) removes that inconsistency.
 _DB.commit()
 
 

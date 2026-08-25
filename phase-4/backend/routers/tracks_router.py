@@ -95,15 +95,15 @@ def list_recommendations(
     advisor_router's GET /advisor/requests for certificate/scholarship."""
     if user.role == "student":
         student_id = user.user_id
-    sql = "SELECT * FROM TrackRecommendations WHERE 1=1"
+    sql = "SELECT t.*, s.name AS student_name FROM TrackRecommendations t LEFT JOIN Students s ON t.student_id = s.student_id WHERE 1=1"
     params: list = []
     if student_id is not None:
-        sql += " AND student_id = ?"
+        sql += " AND t.student_id = ?"
         params.append(student_id)
     if status is not None:
-        sql += " AND status = ?"
+        sql += " AND t.status = ?"
         params.append(status)
-    sql += " ORDER BY created_at DESC"
+    sql += " ORDER BY t.created_at DESC"
     return db.query_all(sql, tuple(params))
 
 

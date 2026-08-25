@@ -15,15 +15,27 @@ This means:
 
 from __future__ import annotations
 
-import os
 import sqlite3
+import sys
+from pathlib import Path
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 
 from .state import FacultyHiringState, CandidateResult, HiringDecisionRecord, InterviewRecord
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "db", "brightpeak.db")
+# FIXED: this used to hardcode its own path to phase-3/db/brightpeak.db, a
+# stale separate copy -- NOT the canonical file (phase-4/brightpeak.db)
+# mcp_server/database.py resolves to and JobPostings/etc. actually live
+# in. See adaptive_assessment/checkpointing.py's docstring for the full
+# rationale. Now reuses database.py's already-resolved _DB_PATH.
+_MCP_DIR = Path(__file__).resolve().parent.parent.parent / "mcp_server"
+if str(_MCP_DIR) not in sys.path:
+    sys.path.insert(0, str(_MCP_DIR))
+
+import database as db  # noqa: E402
+
+DB_PATH = str(db._DB_PATH)
 
 _checkpointer: SqliteSaver | None = None
 

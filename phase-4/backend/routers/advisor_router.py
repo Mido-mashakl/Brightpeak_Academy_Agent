@@ -183,10 +183,10 @@ def list_requests(
     for t in tables:
         table = _table_for(t)
         id_col = _id_col_for(t)
-        sql = f"SELECT *, {id_col} AS request_id FROM {table} WHERE 1=1"
+        sql = f"SELECT t.*, {id_col} AS request_id, s.name AS student_name FROM {table} t LEFT JOIN Students s ON t.student_id = s.student_id WHERE 1=1"
         params: list = []
         if student_id is not None:
-            sql += " AND student_id = ?"
+            sql += " AND t.student_id = ?"
             params.append(student_id)
         sql += f" ORDER BY {id_col} DESC"
         for row in db.query_all(sql, tuple(params)):
@@ -201,7 +201,7 @@ def list_requests(
 def get_request(request_type: str, request_id: int, user: CurrentUser = Depends(require_role("student", "advisor"))):
     table = _table_for(request_type)
     id_col = _id_col_for(request_type)
-    row = db.query_one(f"SELECT *, {id_col} AS request_id FROM {table} WHERE {id_col} = ?", (request_id,))
+    row = db.query_one(f"SELECT t.*, {id_col} AS request_id, s.name AS student_name FROM {table} t LEFT JOIN Students s ON t.student_id = s.student_id WHERE {id_col} = ?", (request_id,))
     if row is None:
         raise HTTPException(status_code=404, detail="Request not found.")
     if user.role == "student" and row["student_id"] != user.user_id:

@@ -292,8 +292,9 @@ CREATE TABLE IF NOT EXISTS ScholarshipApplications (
 CREATE TABLE IF NOT EXISTS JobPostings (
     job_id          INTEGER PRIMARY KEY AUTOINCREMENT,
     title           TEXT NOT NULL,
-    qualifications  TEXT NOT NULL,      -- JSON list of qualification strings
-    application_deadline TEXT,          -- display/validation only; MVP uses admin "close" button, no scheduler
+    department      TEXT,
+    qualifications  TEXT NOT NULL,
+    application_deadline TEXT,
     status          TEXT NOT NULL DEFAULT 'open'
                         CHECK (status IN ('open','closed','hitl_review','completed')),
     created_at      TEXT NOT NULL DEFAULT (DATETIME('now')),

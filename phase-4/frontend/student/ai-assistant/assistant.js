@@ -200,14 +200,17 @@ async function trackStart(el) {
       // awaiting a diagnostic (result._interrupt set). Show an
       // in-progress state instead of a blank "—" card.
       const interrupted = !!result._interrupt;
+      const threadId = data.thread_id || "";
+      const tracksUrl = `../tracks/tracks.html${threadId ? "?threadId=" + encodeURIComponent(threadId) : ""}`;
       appendBotCard(`
         <div class="flex items-center gap-2 mb-2">
           <span class="text-lg">🕐</span>
           <h4 class="font-headline-md text-[16px] leading-[22px] font-semibold text-on-surface">${interrupted ? "We need a bit more information first" : "Still working on your recommendation"}</h4>
         </div>
         <p class="text-body-sm text-on-surface-variant mb-4 leading-relaxed">${interrupted
-          ? "Some of your prerequisite data is missing, so a diagnostic step or advisor review is needed before I can give you a final recommendation."
+          ? "A short assessment is needed before I can finalize your track recommendation."
           : "I wasn't able to finalize a recommendation just yet. Please try again in a moment."}</p>
+        ${interrupted ? `<a href="${tracksUrl}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-br from-primary to-secondary text-on-primary text-body-sm font-semibold shadow-[0_8px_24px_rgba(128,131,255,0.35)] hover:shadow-[0_0_28px_rgba(255,176,205,0.45)] transition-all">Continue to Assessment →</a>` : ""}
       `);
       appendMoreHelpPrompt();
       return;
@@ -346,9 +349,16 @@ async function assessmentPickTopic(el) {
 }
 
 function _renderAssessmentQuestion(result) {
-  // The graph pauses at await_answer and surfaces the question via _interrupt
+  // The graph pauses at await_answer via a STATIC interrupt_before compile
+  // option, not a dynamic interrupt() call — LangGraph does NOT add an
+  // "__interrupt__" key to the state for that kind of pause, so the
+  // backend's _safe_state() never has anything to put in "_interrupt".
+  // pending_question is already sitting directly on the state (that's the
+  // whole point of the await_answer no-op node), so read it from there,
+  // falling back to the old _interrupt shape in case some other code path
+  // (e.g. a future dynamic interrupt()) ever does populate it.
   const interrupt = result?._interrupt;
-  const pending   = interrupt?.[0]?.pending_question ?? interrupt?.[0];
+  const pending   = result?.pending_question ?? interrupt?.[0]?.pending_question ?? interrupt?.[0];
 
   if (!pending || !pending.question_text) {
     if (_assessmentQuestionNo === 0) {
